@@ -12,6 +12,9 @@ This project was developed to satisfy the requirements set forth in the 42 subje
 
 ## 🚀 Project Structure (exemplary)
 
+
+
+```text
 ft_transcendence/
 ├── apps/
 │   ├── backend/                   # chosen backend (or framework) code
@@ -53,6 +56,7 @@ ft_transcendence/
 ├── .gitignore
 ├── README.md
 └── Makefile / task runner (optional)
+```
 
 
 - `apps/backend/` – backend (PHP or chosen backend stack)  
