@@ -1,8 +1,7 @@
-import './style.css'
+import './style.css';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-  <div>
-  	<h1 class="text-3xl font-bold underline"> this is a tester header</h1>
-  </div>
-`
-
+<div class="text-red-950">
+    The whole page has a blue background!
+    </div>
+`;
