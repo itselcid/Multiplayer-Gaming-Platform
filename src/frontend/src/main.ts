@@ -1,7 +1,12 @@
 import './style.css';
+import { startShootingStars } from './shootstars';
+import { Welcome } from './welcome';
 
-document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-<div class="text-red-950">
-    The whole page has a blue background!
-    </div>
-`;
+window.addEventListener("load", () => {
+  const canvas = document.getElementById("starfield") as HTMLCanvasElement;
+  if (canvas) startShootingStars(canvas);
+});
+
+const app = document.querySelector<HTMLDivElement>("#app")!;
+
+app.innerHTML = Welcome();

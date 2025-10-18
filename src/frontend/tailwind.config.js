@@ -5,6 +5,7 @@ module.exports = {
   theme: {
     extend: {
         colors :{
+          ctex: '#A1B7E6'
         },
     },
   },

@@ -10,3 +10,6 @@
 :root{
     background-color: #0D1324;
 }
+
+@theme {  --font-display: "audiowide", cursive;                
+}
