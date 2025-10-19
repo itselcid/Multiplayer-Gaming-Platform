@@ -7,6 +7,7 @@ interface ShootingStar {
   speed: number;
   angle: number;
   opacity: number;
+  color: string; // <-- added
 }
 
 export function startShootingStars(canvas: HTMLCanvasElement) {
@@ -15,6 +16,7 @@ export function startShootingStars(canvas: HTMLCanvasElement) {
     console.error("2D context not supported");
     return;
   }
+
   let width = window.innerWidth;
   let height = window.innerHeight;
 
@@ -23,36 +25,45 @@ export function startShootingStars(canvas: HTMLCanvasElement) {
 
   const stars: ShootingStar[] = [];
 
+  const colors = [
+    (opacity: number) => `rgba(250, 250, 250, ${opacity})`, 
+    (opacity: number) => `rgba(101, 249, 252, ${opacity})`,
+    (opacity: number) => `rgba(224, 143, 248, ${opacity})`, 
+  ];
+
+  // Create a single shooting star
   function createStar(): ShootingStar {
+    const colorIndex = Math.floor(Math.random() * colors.length); 
     return {
       x: Math.random() * width,
-      y: Math.random() * height * 0.5, 
-      length: 100 + Math.random() * 100,
-      speed: 3 + Math.random() * 10,
-      angle: Math.PI / 4, 
-      opacity: 0,
+      y: Math.random() * height * 0.5,
+      length: 75 + Math.random() * 100,
+      speed: 5 + Math.random() * 10,
+      angle: Math.PI / 4,
+      opacity: 0.001,
+      color: colorIndex.toString(), 
     };
   }
-
+  // Add stars gradually
   setInterval(() => {
     if (stars.length < 10) stars.push(createStar());
-  }, 500);
+  }, 250);
 
   function animate() {
-    if(!ctx){return ;}
+    if (!ctx) return;
+
     ctx.clearRect(0, 0, width, height);
 
     for (let i = stars.length - 1; i >= 0; i--) {
       const star = stars[i];
+      if (star.opacity < 1) star.opacity += 0.006;
 
-      // Fade in
-      if (star.opacity < 1) star.opacity += 0.01;
-
-      ctx.strokeStyle = `rgba(255, 255, 255, ${star.opacity})`;
+      const colorFn = colors[parseInt(star.color)];
+      ctx.strokeStyle = colorFn(star.opacity);
       ctx.lineWidth = 2;
       ctx.beginPath();
 
-      // Calculate star tail position
+      // Calculate tail
       const endX = star.x - star.length * Math.cos(star.angle);
       const endY = star.y - star.length * Math.sin(star.angle);
 
@@ -64,7 +75,7 @@ export function startShootingStars(canvas: HTMLCanvasElement) {
       star.x += star.speed * Math.cos(star.angle);
       star.y += star.speed * Math.sin(star.angle);
 
-      // Remove star if off screen
+      // Remove if offscreen
       if (star.x > width || star.y > height) {
         stars.splice(i, 1);
       }
@@ -75,7 +86,6 @@ export function startShootingStars(canvas: HTMLCanvasElement) {
 
   animate();
 
-  
   window.addEventListener("resize", () => {
     width = window.innerWidth;
     height = window.innerHeight;

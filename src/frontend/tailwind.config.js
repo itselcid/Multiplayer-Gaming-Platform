@@ -1,13 +1,13 @@
 /** @type {import('tailwindcss').Config} */
 
-module.exports = {
-  content: [],
+export default {
+  content: [
+    "./index.html",    
+    "./src/**/*.{ts}"  
+  ],
   theme: {
     extend: {
-        colors :{
-          ctex: '#A1B7E6'
-        },
     },
   },
   plugins: [],
-}
+};

@@ -1,15 +1,6 @@
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-
-
 @import "tailwindcss";
 
-:root{
-    background-color: #0D1324;
-}
-
-@theme {  --font-display: "audiowide", cursive;                
+@theme {  
+    --font-display: "audiowide", cursive;
+    --color-ctex: #A1B7E6 ;             
 }
