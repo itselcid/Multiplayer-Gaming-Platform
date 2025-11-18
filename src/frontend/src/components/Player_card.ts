@@ -1,14 +1,14 @@
-// ************************************************************************** //
-//                                                                            //
-//                                                        :::      ::::::::   //
-//   Player_card.ts                                     :+:      :+:    :+:   //
-//                                                    +:+ +:+         +:+     //
-//   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        //
-//                                                +#+#+#+#+#+   +#+           //
-//   Created: 2025/11/06 01:50:41 by kez-zoub          #+#    #+#             //
-//   Updated: 2025/11/10 20:37:52 by kez-zoub         ###   ########.fr       //
-//                                                                            //
-// ************************************************************************** //
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Player_card.ts                                     :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/11/06 01:50:41 by kez-zoub          #+#    #+#             */
+/*   Updated: 2025/11/15 19:25:47 by kez-zoub         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
 import { login_state } from "../core/appStore";
 import { addElement, Component } from "../core/Component";
@@ -40,11 +40,59 @@ export class Player_card extends Component {
 														   <div class="flex items-center space-x-3 p-3 bg-space-dark/50 rounded-lg">
 														   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wallet w-5 h-5 text-neon-cyan" aria-hidden="true"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"></path><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"></path>
 															   </svg>
-														   <span class="text-gray-300 text-sm font-mono">
-																0X26A2BF1978...71A973CF
-														   </span>
-														   </div>
-														   `);
+															
+   <div class="relative inline-block cursor-pointer group">
+    <span class="text-gray-300 text-sm font-mono">
+	 0X26A2BF1978...71A973CF
+</span>
+
+    <!-- Popup -->
+    <div
+        class="
+            absolute 
+            bottom-[calc(100%+10px)] left-[60%]
+            -translate-x-1/2 
+            opacity-0 invisible 
+            group-hover:opacity-100 group-hover:visible group-hover:-translate-y-1 
+            transition-all duration-300 
+            px-5 py-3
+            text-[13px]
+            font-mono tracking-wide text-neon-cyan
+            bg-gradient-to-br from-[rgba(0,242,254,0.15)] to-[rgba(181,55,255,0.15)]
+            backdrop-blur-xl
+            border-2 border-neon-cyan
+            rounded-xl
+            shadow-[0_8px_32px_rgba(0,242,254,0.3),0_0_20px_rgba(181,55,255,0.2),inset_0_1px_1px_rgba(255,255,255,0.1)]
+            whitespace-nowrap 
+            pointer-events-none
+            z-[1000]
+        "
+    >
+        0x26A2BF197820C79150DDE3DB793C23BF71A973CF
+
+        <!-- Arrow -->
+        <span
+            class="
+                absolute top-full left-1/2 -translate-x-1/2
+                border-8 border-transparent
+                border-t-neon-cyan
+            "
+        ></span>
+
+        <span
+            class="
+                absolute top-full left-1/2 -translate-x-1/2 mt-[-2px]
+                border-6 border-transparent
+                border-t-[rgba(0,242,254,0.15)]
+            "
+        ></span>
+    </div>
+</div>
+
+
+</div>
+`);
+
 
 		const	disconnect_logout = addElement('div', 'mt-6 space-y-3', this.el);
 		const	disconnect_container = addElement('div', '', disconnect_logout);

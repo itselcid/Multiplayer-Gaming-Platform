@@ -1,0 +1,187 @@
+{
+  "address": "0xf5059a5d33d5853360d16c683c16e67980206f36",
+  "abi": [
+    {
+      "inputs": [],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint8",
+          "name": "id",
+          "type": "uint8"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "entryFee",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint8",
+          "name": "participants",
+          "type": "uint8"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "startDate",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "enum TournamentFactory.Status",
+          "name": "status",
+          "type": "uint8"
+        }
+      ],
+      "name": "TournamentCreated",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "_id",
+          "type": "uint8"
+        },
+        {
+          "internalType": "string",
+          "name": "_title",
+          "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_entryFee",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint8",
+          "name": "_participants",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_startTime",
+          "type": "uint256"
+        },
+        {
+          "internalType": "enum TournamentFactory.Status",
+          "name": "_status",
+          "type": "uint8"
+        }
+      ],
+      "name": "createTournament",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getTournaments",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint8",
+              "name": "id",
+              "type": "uint8"
+            },
+            {
+              "internalType": "string",
+              "name": "title",
+              "type": "string"
+            },
+            {
+              "internalType": "uint256",
+              "name": "entryFee",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint8",
+              "name": "participants",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint256",
+              "name": "startTime",
+              "type": "uint256"
+            },
+            {
+              "internalType": "enum TournamentFactory.Status",
+              "name": "status",
+              "type": "uint8"
+            }
+          ],
+          "internalType": "struct TournamentFactory.Tournament[]",
+          "name": "",
+          "type": "tuple[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "tournaments",
+      "outputs": [
+        {
+          "internalType": "uint8",
+          "name": "id",
+          "type": "uint8"
+        },
+        {
+          "internalType": "string",
+          "name": "title",
+          "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "entryFee",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint8",
+          "name": "participants",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint256",
+          "name": "startTime",
+          "type": "uint256"
+        },
+        {
+          "internalType": "enum TournamentFactory.Status",
+          "name": "status",
+          "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ]
+}

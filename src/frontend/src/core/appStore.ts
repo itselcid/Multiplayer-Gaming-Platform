@@ -1,19 +1,20 @@
-// ************************************************************************** //
-//                                                                            //
-//                                                        :::      ::::::::   //
-//   appStore.ts                                        :+:      :+:    :+:   //
-//                                                    +:+ +:+         +:+     //
-//   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        //
-//                                                +#+#+#+#+#+   +#+           //
-//   Created: 2025/11/03 15:31:14 by kez-zoub          #+#    #+#             //
-//   Updated: 2025/11/10 20:34:01 by kez-zoub         ###   ########.fr       //
-//                                                                            //
-// ************************************************************************** //
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   appStore.ts                                        :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/11/03 15:31:14 by kez-zoub          #+#    #+#             */
+/*   Updated: 2025/11/18 03:48:55 by kez-zoub         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
 import { Disconnect_wallet } from "../components/Disconnect_wallet";
-import { Navbar_connect_wallet } from "../components/Navbar_connect_wallet";
-import { Navbar_connected_wallet } from "../components/Navbar_connected_wallet";
+import { Navbar_connect_wallet, Navbar_connected_wallet } from "../components/Navbar";
 import { Sign_in } from "../components/sign_in";
+import { join_tournament_active, join_tournament_inactive } from "../components/Tournament_card";
+import { TournamentsDisplay, TournamentTab } from "../pages/Tournaments";
 import { Web3Auth } from "../web3/auth";
 import { State } from "./state";
 
@@ -54,6 +55,7 @@ export const web3_login_sub = () => {
 	login_state.subscribe(() => {
 		const	auth = document.getElementById('auth');
 		const	disconnect_container = document.getElementById('disconnect_container');
+		const	join_tournament = document.querySelectorAll<HTMLElement>('.join-tournament-button');
 		if (!auth) {
 			console.error('cant find auth id');
 			return ;
@@ -74,6 +76,14 @@ export const web3_login_sub = () => {
 				const	disconnect = new Disconnect_wallet();
 				disconnect.mount(disconnect_container);
 			}
+			if (join_tournament) {
+				join_tournament.forEach(element => {
+					element.innerHTML = '';
+					const	join_button_active = new join_tournament_active();
+					join_button_active.mount(element)
+				});
+			}
+			
 		} else {
 			console.log('web3 is not connected');
 			const	navbar_connect_wallet = new Navbar_connect_wallet();
@@ -82,7 +92,32 @@ export const web3_login_sub = () => {
 			if (disconnect_container) {
 				disconnect_container.innerHTML = '';
 			}
+			if (join_tournament) {
+				join_tournament.forEach(element => {
+					element.innerHTML = '';
+					const	join_button_inactive = new join_tournament_inactive();
+					join_button_inactive.mount(element);
+				});
+			}
 		}
 	})
 }
 
+// tournament tabs
+export const	tournament_tab = new State('all');
+export const	tournament_tab_sub = () => {
+	tournament_tab.subscribe(() => {
+		const tournament_tab_container = document.getElementById('tournamentsTabs');
+		const	tournament_list_container = document.getElementById('tournaments-list')
+		if (tournament_tab_container) {
+			tournament_tab_container.innerHTML = '';
+			const	tournament = new TournamentTab();
+			tournament.mount(tournament_tab_container);
+		}
+		if (tournament_list_container) {
+			tournament_list_container.innerHTML = '';
+			const	tournamentsDisplay = new TournamentsDisplay();
+			tournamentsDisplay.mount(tournament_list_container);
+		}
+	})
+}

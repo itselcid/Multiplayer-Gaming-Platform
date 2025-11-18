@@ -1,0 +1,156 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Tournament_card.ts                                 :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/11/15 01:14:19 by kez-zoub          #+#    #+#             */
+/*   Updated: 2025/11/18 03:13:16 by kez-zoub         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+import { formatEther } from "viem";
+import { login_state } from "../core/appStore";
+import { addElement, Component } from "../core/Component";
+import type { Tournament } from "../web3/getters";
+import { bigint_to_date } from "../tools/date";
+
+// interface Tournament {
+//   id: string;
+//   name: string;
+//   entryFee: string;
+//   startTime: string;
+//   participants: number;
+//   prizePool: string;
+// }
+class PendingStatus extends Component {
+	constructor() {
+		super('div', 'w-full flex justify-end -mb-8');
+	}
+
+	render(): void {
+		this.el.innerHTML = `
+			<div class="inline-flex items-center gap-2 px-4 py-2 bg-yellow-500/20 border border-yellow-400 rounded-full mb-6">
+                <span class="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span>
+                <span class="text-yellow-400 font-bold text-xs tracking-wider">PENDING</span>
+            </div>
+		`
+	}
+}
+
+class OngoingStatus extends Component {
+	constructor() {
+		super('div', 'w-full flex justify-end -mb-8');
+	}
+
+	render(): void {
+		this.el.innerHTML = `
+			<div class="inline-flex items-center gap-2 px-4 py-2 bg-green-500/20 border border-green-400 rounded-full mb-6">
+            	<span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+            	<span class="text-green-400 font-bold text-xs tracking-wider">ONGOING</span>
+            </div>
+		`
+	}
+}
+
+class FinishedStatus extends Component {
+	constructor() {
+		super('div', 'w-full flex justify-end -mb-8');
+	}
+
+	render(): void {
+		this.el.innerHTML = `
+			<div class="inline-flex items-center gap-2 px-4 py-2 bg-gray-500/20 border border-gray-400 rounded-full mb-6">
+                <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
+                <span class="text-gray-400 font-bold text-xs tracking-wider">FINISHED</span>
+            </div>
+		`
+	}
+}
+
+export class Tournament_card extends Component {
+	private	tournament;
+
+	constructor(tournmnt: Tournament) {
+		super('div', 'group relative bg-gradient-to-br from-space-blue to-space-dark border-2 border-neon-cyan/30 rounded-xl p-6 hover:border-neon-cyan transition-all hover:shadow-2xl hover:shadow-neon-cyan/30 transform hover:scale-105');
+		this.tournament = tournmnt;
+	}
+
+	render(): void {
+		// console.log('tournmanet card', this.tournament);
+		if (this.tournament.status === 0) {
+			const	pend = new PendingStatus();
+			pend.mount(this.el);
+		} else if (this.tournament.status === 1) {
+			const	ongoing = new OngoingStatus();
+			ongoing.mount(this.el);
+		} else if (this.tournament.status === 2) {
+			const	finished = new FinishedStatus();
+			finished.mount(this.el);
+		}
+		const	tournament_name = addElement('h3', 'text-2xl font-bold mb-4 text-neon-cyan', this.el);
+		tournament_name.textContent = this.tournament.title;
+
+		const	tournament_info = addElement('div', 'space-y-3 mb-6', this.el);
+		tournament_info.insertAdjacentHTML('beforeend', `
+			<div class="flex items-center space-x-3 text-gray-300">
+			  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-coins w-5 h-5 text-neon-gold" aria-hidden="true"><circle cx="8" cy="8" r="6"></circle><path d="M18.09 10.37A6 6 0 1 1 10.34 18"></path><path d="M7 6h1v4"></path><path d="m16.71 13.88.7.71-2.82 2.82"></path></svg>
+			  <span>
+				Entry Fee:
+				<span class="text-neon-gold font-semibold">
+				  ${formatEther(this.tournament.entryFee)} TRIZcoin
+				</span>
+			  </span>
+			</div>
+			<div class="flex items-center space-x-3 text-gray-300">
+			  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clock w-5 h-5 text-neon-purple" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+			  <span>${bigint_to_date(this.tournament.startTime)}</span>
+			</div>
+			<div class="flex items-center space-x-3 text-gray-300">
+			  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users w-5 h-5 text-neon-cyan" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><path d="M16 3.128a4 4 0 0 1 0 7.744"></path><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><circle cx="9" cy="7" r="4"></circle></svg>
+			  <span>${this.tournament.participants} participants</span>
+			</div>
+			`);
+
+		const	prize_pool = addElement('div', 'bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border-2 border-yellow-400/40 rounded-xl p-6 neon-border', this.el);
+		prize_pool.insertAdjacentHTML('beforeend', `
+			<div class="text-sm text-gray-400 mb-1">Prize Pool</div>
+			<div class="text-2xl font-bold text-neon-gold">
+			  ${formatEther(this.tournament.entryFee * BigInt(this.tournament.participants))} TRIZcoin
+			</div>
+			`);
+	  
+		const	join_tournament = addElement('div', 'join-tournament-button', this.el);
+		if (login_state.get() === 'connected') {
+			const	join_button_active = new join_tournament_active();
+			join_button_active.mount(join_tournament)
+		} else if (login_state.get() === 'not connected') {
+			const	join_button_inactive = new join_tournament_inactive();
+			join_button_inactive.mount(join_tournament);
+		}
+    
+	}
+}
+
+export class join_tournament_active extends Component {
+	constructor() {
+		super('Button', 'block w-full py-3 rounded-lg text-center font-bold transition-all bg-gradient-to-r from-neon-cyan to-neon-purple hover:shadow-lg hover:shadow-neon-cyan/50');
+	}
+
+	render(): void {
+		this.el.textContent = 'Enter Tournament';
+	}
+}
+
+export class join_tournament_inactive extends Component {
+	constructor() {
+		super('Button', 'block w-full py-3 rounded-lg text-center font-bold transition-all bg-gray-600 opacity-50');
+	}
+
+	render(): void {
+		this.el.textContent = 'Connect Wallet to Enter';
+		this.el.style = "cursor: not-allowed !important;";
+		(this.el as HTMLButtonElement).disabled = true;
+	}
+}

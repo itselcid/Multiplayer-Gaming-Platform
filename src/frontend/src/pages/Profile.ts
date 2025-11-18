@@ -1,14 +1,14 @@
-// ************************************************************************** //
-//                                                                            //
-//                                                        :::      ::::::::   //
-//   Profile.ts                                         :+:      :+:    :+:   //
-//                                                    +:+ +:+         +:+     //
-//   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        //
-//                                                +#+#+#+#+#+   +#+           //
-//   Created: 2025/11/05 17:41:32 by kez-zoub          #+#    #+#             //
-//   Updated: 2025/11/06 02:14:45 by kez-zoub         ###   ########.fr       //
-//                                                                            //
-// ************************************************************************** //
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Profile.ts                                         :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/11/05 17:41:32 by kez-zoub          #+#    #+#             */
+/*   Updated: 2025/11/15 03:13:27 by kez-zoub         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
 import { Achievements } from "../components/Achievements";
 import { Player_card } from "../components/Player_card";
@@ -17,7 +17,7 @@ import { addElement, Component } from "../core/Component";
 
 export class Profile extends Component {
 	constructor() {
-		super('div', 'max-w-6xl mx-auto px-6 py-12');
+		super('div', 'max-w-6xl mx-auto px-6 py-12 w-full');
 	}
 
 	render() {

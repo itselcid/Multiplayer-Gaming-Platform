@@ -1,14 +1,14 @@
-// ************************************************************************** //
-//                                                                            //
-//                                                        :::      ::::::::   //
-//   auth.ts                                            :+:      :+:    :+:   //
-//                                                    +:+ +:+         +:+     //
-//   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        //
-//                                                +#+#+#+#+#+   +#+           //
-//   Created: 2025/11/04 12:18:56 by kez-zoub          #+#    #+#             //
-//   Updated: 2025/11/10 20:36:17 by kez-zoub         ###   ########.fr       //
-//                                                                            //
-// ************************************************************************** //
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   auth.ts                                            :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/11/04 12:18:56 by kez-zoub          #+#    #+#             */
+/*   Updated: 2025/11/18 03:14:14 by kez-zoub         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
 import { Error_wallet_connection } from "../components/Error_wallet_connection";
 import { Pending_wallet_connection } from "../components/Pending_wallet_connection";
@@ -19,6 +19,30 @@ import { user_address } from "../main";
 export class Web3Auth {
 	private _storageKey = 'wallet_address';
 	private	_address = '';
+
+	private	polling(): void {
+		setInterval(async () => {
+			const	eth = window.ethereum;
+
+			if (typeof(eth) === 'undefined')
+				return ;
+
+			const	accounts = await eth.request({
+				method: 'eth_accounts'
+			}) as string[];
+			const	chainId = await eth.request({
+				method: 'eth_chainId'
+			}) as string;
+			const	currentAccount = accounts[0] || null;
+			// console.log(currentAccount);
+			// console.log(chainId);
+		}, 1000);
+	}
+
+	constructor() {
+		// console.log("web3auth called");
+		this.polling();
+	}
 
 	isWalletInstalled(): boolean {
 		return (typeof window.ethereum !== 'undefined');
@@ -64,11 +88,12 @@ export class Web3Auth {
 
 			//this.setupAccountListener();
 			console.log('Logged in with account ', address);
-			pend.unmount(root);
+			pend.unmount();
 			const	succ = new Success_wallet_connection();
 			succ.mount(root);
 			return (address);
 		} catch (err) {
+			pend.unmount();
 			const	error_page = new Error_wallet_connection();
 			error_page.mount(root);
 			console.error('Error connecting to wallet: ', err);

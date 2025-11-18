@@ -1,23 +1,25 @@
-// ************************************************************************** //
-//                                                                            //
-//                                                        :::      ::::::::   //
-//   router.ts                                          :+:      :+:    :+:   //
-//                                                    +:+ +:+         +:+     //
-//   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        //
-//                                                +#+#+#+#+#+   +#+           //
-//   Created: 2025/10/13 22:19:50 by kez-zoub          #+#    #+#             //
-//   Updated: 2025/11/06 01:27:08 by kez-zoub         ###   ########.fr       //
-//                                                                            //
-// ************************************************************************** //
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   router.ts                                          :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/10/13 22:19:50 by kez-zoub          #+#    #+#             */
+/*   Updated: 2025/11/16 21:21:14 by kez-zoub         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
 import { Home } from "../components/Home";
 import { Page404} from "../components/Page404";
 import { Profile } from "../pages/Profile";
+import { Tournaments } from "../pages/Tournaments";
 
 const routes: Record<string, any> = {
   "/": Home,
   "/home": Home,
   "/profile": Profile,
+  "/tournaments": Tournaments,
 };
 
 export function navigate(path: string) {
