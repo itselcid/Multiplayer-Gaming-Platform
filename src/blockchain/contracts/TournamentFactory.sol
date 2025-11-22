@@ -13,7 +13,7 @@ contract TournamentFactory {
     }
 
     struct Tournament {
-        uint8 id;
+        uint id;
         string title;
         uint entryFee;
         uint8 participants;
@@ -27,7 +27,7 @@ contract TournamentFactory {
 
     // error AdminOnly(address msg_sender);
     event TournamentCreated(
-        uint8 id,
+        uint id,
         uint entryFee,
         uint8 participants,
         uint startDate,
@@ -35,7 +35,6 @@ contract TournamentFactory {
     );
 
     function createTournament(
-        uint8 _id,
         string memory _title,
         uint _entryFee,
         uint8 _participants,
@@ -45,7 +44,7 @@ contract TournamentFactory {
         // require(msg.sender == owner, AdminOnly(msg.sender));
         tournaments.push(
             Tournament({
-                id: _id,
+                id: tournaments.length,
                 title: _title,
                 entryFee: _entryFee,
                 participants: _participants,
@@ -54,7 +53,7 @@ contract TournamentFactory {
             })
         );
         emit TournamentCreated(
-            _id,
+            tournaments.length,
             _entryFee,
             _participants,
             _startTime,
@@ -64,5 +63,9 @@ contract TournamentFactory {
 
     function getTournaments() public view returns (Tournament[] memory) {
         return (tournaments);
+    }
+
+    function getTournament(uint id) public view returns (Tournament memory) {
+        return (tournaments[id]);
     }
 }

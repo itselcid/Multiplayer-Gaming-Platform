@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/15 01:14:19 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/11/18 03:13:16 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/11/21 22:54:26 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,9 @@ import { login_state } from "../core/appStore";
 import { addElement, Component } from "../core/Component";
 import type { Tournament } from "../web3/getters";
 import { bigint_to_date } from "../tools/date";
+import { get_tournament_status } from "../tools/get_tournament_status";
+import { navigate } from "../core/router";
+import { Tournament_status } from "./Tournament_status";
 
 // interface Tournament {
 //   id: string;
@@ -24,50 +27,7 @@ import { bigint_to_date } from "../tools/date";
 //   participants: number;
 //   prizePool: string;
 // }
-class PendingStatus extends Component {
-	constructor() {
-		super('div', 'w-full flex justify-end -mb-8');
-	}
 
-	render(): void {
-		this.el.innerHTML = `
-			<div class="inline-flex items-center gap-2 px-4 py-2 bg-yellow-500/20 border border-yellow-400 rounded-full mb-6">
-                <span class="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span>
-                <span class="text-yellow-400 font-bold text-xs tracking-wider">PENDING</span>
-            </div>
-		`
-	}
-}
-
-class OngoingStatus extends Component {
-	constructor() {
-		super('div', 'w-full flex justify-end -mb-8');
-	}
-
-	render(): void {
-		this.el.innerHTML = `
-			<div class="inline-flex items-center gap-2 px-4 py-2 bg-green-500/20 border border-green-400 rounded-full mb-6">
-            	<span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-            	<span class="text-green-400 font-bold text-xs tracking-wider">ONGOING</span>
-            </div>
-		`
-	}
-}
-
-class FinishedStatus extends Component {
-	constructor() {
-		super('div', 'w-full flex justify-end -mb-8');
-	}
-
-	render(): void {
-		this.el.innerHTML = `
-			<div class="inline-flex items-center gap-2 px-4 py-2 bg-gray-500/20 border border-gray-400 rounded-full mb-6">
-                <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
-                <span class="text-gray-400 font-bold text-xs tracking-wider">FINISHED</span>
-            </div>
-		`
-	}
-}
 
 export class Tournament_card extends Component {
 	private	tournament;
@@ -76,20 +36,13 @@ export class Tournament_card extends Component {
 		super('div', 'group relative bg-gradient-to-br from-space-blue to-space-dark border-2 border-neon-cyan/30 rounded-xl p-6 hover:border-neon-cyan transition-all hover:shadow-2xl hover:shadow-neon-cyan/30 transform hover:scale-105');
 		this.tournament = tournmnt;
 	}
-
+	
 	render(): void {
-		// console.log('tournmanet card', this.tournament);
-		if (this.tournament.status === 0) {
-			const	pend = new PendingStatus();
-			pend.mount(this.el);
-		} else if (this.tournament.status === 1) {
-			const	ongoing = new OngoingStatus();
-			ongoing.mount(this.el);
-		} else if (this.tournament.status === 2) {
-			const	finished = new FinishedStatus();
-			finished.mount(this.el);
-		}
-		const	tournament_name = addElement('h3', 'text-2xl font-bold mb-4 text-neon-cyan', this.el);
+		console.log('tournmanet card', this.tournament.id);
+		const	status = new Tournament_status(get_tournament_status(this.tournament));
+		status.mount(this.el);
+
+		const	tournament_name = addElement('h3', 'text-2xl font-bold my-4 text-neon-cyan', this.el);
 		tournament_name.textContent = this.tournament.title;
 
 		const	tournament_info = addElement('div', 'space-y-3 mb-6', this.el);
@@ -113,7 +66,7 @@ export class Tournament_card extends Component {
 			</div>
 			`);
 
-		const	prize_pool = addElement('div', 'bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border-2 border-yellow-400/40 rounded-xl p-6 neon-border', this.el);
+		const	prize_pool = addElement('div', 'mb-6 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border-2 border-yellow-400/40 rounded-xl p-6 neon-border', this.el);
 		prize_pool.insertAdjacentHTML('beforeend', `
 			<div class="text-sm text-gray-400 mb-1">Prize Pool</div>
 			<div class="text-2xl font-bold text-neon-gold">
@@ -123,7 +76,8 @@ export class Tournament_card extends Component {
 	  
 		const	join_tournament = addElement('div', 'join-tournament-button', this.el);
 		if (login_state.get() === 'connected') {
-			const	join_button_active = new join_tournament_active();
+			console.log('here:', this.tournament.id);
+			const	join_button_active = new join_tournament_active(Number(this.tournament.id));
 			join_button_active.mount(join_tournament)
 		} else if (login_state.get() === 'not connected') {
 			const	join_button_inactive = new join_tournament_inactive();
@@ -134,12 +88,17 @@ export class Tournament_card extends Component {
 }
 
 export class join_tournament_active extends Component {
-	constructor() {
+	private	_id: number;
+	constructor(id: number) {
 		super('Button', 'block w-full py-3 rounded-lg text-center font-bold transition-all bg-gradient-to-r from-neon-cyan to-neon-purple hover:shadow-lg hover:shadow-neon-cyan/50');
+		this._id = id;
 	}
 
 	render(): void {
 		this.el.textContent = 'Enter Tournament';
+		this.el.onclick = () => {
+			navigate('/tournaments/'+this._id);
+		}
 	}
 }
 

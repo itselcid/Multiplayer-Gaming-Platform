@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/03 15:31:14 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/11/18 03:48:55 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/11/21 23:42:28 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@ import { Sign_in } from "../components/sign_in";
 import { join_tournament_active, join_tournament_inactive } from "../components/Tournament_card";
 import { TournamentsDisplay, TournamentTab } from "../pages/Tournaments";
 import { Web3Auth } from "../web3/auth";
+import { tournamentsGlobal } from "../web3/getters";
 import { State } from "./state";
 
 // nav bar active tab state
@@ -77,10 +78,12 @@ export const web3_login_sub = () => {
 				disconnect.mount(disconnect_container);
 			}
 			if (join_tournament) {
-				join_tournament.forEach(element => {
-					element.innerHTML = '';
-					const	join_button_active = new join_tournament_active();
-					join_button_active.mount(element)
+				let i: number = 0;
+				tournamentsGlobal.forEach(tournament => {
+					join_tournament[i].innerHTML = '';
+					const	join_button_active = new join_tournament_active(Number(tournament.id));
+					join_button_active.mount(join_tournament[i]);
+					i++;
 				});
 			}
 			

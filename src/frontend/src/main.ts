@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/12 15:53:05 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/11/16 20:48:53 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/11/19 02:05:06 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,6 @@ import { Navbar } from './components/Navbar.ts';
 import { subs } from './core/state.ts';
 import { Shouting_stars, startShootingStars } from './pages/Shouting_stars.ts';
 import { TestBG } from './pages/TestBG.ts';
-import { Metamask_warning } from './components/Metamask_warning.ts';
 
 //  TODO: get user address from database for auth
 export const user_address = '0x26a2bf197820c79150dde3db793c23bf71a973cf';
@@ -36,7 +35,7 @@ const	bg = addElement("main", "flex-1 flex flex-col", container2);
 bg.id = "bg";
 document.getElementById('app')?.append(container1);
 renderRoute();
-// const page = new Metamask_warning();
+// const page = new CreateTournament();
 // page.mount(document.getElementById('app'));
 
 subs();

@@ -6,14 +6,16 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 21:57:12 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/11/18 04:25:01 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/11/21 23:37:55 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
+import { CreateTournament } from "../components/CreateTournament";
 import { Tournament_card } from "../components/Tournament_card";
 import { tournament_tab } from "../core/appStore";
 import { addElement, Component } from "../core/Component";
-import { getTournaments, type Tournament } from "../web3/getters";
+import { get_tournament_status } from "../tools/get_tournament_status";
+import { getTournaments, setTournaments, tournamentsGlobal, type Tournament } from "../web3/getters";
 
 export class TournamentTab extends Component {
 	constructor() {
@@ -45,6 +47,25 @@ export class TournamentTab extends Component {
 			tournament_tab.set('finished');
 		};
 
+		const	expired = addElement('button', 'px-8 py-4 glass-effect rounded-xl font-bold text-sm tracking-wider text-gray-400 border-2 border-transparent hover:border-cyan-400/30 transition-all duration-300 hover:scale-105', this.el);
+		expired.textContent = 'EXPIRED';
+		expired.onclick = () => {
+			tournament_tab.set('expired');
+		};
+
+		const	addTournament = addElement('button', 'px-8 py-4 glass-effect rounded-xl font-bold text-sm tracking-wider text-gray-400 border-2 border-transparent hover:border-cyan-400/30 transition-all duration-300 hover:scale-105', this.el);
+		addTournament.textContent = 'add tournament';
+		addTournament.onclick = () => {
+			const	create_tournament = new CreateTournament();
+			const	root = document.getElementById('app');
+			if (root)
+				create_tournament.mount(root);
+			else {
+				console.error('root not found');
+				return (null);
+			}
+		};
+
 		const	active_classes = 'filter-tab px-8 py-4 glass-effect rounded-xl font-bold text-sm tracking-wider border-2 hover:border-cyan-400/30 transition-all duration-300 hover:scale-105 bg-gradient-to-r from-cyan-500/20 to-purple-600/20 border-cyan-400 text-cyan-400 neon-border';
 		switch (tournament_tab.get()) {
 			case 'all':
@@ -58,17 +79,19 @@ export class TournamentTab extends Component {
 				break;
 			case 'finished':
 				finished.className = active_classes;
+				break;
+			case 'expired':
+				expired.className = active_classes;
+				break;
 		}
 	}
 }
 
-async function sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-}
+// async function sleep(ms: number): Promise<void> {
+//     return new Promise((resolve) => setTimeout(resolve, ms));
+// }
 
 export class TournamentsDisplay extends Component {
-	private tournaments: Tournament[] = [];
-
 	constructor() {
 		super('div', 'min-h-[400px] transition-all duration-300');
 	}
@@ -76,26 +99,24 @@ export class TournamentsDisplay extends Component {
 	async render(): Promise<void> {
 	const	container = addElement('div', 'transition-opacity duration-200 opacity-0', this.el);
 	const	container2 = addElement('div', 'grid grid-cols-1 md:grid-cols-2 gap-6 mb-12', container);
-	try {
-		await sleep(1000);
-		this.tournaments = await getTournaments();
-	} catch {
-		console.error('error during fetching tournaments');
-	} finally {
+		// await sleep(1000);
+		setTournaments(await getTournaments());
 		container.className = 'transition-opacity duration-200 opacity-100';
-		this.tournaments = [];
-		this.tournaments.map(tournament => {
+		console.log('tournament length: ', tournamentsGlobal.length);
+		tournamentsGlobal.map(tournament => {
 			if (
 				tournament_tab.get() === 'all' ||
-				tournament_tab.get() === 'pending' && tournament.status === 0 ||
-				tournament_tab.get() === 'ongoing' && tournament.status === 1 ||
-				tournament_tab.get() === 'finished' && tournament.status === 2
+				tournament_tab.get() === 'pending' && get_tournament_status(tournament) === 'pending' ||
+				tournament_tab.get() === 'ongoing' && get_tournament_status(tournament) === 'ongoing' ||
+				tournament_tab.get() === 'finished' && get_tournament_status(tournament) === 'finished' ||
+				tournament_tab.get() === 'expired' && get_tournament_status(tournament) === 'expired'
 			) {
+				console.log('run', tournament);
 				const	card = new Tournament_card(tournament);
 				card.mount(container2);
 			};
 		});
-	}
+	
 	// console.log(typeof(tournaments));
 	}
 }

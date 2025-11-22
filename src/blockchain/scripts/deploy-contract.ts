@@ -41,30 +41,38 @@ async function deploy(contractName: string) {
 	}
 
 
-	// add one tournament
+	// add one tournament pending
 	const	entry_fee_string1 = '0.5';
 	const	timestamp1 = BigInt(Math.floor(new Date("2025-12-15T14:00:00Z").getTime() / 1000));
-	const	tx1 = await contract.write.createTournament([1, "triz tournowa (pend)", parseEther(entry_fee_string1), 8, timestamp1, 0]);
+	const	tx1 = await contract.write.createTournament(["triz tournowa (pend)", parseEther(entry_fee_string1), 8, timestamp1, 0]);
 	
-	// wait for confirmation
+	// // wait for confirmation
 	const client = await viem.getPublicClient();
 	await client.waitForTransactionReceipt({hash: tx1, confirmations: 1});
 
 	// add one tournament
 	const	entry_fee_string2 = '0.75';
-	const	timestamp2 = BigInt(Math.floor(new Date("2025-12-01T14:00:00Z").getTime() / 1000));
-	const	tx2 = await contract.write.createTournament([1, "triz tournowa (ongoing)", parseEther(entry_fee_string2), 4, timestamp2, 1]);
+	const	timestamp2 = BigInt(Math.floor(new Date("2025-11-20T14:00:00Z").getTime() / 1000));
+	const	tx2 = await contract.write.createTournament(["triz tournowa (ongoing)", parseEther(entry_fee_string2), 4, timestamp2, 1]);
 	
 	// wait for confirmation
 	await client.waitForTransactionReceipt({hash: tx2, confirmations: 1});
 
 	// add one tournament
-	const	entry_fee_string3 = '0.5';
-	const	timestamp3 = BigInt(Math.floor(new Date("2025-11-22T14:00:00Z").getTime() / 1000));
-	const	tx3 = await contract.write.createTournament([1, "triz tournowa (finished)", parseEther(entry_fee_string3), 16, timestamp3, 2]);
+	const	entry_fee_string3 = '1';
+	const	timestamp3 = BigInt(Math.floor(new Date("2025-11-19T14:00:00Z").getTime() / 1000));
+	const	tx3 = await contract.write.createTournament(["triz tournowa (finished)", parseEther(entry_fee_string3), 16, timestamp3, 2]);
 	
 	// wait for confirmation
 	await client.waitForTransactionReceipt({hash: tx3, confirmations: 1});
+
+	// add one tournament
+	const	entry_fee_string4 = '2';
+	const	timestamp4 = BigInt(Math.floor(new Date("2025-11-15T14:00:00Z").getTime() / 1000));
+	const	tx4 = await contract.write.createTournament(["triz tournowa (expired)", parseEther(entry_fee_string4), 32, timestamp4, 0]);
+	
+	// wait for confirmation
+	await client.waitForTransactionReceipt({hash: tx4, confirmations: 1});
 }
 
 async function main() {

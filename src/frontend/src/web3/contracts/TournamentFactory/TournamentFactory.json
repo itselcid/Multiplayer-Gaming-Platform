@@ -1,5 +1,5 @@
 {
-  "address": "0xf5059a5d33d5853360d16c683c16e67980206f36",
+  "address": "0x9e545e3c0baab3e08cdfd552c960a1050f373042",
   "abi": [
     {
       "inputs": [],
@@ -11,9 +11,9 @@
       "inputs": [
         {
           "indexed": false,
-          "internalType": "uint8",
+          "internalType": "uint256",
           "name": "id",
-          "type": "uint8"
+          "type": "uint256"
         },
         {
           "indexed": false,
@@ -46,11 +46,6 @@
     {
       "inputs": [
         {
-          "internalType": "uint8",
-          "name": "_id",
-          "type": "uint8"
-        },
-        {
           "internalType": "string",
           "name": "_title",
           "type": "string"
@@ -82,15 +77,66 @@
       "type": "function"
     },
     {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "id",
+          "type": "uint256"
+        }
+      ],
+      "name": "getTournament",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "id",
+              "type": "uint256"
+            },
+            {
+              "internalType": "string",
+              "name": "title",
+              "type": "string"
+            },
+            {
+              "internalType": "uint256",
+              "name": "entryFee",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint8",
+              "name": "participants",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint256",
+              "name": "startTime",
+              "type": "uint256"
+            },
+            {
+              "internalType": "enum TournamentFactory.Status",
+              "name": "status",
+              "type": "uint8"
+            }
+          ],
+          "internalType": "struct TournamentFactory.Tournament",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
       "inputs": [],
       "name": "getTournaments",
       "outputs": [
         {
           "components": [
             {
-              "internalType": "uint8",
+              "internalType": "uint256",
               "name": "id",
-              "type": "uint8"
+              "type": "uint256"
             },
             {
               "internalType": "string",
@@ -150,9 +196,9 @@
       "name": "tournaments",
       "outputs": [
         {
-          "internalType": "uint8",
+          "internalType": "uint256",
           "name": "id",
-          "type": "uint8"
+          "type": "uint256"
         },
         {
           "internalType": "string",
