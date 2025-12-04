@@ -1,0 +1,47 @@
+services:
+  nginx:
+    build: ./infra/nginx
+    container_name: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - app
+    networks:
+      - gateway
+      - elk  
+    volumes:
+      - nginx-logs:/var/log/nginx
+    restart: unless-stopped
+
+  app:
+    build: ./src/backend/auth-service
+    container_name: auth-service
+    environment:
+      - SERVICE_NAME=auth-service
+      - LOG_LEVEL=info
+    networks:
+      - gateway      
+      - app-network
+      - monitoring
+    mem_limit: 512m
+    cpus: 1.0
+
+volumes:
+  nginx-logs:
+    driver: local
+    name: nginx-logs
+
+networks:
+  gateway:
+    driver: bridge
+    name: gateway
+  app-network:
+    driver: bridge
+    name: network
+  elk:
+    driver: bridge
+    name: logging
+  monitoring:
+    driver: bridge
+    name: monitoring
