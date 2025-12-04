@@ -9,9 +9,14 @@ import cors from '@fastify/cors'
 import userRoutes from './routes/users.js';
 import authRoutes from './routes/auth.js';
 import { initializeTempData } from './db.js';
+import { testEmailConnection } from './services/email.js'
 
 // init Fastify instance and database
 const server = Fastify({ logger: true })
+
+// testing email connection on startup 
+await testEmailConnection()
+
 
 await server.register(swagger, {
     mode: 'static',
@@ -45,7 +50,7 @@ server.get('/health', async (request, reply) => {
 
 // launching server
 server.listen({
-    port: 3000, 
+    port: process.env.PORT, 
     host: '127.0.0.1'
 })
 

@@ -26,6 +26,51 @@ async function  createUser(username, email, password, role = 'user') {
     return user;
 }
 
+// find or create a user from github
+async function findOrCreateGithubUser(githubProfile) {
+    let user = await prisma.user.findUnique({
+        where: {
+            githubId: githubProfile.id.toString()
+        }
+    })
+
+    if (user) {
+        if (user.avatar !== githubProfile.avatar_url) {
+            await prisma.user.update({
+                where: { id: user.id },
+                data: {
+                    avatar: githubProfile.avatar_url
+                }
+            })
+        }
+        return user;
+    }
+    
+    let username = githubProfile.login
+    let counter = 1
+    
+    while (await prisma.user.findUnique({ where: { username } })) {
+        username = `${githubProfile.login}${counter}`
+        counter++
+    }
+
+    const email = githubProfile.email || `${githubProfile.login}@github.oauth`
+
+    user = await prisma.user.create({
+        data: {
+            username,
+            email,
+            password: null,
+            role: 'user',
+            githubId: githubProfile.id.toString(),
+            avatar: githubProfile.avatar_url
+        }
+    })
+
+    return user;
+}
+
+
 // get all users
 async function getAllUsers() {
     
@@ -227,6 +272,9 @@ export {
     createPasswordResetToken,
     findPasswordResetToken,
     deletePasswordResetToken,
+
+
+    findOrCreateGithubUser,
 
     /// tmp
     initializeTempData

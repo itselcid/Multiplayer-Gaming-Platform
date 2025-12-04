@@ -8,8 +8,10 @@ import {
     findPasswordResetToken,
     deletePasswordResetToken,
     updateUser,
-    prisma
+    prisma,
+    findOrCreateGithubUser
 } from "../db.js";
+import { sendPasswordResetEmail } from '../services/email.js';
 
 
 async function authRoutes(server, ops) {
@@ -109,6 +111,8 @@ async function authRoutes(server, ops) {
             if (user) {
                 const resetToken = await createPasswordResetToken(user.id)
 
+                await sendPasswordResetEmail(email, resetToken.token, user.username)
+
                 return { 
                     message: 'A reset link has been sent',
                     // !!! ONLY FOR DEVELOPMENT Remove in production!
@@ -153,6 +157,96 @@ async function authRoutes(server, ops) {
         } catch (err) {
             reply.code(500)
             return { error: 'Server error' }
+        }
+    })
+
+    // Route 5: begin Github Auth
+    server.get('/github', async (request, reply) => {
+        const clientId = process.env.GITHUB_CLIENT_ID
+        const redirectUri = 'http://localhost:3000/api/auth/github/callback'
+        const scope = 'read:user user:email'
+
+        const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}`
+
+        reply.redirect(githubAuthUrl)
+
+    })
+
+    // Route 6: github OAuth callback
+    server.get('/github/callback', async (request, reply) => {
+        const { code } = request.query
+
+        if (!code) {
+            reply.code(400)
+            return { error: 'Authorization code not provided' }
+        }
+
+        try {
+            const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    client_id: process.env.GITHUB_CLIENT_ID,
+                    client_secret: process.env.GITHUB_CLIENT_SECRET,
+                    code
+                })
+            })
+
+            const tokenData = await tokenResponse.json()
+            if (tokenData.error) {
+                reply.code(400)
+                return { error: tokenData.error_description }
+            }
+
+            const githubAccessToken = tokenData.access_token
+
+            // Get user info with token
+            const userResponse = await fetch('https://api.github.com/user', {
+                headers: {
+                    'Authorization': `Bearer ${githubAccessToken}`,
+                    'Accept': 'application/json'
+                }
+            })
+
+            const githubUser = await userResponse.json()
+
+            // create a user in our database matching github user
+            const user = await findOrCreateGithubUser(githubUser)
+
+            const jwtkn = jwt.sign(
+                {
+                    userId: user.id,
+                    username: user.username,
+                    role: user.role
+                },
+                process.env.JWT_SEC,
+                { expiresIn: '7d' } // 7 days short term token
+            )
+
+            // Redirect to frontend with tokens
+            // In production, i will redirect to the frontend app
+            // For now, return JSON
+
+            return {
+                message: 'Github auth successful',
+                token: jwtkn,
+                user: {
+                    id: user.id,
+                    username: user.username,
+                    email: user.email,
+                    role: user.role,
+                    avatar: user.avatar
+                }
+            }
+
+
+        } catch (err) {
+            console.error('[!] - GitHub OAuth error:', err)
+            reply.code(500)
+            return { error: 'Authentication failed' }
         }
     })
 
