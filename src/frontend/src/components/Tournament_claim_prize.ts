@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/21 01:41:54 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/11/22 02:43:54 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/11/25 13:48:16 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,7 +37,7 @@ export class Tournament_claim_prize extends Component {
                   </h3>
                   
                   <p class="text-cyan-300/60 text-lg font-bold mb-2">Champion</p>
-                  <p class="text-4xl font-black text-white mb-8">Prize: ${formatEther(this._tournament.entryFee * BigInt(this._tournament.participants))} TRIZcoin</p>
+                  <p class="text-4xl font-black text-white mb-8">Prize: ${formatEther(this._tournament.entryFee * BigInt(this._tournament.maxParticipants))} TRIZcoin</p>
                   
                   <div class="flex justify-center gap-8 mb-8">
                     <div class="text-center">

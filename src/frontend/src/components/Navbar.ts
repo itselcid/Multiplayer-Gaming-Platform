@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/14 14:43:40 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/11/15 18:10:40 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/12/01 01:45:02 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -98,6 +98,7 @@ export class Navbar_connected_wallet extends Component {
 			)
 		}
 		const	link_span = addElement('span', 'text-sm font-mono', link);
+		link_span.id = 'current-web3-account';
 		link_span.textContent = shortenEthAddress(await web3auth.getEthAddress()); 
 
 		link.insertAdjacentHTML('beforeend', `

@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/20 15:00:55 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/11/22 02:51:06 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/11/25 13:49:24 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -98,7 +98,7 @@ export class Tournament_info extends Component {
 				</div>
 				<div>
 					<p class="text-cyan-300/60 text-sm font-medium mb-1">Participants</p>
-					<p class="text-white font-bold">${this._tournament.participants} players</p>
+					<p class="text-white font-bold">${this._tournament.maxParticipants} players</p>
 				</div>
 			`);
 		const	tournament_info_prizePool = addElement('div', 'mt-8 pt-6 border-t border-cyan-500/20', tournament_info_body);
@@ -111,7 +111,7 @@ export class Tournament_info extends Component {
 						Prize Pool
 					</p>
 					<p class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-400">
-						${formatEther(this._tournament.entryFee * BigInt(this._tournament.participants))} <span class="text-xl">TRIZcoin</span>
+						${formatEther(this._tournament.entryFee * BigInt(this._tournament.maxParticipants))} <span class="text-xl">TRIZcoin</span>
 					</p>
 					</div>
 				</div>

@@ -6,14 +6,15 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/04 12:18:56 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/11/18 03:14:14 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/12/05 00:03:29 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-import { Error_wallet_connection } from "../components/Error_wallet_connection";
+import { Metamask_error } from "../components/Metamask_error";
+import { Metamask_warning } from "../components/Metamask_warning";
 import { Pending_wallet_connection } from "../components/Pending_wallet_connection";
 import { Success_wallet_connection } from "../components/Success_wallet_connection";
-import { login_state } from "../core/appStore";
+import { currentWeb3Account, login_state } from "../core/appStore";
 import { user_address } from "../main";
 
 export class Web3Auth {
@@ -33,9 +34,22 @@ export class Web3Auth {
 			const	chainId = await eth.request({
 				method: 'eth_chainId'
 			}) as string;
-			const	currentAccount = accounts[0] || null;
-			// console.log(currentAccount);
-			// console.log(chainId);
+
+			if (accounts[0] !== currentWeb3Account.get()) {
+				currentWeb3Account.set(accounts[0]);
+			}
+
+			const VITE_FUJI_CHAIN_ID = import.meta.env.VITE_FUJI_CHAIN_ID;
+			if (chainId !== VITE_FUJI_CHAIN_ID) {
+				const	metamask_warning = document.getElementById('metamask-warning');
+				if (!metamask_warning) {
+					const	root = document.getElementById('app');
+					if (root) {
+						const	warning_page = new Metamask_warning(chainId);
+						warning_page.mount(root);
+					}
+				}
+			}
 		}, 1000);
 	}
 
@@ -94,7 +108,7 @@ export class Web3Auth {
 			return (address);
 		} catch (err) {
 			pend.unmount();
-			const	error_page = new Error_wallet_connection();
+			const	error_page = new Metamask_error();
 			error_page.mount(root);
 			console.error('Error connecting to wallet: ', err);
 			return (null);
@@ -119,9 +133,11 @@ export class Web3Auth {
 		}
 
 		try {
-			const accounts = await window.ethereum.request({
+			const accounts = await window.ethereum.request<string[]>({
 				method: 'eth_accounts'
 			})
+			if (!accounts)
+				return (false);
 			return (accounts.includes(storedAddress));
 		} catch (err) {
 			console.error('Error checkig login status: ', err);
@@ -129,27 +145,27 @@ export class Web3Auth {
 		}
 	}
 
-	async getEthAddress(): Promise<string | null> {
-  // Make sure MetaMask (or another wallet) is installed
-  if (typeof window.ethereum === 'undefined') {
-    console.error('MetaMask is not installed');
-    return null;
-  }
+	// get current connected address or empty string if metamask ins
+	async getEthAddress(): Promise<string> {
+	// Make sure MetaMask (or another wallet) is installed
+		if (typeof window.ethereum === 'undefined') {
+			console.error('MetaMask is not installed');
+			return ('');
+		}
 
-  try {
-    // Request the list of connected accounts
-    const accounts: string[] = await window.ethereum.request({
-      method: 'eth_accounts'
-    });
+		try {
+			// Request the list of connected accounts
+			const accounts = await window.ethereum.request({
+			method: 'eth_accounts'
+			}) as string[];
 
-    // Return the first connected address (if any)
-    return accounts.length > 0 ? accounts[0] : null;
-  } catch (err) {
-    console.error('Error fetching Ethereum address:', err);
-    return null;
-  }
-
-};
+			// Return the first connected address (if any)
+			return accounts?.[0] ?? "";
+		} catch (err) {
+			console.error('Error fetching Ethereum address:', err);
+			return ('');
+		}
+	};
 
 async getMetaMaskProvider(): Promise<any | null> {
   const eth = (window as any).ethereum;

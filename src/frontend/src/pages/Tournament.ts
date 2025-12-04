@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/19 17:54:21 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/11/22 02:46:56 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/12/02 02:39:19 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,9 +16,9 @@ import { Tournament_matches_history } from "../components/tournament_matches_his
 import { Tournament_recrute } from "../components/Tournament_recrute";
 import { Tournament_refund } from "../components/Tournament_refund";
 import { Tournament_rounds_matches } from "../components/Tournament_rounds_matches";
+import { tournamentState } from "../core/appStore";
 import { addElement, Component } from "../core/Component";
 import { get_tournament_status } from "../tools/get_tournament_status";
-import { tournamentsGlobal } from "../web3/getters";
 
 export class Tournament extends Component {
 	private params: { id: string};
@@ -29,7 +29,7 @@ export class Tournament extends Component {
 	}
 
 	render(): void {
-		const	tournament = tournamentsGlobal[Number(this.params.id)];
+		const	tournament = tournamentState.get()[Number(this.params.id)];
 		
 		// header
 		this.el.insertAdjacentHTML('beforeend', `
@@ -49,6 +49,7 @@ export class Tournament extends Component {
 		tournament_info_component.mount(tournament_info);
 		
 
+
 		switch (get_tournament_status(tournament)) {
 			case 'pending':
 				const	recrute = new Tournament_recrute(tournament);
@@ -56,7 +57,7 @@ export class Tournament extends Component {
 				break;
 			case 'ongoing':
 				// round and matches
-				const	tournament_rounds_matches = new Tournament_rounds_matches();
+				const	tournament_rounds_matches = new Tournament_rounds_matches(tournament);
 				tournament_rounds_matches.mount(tournament_infos);
 				// matches history
 				const	tournament_matches_history = new Tournament_matches_history();

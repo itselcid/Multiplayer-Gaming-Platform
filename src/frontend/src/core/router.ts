@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/13 22:19:50 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/11/22 00:21:42 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/12/02 02:39:55 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@ import { Page404} from "../components/Page404";
 import { Profile } from "../pages/Profile";
 import { Tournament } from "../pages/Tournament";
 import { Tournaments } from "../pages/Tournaments";
+import { tournamentState } from "./appStore";
 
 // --- Route Definitions ---
 const routes: Record<string, any> = {
@@ -81,18 +82,29 @@ function matchRoute(path: string): { view: any; params: Record<string, string> }
 
 // --- Render Route ---
 export function renderRoute() {
-  const root = document.getElementById("bg")!;
-  root.innerHTML = "";
+	const root = document.getElementById("bg")!;
+	root.innerHTML = "";
 
-  const match = matchRoute(location.pathname);
+	const match = matchRoute(location.pathname);
 
-  if (!match) {
-    new Page404().mount(root);
-    return;
-  }
+	if (!match) {
+		new Page404().mount(root);
+		return;
+	}
 
-  const { view: View, params } = match;
-  new View(params).mount(root);
+	const { view: View, params } = match;
+
+	// --- ID VALIDATION FOR /tournaments/:id ---
+	if (View === Tournament) {
+	const id = Number(params.id);
+
+	if (isNaN(id) || id >= tournamentState.get().length) {
+		new Page404().mount(root);
+		return;
+	}
+	}
+
+	new View(params).mount(root);
 }
 
 

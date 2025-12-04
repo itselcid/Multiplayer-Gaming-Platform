@@ -6,17 +6,19 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/03 15:31:14 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/11/21 23:42:28 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/12/02 21:08:20 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { Disconnect_wallet } from "../components/Disconnect_wallet";
 import { Navbar_connect_wallet, Navbar_connected_wallet } from "../components/Navbar";
 import { Sign_in } from "../components/sign_in";
-import { join_tournament_active, join_tournament_inactive } from "../components/Tournament_card";
+import { Tournament_card } from "../components/Tournament_card";
 import { TournamentsDisplay, TournamentTab } from "../pages/Tournaments";
+import { get_tournament_status } from "../tools/get_tournament_status";
 import { Web3Auth } from "../web3/auth";
-import { tournamentsGlobal } from "../web3/getters";
+import { getTournament, getTournamentLength, getTournaments } from "../web3/getters";
+import { shortenEthAddress } from "../web3/tools";
 import { State } from "./state";
 
 // nav bar active tab state
@@ -49,14 +51,13 @@ export const active_tab_sub = () => {
 // web3logged
 export const	web3auth = new Web3Auth();
 export const login_state = new State(
-	'sign in'
-	// await web3auth.isLoggedIn()
+	// 'sign in'
+	await web3auth.isLoggedIn() ? 'connected': 'not connected'
 );
 export const web3_login_sub = () => {
 	login_state.subscribe(() => {
 		const	auth = document.getElementById('auth');
 		const	disconnect_container = document.getElementById('disconnect_container');
-		const	join_tournament = document.querySelectorAll<HTMLElement>('.join-tournament-button');
 		if (!auth) {
 			console.error('cant find auth id');
 			return ;
@@ -77,15 +78,6 @@ export const web3_login_sub = () => {
 				const	disconnect = new Disconnect_wallet();
 				disconnect.mount(disconnect_container);
 			}
-			if (join_tournament) {
-				let i: number = 0;
-				tournamentsGlobal.forEach(tournament => {
-					join_tournament[i].innerHTML = '';
-					const	join_button_active = new join_tournament_active(Number(tournament.id));
-					join_button_active.mount(join_tournament[i]);
-					i++;
-				});
-			}
 			
 		} else {
 			console.log('web3 is not connected');
@@ -94,13 +86,6 @@ export const web3_login_sub = () => {
 			navbar_connect_wallet.mount(auth);
 			if (disconnect_container) {
 				disconnect_container.innerHTML = '';
-			}
-			if (join_tournament) {
-				join_tournament.forEach(element => {
-					element.innerHTML = '';
-					const	join_button_inactive = new join_tournament_inactive();
-					join_button_inactive.mount(element);
-				});
 			}
 		}
 	})
@@ -121,6 +106,52 @@ export const	tournament_tab_sub = () => {
 			tournament_list_container.innerHTML = '';
 			const	tournamentsDisplay = new TournamentsDisplay();
 			tournamentsDisplay.mount(tournament_list_container);
+		}
+	})
+}
+
+// web3 account
+export const	currentWeb3Account = new State(await web3auth.getEthAddress());
+export const	currentWeb3AccountSub = () => {
+	currentWeb3Account.subscribe(async () => {
+		const	account_container = document.getElementById('current-web3-account');
+		if (account_container) {
+			account_container.textContent = shortenEthAddress(await web3auth.getEthAddress());
+		}
+	})
+}
+
+// retrieving tournaments
+export const	tournamentState = new State (await getTournaments()); // TODO : case where tournament array is so big can't be retrieved in one fetch
+export const	tournamentStateSub = () => {
+	// use events instead of polling
+	setInterval(async() => {
+		const	tournamentsLength = await getTournamentLength();
+		if (tournamentState.get().length < tournamentsLength) {
+			const tournaments = tournamentState.get();
+			for(let i:bigint = BigInt(tournamentState.get().length); i < tournamentsLength; i++) {
+				const	tournament = await getTournament(i);
+				tournaments.push(tournament);
+			}
+			tournamentState.set(tournaments);
+		}
+	}, 1000);
+	tournamentState.subscribe(() => {
+		const	tournaments_container = document.getElementById('tournaments-container');
+		if (tournaments_container) {
+			tournaments_container.innerHTML = '';
+			[...tournamentState.get()].reverse().map(tournament => {
+				if (
+					tournament_tab.get() === 'all' ||
+					tournament_tab.get() === 'pending' && get_tournament_status(tournament) === 'pending' ||
+					tournament_tab.get() === 'ongoing' && get_tournament_status(tournament) === 'ongoing' ||
+					tournament_tab.get() === 'finished' && get_tournament_status(tournament) === 'finished' ||
+					tournament_tab.get() === 'expired' && get_tournament_status(tournament) === 'expired'
+				) {
+					const	card = new Tournament_card(tournament);
+					card.mount(tournaments_container);
+				};
+			});
 		}
 	})
 }

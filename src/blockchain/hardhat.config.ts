@@ -1,5 +1,5 @@
 import hardhatToolboxViemPlugin from "@nomicfoundation/hardhat-toolbox-viem";
-import { configVariable, defineConfig } from "hardhat/config";
+import { defineConfig } from "hardhat/config";
 import * as dotenv from "dotenv";
 dotenv.config();
 
@@ -9,10 +9,14 @@ export default defineConfig({
     profiles: {
       default: {
         version: "0.8.28",
+		settings: {
+			viaIR: true
+		}
       },
       production: {
         version: "0.8.28",
         settings: {
+		  viaIR: true,
           optimizer: {
             enabled: true,
             runs: 200,
@@ -22,14 +26,6 @@ export default defineConfig({
     },
   },
   networks: {
-    hardhatMainnet: {
-      type: "edr-simulated",
-      chainType: "l1",
-    },
-    hardhatOp: {
-      type: "edr-simulated",
-      chainType: "op",
-    },
     fuji: {
       type: "http",
       chainType: "l1",

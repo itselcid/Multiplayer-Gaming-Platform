@@ -1,19 +1,19 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Error_wallet_connection.ts                         :+:      :+:    :+:   */
+/*   Metamask_error.ts                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/08 17:57:08 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/11/14 21:45:25 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/12/05 00:05:05 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { web3auth } from "../core/appStore";
 import { addElement, Component } from "../core/Component";
 
-export class Error_wallet_connection extends Component {
+export class Metamask_error extends Component {
 	constructor() {
 		super('div', 'fixed inset-0 z-10 bg-black/40 backdrop-blur-sm overflow-y-auto overscroll-y-auto no-scrollbar flex justify-center items-start');
 	}

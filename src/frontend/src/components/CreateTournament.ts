@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/18 18:01:17 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/11/19 12:57:15 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/12/02 23:23:48 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,8 @@ export class CreateTournament extends Component {
 	}
 
 	render(): void {
+		const	logged = false;
+
 		const	container = addElement('div', 'relative max-w-2xl w-full my-8', this.el);
 		// outer glow
 		addElement('div', 'absolute inset-0 bg-gradient-to-r from-neon-purple via-pink-500 to-neon-cyan rounded-3xl blur-2xl opacity-30 animate-pulse', container);
@@ -55,7 +57,30 @@ export class CreateTournament extends Component {
 
 		const	form = addElement('div', 'grid grid-cols-2 gap-6', content);
 
-		const	title = addElement('div', 'col-span-2 space-y-3', form);
+		// if not logged in:
+		let	username_input: HTMLInputElement;
+		if (!logged) {
+			const	username = addElement('div', 'space-y-3', form);
+			username.insertAdjacentHTML('beforeend', `
+				<label class="flex items-center gap-2 text-neon-gold font-bold text-sm uppercase tracking-widest">
+				  <span class="text-xl">👤</span>
+				  Your Username
+				</label>
+				`);
+			const	username_group = addElement('div', 'relative group', username);
+			addElement('div', 'absolute -inset-0.5 bg-gradient-to-r from-neon-gold to-neon-purple rounded-xl blur opacity-30 group-hover:opacity-60 transition', username_group);
+			username_input = addElement('input', 'relative w-full px-5 py-4 bg-slate-900/90 border-2 border-neon-gold/50 rounded-xl text-white text-lg placeholder-slate-500 focus:border-neon-gold focus:outline-none focus:ring-4 focus:ring-neon-gold/20 transition-all', username_group) as HTMLInputElement;
+			username_input.type = 'text';
+			username_input.placeholder = 'Enter your username';
+		}
+
+		// if logged in
+		let	title;
+		if (logged)
+			title = addElement('div', 'col-span-2 space-y-3', form);
+		// if not logged in
+		else
+			title = addElement('div', 'space-y-3', form);
 		title.insertAdjacentHTML('beforeend', `
 			<label class="flex items-center gap-2 text-neon-cyan font-bold text-sm uppercase tracking-widest">
 			  <span class="text-xl">🎮</span>
@@ -66,7 +91,7 @@ export class CreateTournament extends Component {
 		addElement('div', 'absolute -inset-0.5 bg-gradient-to-r from-neon-cyan to-neon-purple rounded-xl blur opacity-30 group-hover:opacity-60 transition', title_group);
 		const	title_input = addElement('input', 'relative w-full px-5 py-4 bg-slate-900/90 border-2 border-neon-cyan/50 rounded-xl text-white text-lg placeholder-slate-500 focus:border-neon-cyan focus:outline-none focus:ring-4 focus:ring-neon-cyan/20 transition-all', title_group) as HTMLInputElement;
 		title_input.type = 'text';
-		title_input.placeholder = 'Enter epic tournament name...';
+		title_input.placeholder = 'Enter an epic name...';
 
 		const	entryFee = addElement('div', 'space-y-3', form);
 		entryFee.insertAdjacentHTML('beforeend', `
@@ -108,26 +133,27 @@ export class CreateTournament extends Component {
 		addElement('div', 'absolute -inset-0.5 bg-gradient-to-r from-neon-cyan to-neon-purple rounded-xl blur opacity-30 group-hover:opacity-60 transition', startTime_group);
 		const	startTime_input = addElement('input', 'relative w-full px-5 py-4 bg-slate-900/90 border-2 border-neon-cyan/50 rounded-xl text-white text-lg focus:border-neon-cyan focus:outline-none focus:ring-4 focus:ring-neon-cyan/20 transition-all', startTime_group) as HTMLInputElement;
 		startTime_input.type = 'datetime-local';
-		
-		content.insertAdjacentHTML('beforeend', `
-			<div class="mt-8 relative">
-			  <div class="absolute -inset-1 bg-gradient-to-r from-neon-gold via-orange-500 to-neon-gold rounded-2xl blur opacity-40 animate-pulse"></div>
-			  <div class="relative p-6 bg-slate-900/90 border-2 border-neon-gold rounded-2xl">
-				<div class="flex items-center justify-between">
-				  <div class="flex items-center gap-3">
-					<span class="text-4xl">🏆</span>
-					<div>
-					  <div class="text-neon-gold/70 text-sm font-bold uppercase tracking-wider">Total Prize Pool</div>
-					  <div class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-neon-gold to-orange-400">
-						0.00 TRIZcoin
-					  </div>
-					</div>
-				  </div>
-				  <div class="text-5xl animate-bounce">💰</div>
-				</div>
-			  </div>
-			</div>
-			`);
+
+		const	prizePoolContainer = addElement('div', 'mt-8 relative', content);
+		addElement('div', 'absolute -inset-1 bg-gradient-to-r from-neon-gold via-orange-500 to-neon-gold rounded-2xl blur opacity-40 animate-pulse', prizePoolContainer);
+		const	prizePoolContainer2 = addElement('div', 'relative p-6 bg-slate-900/90 border-2 border-neon-gold rounded-2xl', prizePoolContainer);
+		const	prizePoolContainer3 =addElement('div', 'flex items-center justify-between', prizePoolContainer2);
+		const	prizePoolContainer4 =addElement('div', 'flex items-center gap-3', prizePoolContainer3);
+		prizePoolContainer4.insertAdjacentHTML('beforeend', `<span class="text-4xl">🏆</span>`);
+		const	prizePoolContainer5 =addElement('div', '', prizePoolContainer4);
+		prizePoolContainer5.insertAdjacentHTML('beforeend', `<div class="text-neon-gold/70 text-sm font-bold uppercase tracking-wider">Total Prize Pool</div>`);
+		const	totalPrizePool = addElement('div', 'text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-neon-gold to-orange-400', prizePoolContainer5);
+		totalPrizePool.textContent = "0.00 TRIZcoin";
+		prizePoolContainer3.insertAdjacentHTML('beforeend', `<div class="text-5xl animate-bounce">💰</div>`);
+
+		function updateTotalPrize() {
+		const participants = parseFloat(participants_input.value) || 0;
+		const entryFee = parseFloat(entryFee_input.value) || 0;
+		totalPrizePool.textContent = (participants * entryFee).toFixed(2) + " TRIZcoin";
+		}
+
+		participants_input.addEventListener('input', updateTotalPrize);
+		entryFee_input.addEventListener('input', updateTotalPrize);
 		
 		const	buttons = addElement('div', 'flex gap-6 mt-8', content);
 		const	cancel_button = addElement('button', 'flex-1 px-8 py-4 bg-slate-800/50 border-2 border-slate-600 rounded-xl text-slate-400 font-bold text-lg uppercase tracking-wider hover:border-slate-400 hover:text-slate-300 hover:bg-slate-800 transition-all duration-300 hover:scale-105', buttons);
@@ -147,7 +173,8 @@ export class CreateTournament extends Component {
 				title_input.value,
 				parseEther(entryFee_input.value),
 				BigInt(participants_input.value),
-				date_to_bigint(startTime_input.value)
+				date_to_bigint(startTime_input.value),
+				logged? 'user input from db': username_input.value
 			);
 			this.unmount();
 		};

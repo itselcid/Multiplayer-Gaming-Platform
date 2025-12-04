@@ -6,16 +6,17 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 21:57:12 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/11/21 23:37:55 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/12/02 23:49:46 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
+import { ConnectWallet } from "../components/ConnectWallet";
 import { CreateTournament } from "../components/CreateTournament";
 import { Tournament_card } from "../components/Tournament_card";
-import { tournament_tab } from "../core/appStore";
+import { tournament_tab, tournamentState, web3auth } from "../core/appStore";
 import { addElement, Component } from "../core/Component";
 import { get_tournament_status } from "../tools/get_tournament_status";
-import { getTournaments, setTournaments, tournamentsGlobal, type Tournament } from "../web3/getters";
+import { getTournaments, type Tournament } from "../web3/getters";
 
 export class TournamentTab extends Component {
 	constructor() {
@@ -55,11 +56,16 @@ export class TournamentTab extends Component {
 
 		const	addTournament = addElement('button', 'px-8 py-4 glass-effect rounded-xl font-bold text-sm tracking-wider text-gray-400 border-2 border-transparent hover:border-cyan-400/30 transition-all duration-300 hover:scale-105', this.el);
 		addTournament.textContent = 'add tournament';
-		addTournament.onclick = () => {
-			const	create_tournament = new CreateTournament();
+		addTournament.onclick = async () => {
+			let add_tournament;
+			if (await web3auth.isLoggedIn()) {
+				add_tournament = new CreateTournament();
+			} else {
+				add_tournament = new ConnectWallet();
+			}
 			const	root = document.getElementById('app');
 			if (root)
-				create_tournament.mount(root);
+				add_tournament.mount(root);
 			else {
 				console.error('root not found');
 				return (null);
@@ -99,11 +105,12 @@ export class TournamentsDisplay extends Component {
 	async render(): Promise<void> {
 	const	container = addElement('div', 'transition-opacity duration-200 opacity-0', this.el);
 	const	container2 = addElement('div', 'grid grid-cols-1 md:grid-cols-2 gap-6 mb-12', container);
+	container2.id = 'tournaments-container';
 		// await sleep(1000);
-		setTournaments(await getTournaments());
+		// setTournaments(await getTournaments());
 		container.className = 'transition-opacity duration-200 opacity-100';
-		console.log('tournament length: ', tournamentsGlobal.length);
-		tournamentsGlobal.map(tournament => {
+		// const	reverse_tournamentGlobal = tournamentsGlobal.reverse();
+		[...tournamentState.get()].reverse().map(tournament => {
 			if (
 				tournament_tab.get() === 'all' ||
 				tournament_tab.get() === 'pending' && get_tournament_status(tournament) === 'pending' ||
@@ -111,7 +118,6 @@ export class TournamentsDisplay extends Component {
 				tournament_tab.get() === 'finished' && get_tournament_status(tournament) === 'finished' ||
 				tournament_tab.get() === 'expired' && get_tournament_status(tournament) === 'expired'
 			) {
-				console.log('run', tournament);
 				const	card = new Tournament_card(tournament);
 				card.mount(container2);
 			};
