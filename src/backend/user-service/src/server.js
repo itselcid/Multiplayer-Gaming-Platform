@@ -11,8 +11,25 @@ import authRoutes from './routes/auth.js';
 import { initializeTempData } from './db.js';
 import { testEmailConnection } from './services/email.js'
 
+
+
+
+
+
 // init Fastify instance and database
 const server = Fastify({ logger: true })
+
+
+
+
+
+import fastifyCookie from '@fastify/cookie';
+// 
+// ADD THIS BLOCK 
+await server.register(fastifyCookie, {
+    // IMPORTANT: Use a strong, unique secret from environment variables in a real app
+    secret: process.env.COOKIE_SECRET || "super-secure-default-secret-key-12345"
+});
 
 // testing email connection on startup 
 await testEmailConnection()
@@ -33,8 +50,9 @@ await server.register(swaggerUI, {
 // the following code is a fix for the options request check for Cross Origin Resource Sharing
 // Register CORS 
 await server.register(cors, {
-    origin: ['http://localhost:5000', 'https://127.0.0.1:5000']
-})
+    origin: ['https://localhost:5000', 'https://127.0.0.1:5000'],
+    credentials: true  // for siting cookies to work 
+});
 
 // registering Routes
 server.register(userRoutes, { prefix: '/api/users' })

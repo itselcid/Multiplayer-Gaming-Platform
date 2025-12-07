@@ -43,22 +43,32 @@ async function authRoutes(server, ops) {
                         { expiresIn: '7d' } // 7 days short term token
                     )
 
-                    return {
+
+                    // Backend code modification (Recommended for cross-origin/cross-port)
+                    reply.setCookie('authToken', jwtkn, {
+                        httpOnly: true,
+                        secure: true,   // 👈 MUST BE TRUE
+                        sameSite: 'None', // 👈 MUST BE 'None' for cross-site/port requests
+                        path: '/',
+                        maxAge: 7 * 24 * 60 * 60 * 1000
+                    })
+
+                    return reply.send ({
                         message: 'Login successful',
-                        token: jwtkn,
                         user: {
                             id: user.id,
                             username: user.username,
                             email: user.email,
                             role: user.role
                         }
-                    }
+                    })
                 }
             }
             reply.code(401)
             return { error: 'Invalid username or password' }
 
         } catch (err) {
+            // console.log(err)
             reply.code(500)
             return { error: 'Internal server error' }
         }
