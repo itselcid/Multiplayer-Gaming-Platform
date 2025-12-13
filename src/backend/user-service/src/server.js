@@ -50,7 +50,7 @@ await server.register(swaggerUI, {
 // the following code is a fix for the options request check for Cross Origin Resource Sharing
 // Register CORS 
 await server.register(cors, {
-    origin: ['https://localhost:5000', 'https://127.0.0.1:5000'],
+    origin: [ process.env.FRONTEND_URL ],   // diffrent host is needed for 127.0.0.1
     credentials: true  // for siting cookies to work 
 });
 

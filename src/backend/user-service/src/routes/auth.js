@@ -47,8 +47,8 @@ async function authRoutes(server, ops) {
                     // Backend code modification (Recommended for cross-origin/cross-port)
                     reply.setCookie('authToken', jwtkn, {
                         httpOnly: true,
-                        secure: true,   // 👈 MUST BE TRUE
-                        sameSite: 'None', // 👈 MUST BE 'None' for cross-site/port requests
+                        secure: true,   // MUST BE TRUE
+                        sameSite: 'None', // MUST BE 'None' for cross-site/port requests
                         path: '/',
                         maxAge: 7 * 24 * 60 * 60 * 1000
                     })
@@ -98,13 +98,29 @@ async function authRoutes(server, ops) {
             }
 
         } catch (err) {
-            reply.code(400)
+            reply.code(409)
             return { error: 'Username or email already exists' }
         }
 
     })
 
-    // Route 3: request password reset
+    // Route 3: logout
+    server.post('/logout', async (request, reply) => {
+        
+        reply.clearCookie('authToken', {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'None', 
+            path: '/',
+        });
+
+        return reply.send({
+            message: 'Logout successful. Token invalidated.'
+        });
+
+    })
+
+    // Route 4: request password reset
     server.post('/forgot-password', async (request, reply) => {
         const { email } = request.body
 
@@ -136,7 +152,7 @@ async function authRoutes(server, ops) {
         }
     })
 
-    // Route 4: Reset password with token
+    // Route 5: Reset password with token
     server.post('/reset-password', async (request, reply) => {
         const { token, newPassword } = request.body
         
@@ -170,7 +186,7 @@ async function authRoutes(server, ops) {
         }
     })
 
-    // Route 5: begin Github Auth
+    // Route 6: begin Github Auth
     server.get('/github', async (request, reply) => {
         const clientId = process.env.GITHUB_CLIENT_ID
         const redirectUri = 'http://localhost:3000/api/auth/github/callback'
@@ -182,7 +198,7 @@ async function authRoutes(server, ops) {
 
     })
 
-    // Route 6: github OAuth callback
+    // Route 7: github OAuth callback
     server.get('/github/callback', async (request, reply) => {
         const { code } = request.query
 
@@ -236,22 +252,15 @@ async function authRoutes(server, ops) {
                 { expiresIn: '7d' } // 7 days short term token
             )
 
-            // Redirect to frontend with tokens
-            // In production, i will redirect to the frontend app
-            // For now, return JSON
-
-            return {
-                message: 'Github auth successful',
-                token: jwtkn,
-                user: {
-                    id: user.id,
-                    username: user.username,
-                    email: user.email,
-                    role: user.role,
-                    avatar: user.avatar
-                }
-            }
-
+            reply.setCookie('authToken', jwtkn, {
+                        httpOnly: true,
+                        secure: true,   //  MUST BE TRUE
+                        sameSite: 'None', //  MUST BE 'None' for cross-site/port requests
+                        path: '/',
+                        maxAge: 7 * 24 * 60 * 60 * 1000
+            })
+            
+            return reply.redirect(`${process.env.FRONTEND_URL}/profile`, 303);
 
         } catch (err) {
             console.error('[!] - GitHub OAuth error:', err)
