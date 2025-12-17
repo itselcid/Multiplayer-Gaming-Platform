@@ -1,11 +1,5 @@
 node_modules
 package-lock.json
-
-
-# Keep environment variables out of version control
 .env
-
-prisma
-
-
-/src/generated/prisma
+prisma/*.db
+/src/generated/
