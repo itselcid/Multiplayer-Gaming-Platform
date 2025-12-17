@@ -29,6 +29,13 @@ const RegisterSchema = {
     }
 } as const;
 
+const StrictRateLimit = {
+    rateLimit: {
+        max: 5,
+        timeWindow: '1 minute'
+    }
+}
+
 const ForgotPasswordSchema = {
     body: {
         type: 'object',
@@ -76,6 +83,7 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
     server.post<{
         Body: LoginInput
     }>('/login', {
+        config: StrictRateLimit, // more strict rate limit for login 5/min 
         schema: LoginSchema
     }, async (request, reply) => {
 
@@ -103,8 +111,7 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
 
         const payload: JWTPayload = {
             userId: user.id,
-            username: user.username,
-            role: user.role
+            username: user.username
         }
 
         const jwToken = jwt.sign(
@@ -127,8 +134,7 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
             user: {   // use interface later
                 id: user.id,
                 username: user.username,
-                email: user.email,
-                role: user.role
+                email: user.email
             }
         });
     });
@@ -137,6 +143,7 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
     server.post<{
         Body: RegisterInput
     }>('/register', {
+        config: StrictRateLimit,
         schema: RegisterSchema
     }, async (request, reply) => {
         const { username, email, password } = request.body;
@@ -152,8 +159,7 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
         const newUser: CreateUserInput = {
             username,
             email,
-            password,
-            role: 'user'
+            password
         }
 
 
@@ -328,8 +334,7 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
             // Generate JWT token   
             const payload: JWTPayload = {
                 userId: user.id,
-                username: user.username,
-                role: user.role as 'user' | 'admin'
+                username: user.username
             };
 
             const jwToken = jwt.sign(

@@ -1,10 +1,9 @@
 // This is your Prisma schema file
 
 generator client {
-    provider        = "prisma-client-js"
+    provider = "prisma-client-js"
     // TypeScript-specific options
-    output          = "../node_modules/.prisma/client"
-    previewFeatures = ["fullTextSearch"]
+    output   = "../node_modules/.prisma/client"
 }
 
 datasource db {
@@ -17,7 +16,6 @@ model User {
     username String  @unique
     email    String  @unique
     password String? // optional (nullable)
-    role     String  @default("user")
 
     // OAuth fields
     githubId String? @unique

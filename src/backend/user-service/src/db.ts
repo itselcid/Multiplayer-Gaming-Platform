@@ -8,7 +8,7 @@ import type { GithubProfile, UserAuthData } from "./types/auth.types.js";
 const prisma = new PrismaClient();
 
 export async function createUser(input: CreateUserInput): Promise<UserData> {
-    const { username, email, password, role = 'user' } = input;
+    const { username, email, password } = input;
 
     const hash = await bcrypt.hash(password, 10);
 
@@ -16,14 +16,12 @@ export async function createUser(input: CreateUserInput): Promise<UserData> {
         data: {
             username,
             email,
-            password: hash,
-            role
+            password: hash
         },
         select: {
             id: true,
             username: true,
             email: true,
-            role: true,
             avatar: true,
             githubId: true,
             createdAt: true,
@@ -40,7 +38,6 @@ export async function getAllUsers(): Promise<UserData[]> {
             id: true,
             username: true,
             email: true,
-            role: true,
             avatar: true,
             githubId: true,
             createdAt: true,
@@ -58,7 +55,6 @@ export async function getUserById(id: number): Promise<UserData | null> {
             id: true,
             username: true,
             email: true,
-            role: true,
             avatar: true,
             githubId: true,
             createdAt: true,
@@ -81,7 +77,6 @@ export async function getUserByUsername(usernameOrEmail: string): Promise<UserDa
             id: true,
             username: true,
             email: true,
-            role: true,
             avatar: true,
             githubId: true,
             createdAt: true,
@@ -99,7 +94,6 @@ export async function getUserForAuth(username: string): Promise<UserAuthData> {
             id: true,
             username: true,
             email: true,
-            role: true,
             avatar: true,
             githubId: true,
             password: true,
@@ -116,9 +110,7 @@ export async function updateUser(id: number, updates: UpdateUserInput): Promise<
     if (updates.email !== undefined) {
         data.email = updates.email;
     }
-    if (updates.role !== undefined) {
-        data.role = updates.role;
-    }
+
     if (updates.password !== undefined) {
         const hash = await bcrypt.hash(updates.password, 10);
         data.password = hash;
@@ -131,7 +123,6 @@ export async function updateUser(id: number, updates: UpdateUserInput): Promise<
             id: true,
             username: true,
             email: true,
-            role: true,
             avatar: true,
             githubId: true,
             createdAt: true,
@@ -150,7 +141,6 @@ export async function deleteUser(id: number): Promise<UserData | null> {
             id: true,
             username: true,
             email: true,
-            role: true,
             avatar: true,
             githubId: true,
             createdAt: true,
@@ -203,9 +193,7 @@ export async function createPasswordResetToken(userId: number): Promise<Password
     const token = (await import('crypto')).randomBytes(12).toString('hex');
 
     const expiresAt = new Date();
-
-
-    expiresAt.setHours(expiresAt.getHours() + 24 * 7); // 7 days access token
+    expiresAt.setHours(expiresAt.getHours() + 1); // 1 hour expiry
 
     const resetToken = await prisma.passwordReset.create({
         data: {
@@ -246,18 +234,17 @@ export async function deletePasswordResetToken(token: string): Promise<void> {
 }
 
 /////// Temporary ///////
-export async function createAdminIfNeeded() {
-    let user = await getUserByUsername('admin')
+export async function createTestUserIfNeeded() {
+    let user = await getUserByUsername('test')
 
     if (!user) {
         user = await createUser({
-            username: 'admin',
-            email: 'admin@test.com',
-            password: 'admin',
-            role: 'admin'
+            username: 'test',
+            email: 'test@test.com',
+            password: 'test'
         })
         if (user)
-            console.log("\x1b[32m%s\x1b[0m", 'Admin user created: username=admin, password=admin')
+            console.log("\x1b[32m%s\x1b[0m", 'Test user created: username=test, password=test')
     }
 }
 

@@ -1,7 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { deleteUser, getAllUsers, getUserById, updateUser } from "../db";
-import { requireAdmin } from "../middelware/admin";
-import { verifyToken } from "../middelware/auth";
+// import { requireAdmin } from "../middleware/admin";
+import { verifyToken } from "../middleware/auth";
 
 const UserIdSchema = {
     params: {
@@ -24,17 +24,17 @@ const UpdateProfileSchema = {
     }
 } as const;
 
-type UpdateUserBody = {
-    email?: string;
-    password?: string;
-    role?: string;
-}
+// type UpdateUserBody = {
+//     email?: string;
+//     password?: string;
+//     role?: string;
+// }
 
 export default async function userRoutes(server: FastifyInstance): Promise<void> {
 
     // get all users
     server.get('/', {
-        preHandler: [verifyToken, requireAdmin]
+        preHandler: verifyToken
     }, async (_request, reply) => {
         try {
             const users = await getAllUsers();
@@ -111,67 +111,67 @@ export default async function userRoutes(server: FastifyInstance): Promise<void>
         }
     })
 
-    // update any user requires admin user  [ --! ADMIN ONLY !-- ]
-    server.put<{
-        Params: { id: string };
-        Body: UpdateUserBody;
-    }>('/:id', {
-        preHandler: [verifyToken, requireAdmin],
-        schema: UpdateProfileSchema
-    }, async (request, reply) => {
-        try {
+    // // update any user requires admin user  [ --! ADMIN ONLY !-- ]
+    // server.put<{
+    //     Params: { id: string };
+    //     Body: UpdateUserBody;
+    // }>('/:id', {
+    //     preHandler: [verifyToken, requireAdmin],
+    //     schema: UpdateProfileSchema
+    // }, async (request, reply) => {
+    //     try {
 
-            const { email, password, role } = request.body;
+    //         const { email, password, role } = request.body;
 
-            if (!email) {
-                return reply.code(400).send({ error: 'Provide email to update' });
-            }
+    //         if (!email) {
+    //             return reply.code(400).send({ error: 'Provide email to update' });
+    //         }
 
-            const userId = parseInt(request.params.id, 10);
-            if (isNaN(userId)) {
-                return reply.code(400).send({ error: 'Invalid user ID' });
-            }
+    //         const userId = parseInt(request.params.id, 10);
+    //         if (isNaN(userId)) {
+    //             return reply.code(400).send({ error: 'Invalid user ID' });
+    //         }
 
-            const user = await updateUser(userId, { email, password, role });
+    //         const user = await updateUser(userId, { email, password, role });
 
-            return reply.send({
-                message: 'Profile updated successfully',
-                user
-            });
+    //         return reply.send({
+    //             message: 'Profile updated successfully',
+    //             user
+    //         });
 
-        } catch (err) {
-            return reply.code(400).send({ error: 'Email already exists or update failed' });
-        }
-    })
+    //     } catch (err) {
+    //         return reply.code(400).send({ error: 'Email already exists or update failed' });
+    //     }
+    // })
 
-    // delete any user requires admin role  [ --! ADMIN ONLY !-- ]
-    server.delete<{
-        Params: { id: string }
-    }>('/:id', {
-        preHandler: [verifyToken, requireAdmin],
-        schema: UserIdSchema
-    }, async (request, reply) => {
-        try {
+    // // delete any user requires admin role  [ --! ADMIN ONLY !-- ]
+    // server.delete<{
+    //     Params: { id: string }
+    // }>('/:id', {
+    //     preHandler: [verifyToken, requireAdmin],
+    //     schema: UserIdSchema
+    // }, async (request, reply) => {
+    //     try {
 
-            const userId = parseInt(request.params.id, 10);
-            if (isNaN(userId)) {
-                return reply.code(400).send({ error: 'Invalid user ID' });
-            }
+    //         const userId = parseInt(request.params.id, 10);
+    //         if (isNaN(userId)) {
+    //             return reply.code(400).send({ error: 'Invalid user ID' });
+    //         }
 
-            await deleteUser(userId);
+    //         await deleteUser(userId);
 
-            return reply.send({ message: 'Account deleted successfully' });
+    //         return reply.send({ message: 'Account deleted successfully' });
 
-        } catch (error) {
-            return reply.code(500).send({ error: 'Internal server error' });
-        }
-    })
+    //     } catch (error) {
+    //         return reply.code(500).send({ error: 'Internal server error' });
+    //     }
+    // })
 
     // get user by id
     server.get<{
         Params: { id: string }
     }>('/:id', {
-        preHandler: [verifyToken, requireAdmin],
+        preHandler: verifyToken,
         schema: UserIdSchema
     }, async (request, reply) => {
         try {

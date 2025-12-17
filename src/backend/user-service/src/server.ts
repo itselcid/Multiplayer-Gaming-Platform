@@ -6,7 +6,7 @@ import cors from '@fastify/cors';
 import fastifyCookie from '@fastify/cookie';
 import userRoutes from './routes/users';
 import authRoutes from './routes/auth';
-import { createAdminIfNeeded } from './db';
+import { createTestUserIfNeeded } from './db';
 import { testEmailConnection } from './services/email';
 
 const fastifyServer = Fastify({
@@ -19,6 +19,14 @@ async function startServer(): Promise<void> {
             // IMPORTANT: Use a strong, unique secret from environment variables in a real app
             secret: process.env.COOKIE_SECRET || "super-secure-default-secret-key-12345"
         });
+
+        await fastifyServer.register(import('@fastify/rate-limit'), {
+            max: 100,
+            timeWindow: '1 minute',
+            keyGenerator: (request) => {
+                return request.user?.userId || request.ip; // use userId if available
+            }
+        })
 
         // testing email connection on startup 
         await testEmailConnection();
@@ -48,7 +56,7 @@ async function startServer(): Promise<void> {
         fastifyServer.register(authRoutes, { prefix: '/api/auth' });
 
 
-        // rate limite?
+        // health check
         fastifyServer.get('/health', async (_request, _reply) => {
             return { status: 'ok' }
         });
@@ -60,7 +68,7 @@ async function startServer(): Promise<void> {
         });
 
         console.log('\x1b[32m%s\x1b[0m', 'Server running on localhost:3000');
-        await createAdminIfNeeded();
+        await createTestUserIfNeeded();
 
     } catch (error) {
         console.error('\x1b[31m%s\x1b[0m', 'Failed to start server:', error);
