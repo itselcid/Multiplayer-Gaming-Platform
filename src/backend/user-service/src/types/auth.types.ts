@@ -2,9 +2,9 @@
 // import type { userRoles } from "./user.types.ts";
 
 export interface JWTPayload {
-    // 1. Custom Data (from your signing object)
     userId: number;
     username: string;
+    requires2FA: boolean;
 }
 
 export interface PasswordResetToken {
@@ -38,6 +38,10 @@ export interface UserAuthData {
     avatar: string;
     githubId: string;
     password?: string;
+    twoFactor?: {
+        method: string | null;
+        totpSecret: string | null;
+    } | null;
     createdAt: Date;
     updatedAt: Date;
 }

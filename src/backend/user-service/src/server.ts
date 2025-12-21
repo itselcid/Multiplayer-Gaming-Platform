@@ -4,10 +4,12 @@ import swagger from '@fastify/swagger';
 import swaggerUI from '@fastify/swagger-ui';
 import cors from '@fastify/cors';
 import fastifyCookie from '@fastify/cookie';
+import jwt from '@fastify/jwt';
 import userRoutes from './routes/users';
 import authRoutes from './routes/auth';
 import { createTestUserIfNeeded } from './db';
 import { testEmailConnection } from './services/email';
+import twoFactorRoutes from './routes/2fa';
 
 const fastifyServer = Fastify({
     logger: true,
@@ -31,6 +33,38 @@ async function startServer(): Promise<void> {
         // testing email connection on startup 
         await testEmailConnection();
 
+        await fastifyServer.register(jwt, {
+            secret: process.env.JWT_SEC,
+            cookie: {
+                cookieName: 'authToken', // Tell it where to find the token
+                signed: false
+            }
+        });
+
+        fastifyServer.decorate('authenticate', async (request, reply) => {
+            try {
+                await request.jwtVerify() // Auto-verifies token from cookie/header
+
+                if (request.user.requires2FA) {
+                    return reply.code(403).send({ error: '2FA required' })
+                }
+            } catch (err) {
+                return reply.code(401).send({ error: 'Invalid token' })
+            }
+        })
+
+        fastifyServer.decorate('authenticate2FA', async (request, reply) => {
+            try {
+                await request.jwtVerify() // Uses authToken cookie by default
+
+                if (!request.user.requires2FA) {
+                    return reply.code(403).send({ error: '2FA not required' })
+                }
+
+            } catch (err) {
+                return reply.code(401).send({ error: 'Invalid or expired token' })
+            }
+        })
 
         await fastifyServer.register(swagger, {
             mode: 'static',
@@ -48,12 +82,14 @@ async function startServer(): Promise<void> {
         // Register CORS 
         await fastifyServer.register(cors, {
             origin: [process.env.FRONTEND_URL],   // diffrent host is needed for 127.0.0.1
-            credentials: true  // for siting cookies to work 
+            credentials: true,  // for siting cookies to work 
+            methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
         });
 
         // registering Routes
         fastifyServer.register(userRoutes, { prefix: '/api/users' });
         fastifyServer.register(authRoutes, { prefix: '/api/auth' });
+        fastifyServer.register(twoFactorRoutes, { prefix: '/api/2fa' });
 
 
         // health check

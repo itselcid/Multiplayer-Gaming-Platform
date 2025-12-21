@@ -1,7 +1,5 @@
 import { FastifyInstance } from "fastify";
 import { deleteUser, getAllUsers, getUserById, updateUser } from "../db";
-// import { requireAdmin } from "../middleware/admin";
-import { verifyToken } from "../middleware/auth";
 
 const UserIdSchema = {
     params: {
@@ -24,17 +22,11 @@ const UpdateProfileSchema = {
     }
 } as const;
 
-// type UpdateUserBody = {
-//     email?: string;
-//     password?: string;
-//     role?: string;
-// }
-
 export default async function userRoutes(server: FastifyInstance): Promise<void> {
 
     // get all users
     server.get('/', {
-        preHandler: verifyToken
+        preHandler: [server.authenticate]
     }, async (_request, reply) => {
         try {
             const users = await getAllUsers();
@@ -48,7 +40,7 @@ export default async function userRoutes(server: FastifyInstance): Promise<void>
 
     // get logged in user data
     server.get('/me', {
-        preHandler: verifyToken
+        preHandler: [server.authenticate]
     }, async (request, reply) => {
         try {
 
@@ -71,7 +63,7 @@ export default async function userRoutes(server: FastifyInstance): Promise<void>
     server.put<{
         Body: { email: string }  // only email updates available for now
     }>('/me', {
-        preHandler: verifyToken,
+        preHandler: [server.authenticate],
         schema: UpdateProfileSchema
     }, async (request, reply) => {
         try {
@@ -98,7 +90,7 @@ export default async function userRoutes(server: FastifyInstance): Promise<void>
 
     // delete logged in user account
     server.delete('/me', {
-        preHandler: verifyToken
+        preHandler: [server.authenticate]
     }, async (request, reply) => {
         try {
 
@@ -171,7 +163,7 @@ export default async function userRoutes(server: FastifyInstance): Promise<void>
     server.get<{
         Params: { id: string }
     }>('/:id', {
-        preHandler: verifyToken,
+        preHandler: [server.authenticate],
         schema: UserIdSchema
     }, async (request, reply) => {
         try {
@@ -196,7 +188,6 @@ export default async function userRoutes(server: FastifyInstance): Promise<void>
             return reply.code(500).send({ error: 'Internal server error' });
         }
     });
-
 
 }
 

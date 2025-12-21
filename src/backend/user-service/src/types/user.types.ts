@@ -15,8 +15,10 @@ export interface UserData {
     id: number;
     username: string;
     email: string;
-    password?: string;
     avatar: string | null;
+    twoFactor?: {
+        method: string | null;
+    } | null;
     createdAt: Date;
     updatedAt: Date;
 }
