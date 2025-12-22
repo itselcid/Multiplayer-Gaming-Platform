@@ -6,24 +6,27 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/13 22:19:50 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/02 02:39:55 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/12/22 20:42:12 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { Home } from "../components/Home";
 import { Page404} from "../components/Page404";
-import { Profile } from "../pages/Profile";
-import { Tournament } from "../pages/Tournament";
-import { Tournaments } from "../pages/Tournaments";
-import { tournamentState } from "./appStore";
+import { cachedTournaments } from "../main";
+import { MatchView } from "../pages/Match";
+import { ProfileView } from "../pages/Profile";
+import { TournamentView } from "../pages/Tournament";
+import { TournamentsView } from "../pages/Tournaments";
+import { getTournamentLength } from "../web3/getters";
 
 // --- Route Definitions ---
 const routes: Record<string, any> = {
-  "/": Home,
-  "/home": Home,
-  "/profile": Profile,
-  "/tournaments": Tournaments,
-  "/tournaments/:id": Tournament,
+	"/": Home,
+	"/home": Home,
+	"/profile": ProfileView,
+	"/tournaments": TournamentsView,
+	"/tournaments/:id": TournamentView,
+	"/match/:key": MatchView
 };
 
 // --- Scroll Position Store ---
@@ -56,7 +59,7 @@ export function navigate(path: string) {
 
 
 // --- Route Matching ---
-function matchRoute(path: string): { view: any; params: Record<string, string> } | null {
+export function matchRoute(path: string): { view: any; params: Record<string, string> } | null {
   path = path.replace(/\/+$/, "") || "/";
 
   for (const pattern in routes) {
@@ -81,10 +84,10 @@ function matchRoute(path: string): { view: any; params: Record<string, string> }
 
 
 // --- Render Route ---
-export function renderRoute() {
+export async function renderRoute() {
 	const root = document.getElementById("bg")!;
 	root.innerHTML = "";
-
+	
 	const match = matchRoute(location.pathname);
 
 	if (!match) {
@@ -93,16 +96,6 @@ export function renderRoute() {
 	}
 
 	const { view: View, params } = match;
-
-	// --- ID VALIDATION FOR /tournaments/:id ---
-	if (View === Tournament) {
-	const id = Number(params.id);
-
-	if (isNaN(id) || id >= tournamentState.get().length) {
-		new Page404().mount(root);
-		return;
-	}
-	}
 
 	new View(params).mount(root);
 }

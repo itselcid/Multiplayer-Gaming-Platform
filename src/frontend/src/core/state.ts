@@ -6,11 +6,11 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/18 00:04:38 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/02 03:14:47 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/12/06 15:11:56 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-import { active_tab_sub, currentWeb3AccountSub, tournament_tab_sub, tournamentStateSub, web3_login_sub } from "./appStore";
+import { active_tab_sub, addTouranamentStateSub, currentWeb3AccountSub, tournament_tab_sub, updateTournamentStateSub, web3_login_sub } from "./appStore";
 
 	type Subscriber<T> = (value: T) => void;
 
@@ -59,6 +59,7 @@ export const subs = () => {
 	web3_login_sub();
 	tournament_tab_sub();
 	currentWeb3AccountSub();
-	tournamentStateSub();
+	addTouranamentStateSub();
+	updateTournamentStateSub();
 }
 

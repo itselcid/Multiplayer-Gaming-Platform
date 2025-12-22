@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/12 15:53:05 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/02 23:41:59 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/12/15 01:54:50 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,12 +17,12 @@ import { Navbar } from './components/Navbar.ts';
 import { subs } from './core/state.ts';
 import { Shouting_stars, startShootingStars } from './pages/Shouting_stars.ts';
 import { TestBG } from './pages/TestBG.ts';
-// import { ConnectWallet } from './components/ConnectWallet.ts';
-// import { getAllowance, getBalance } from './web3/getters.ts';
-// import { formatEther } from 'viem';
+import { type Tournament } from './web3/getters.ts';
 
 //  TODO: get user address from database for auth
 export const user_address = '0x26a2bf197820c79150dde3db793c23bf71a973cf';
+export let logged: boolean = false;
+export	let cachedTournaments: Tournament[] = [];
 
 const	container1 = addElement("div", "min-h-screen w-full bg-space-dark text-white");
 const	shouting_stars = new Shouting_stars();

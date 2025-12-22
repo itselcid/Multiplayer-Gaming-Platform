@@ -1,4 +1,4 @@
-import { createPublicClient, createWalletClient, custom, getAddress, http, type Address } from 'viem';
+import { createPublicClient, createWalletClient, custom, getAddress, http, webSocket, type Address } from 'viem';
 import TournamentFactoryData from './TournamentFactory/TournamentFactory.json';
 import { avalancheFuji } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
@@ -6,12 +6,12 @@ import TRIZcoinData from './TRIZcoin/TRIZcoin.json';
 
 
 // const FUJI_PRIVATE_KEY = process.env.FUJI_PRIVATE_KEY;
-const FUJI_RPC_URL = import.meta.env.FUJI_RPC_URL;
+const VITE_FUJI_RPC_URL = import.meta.env.VITE_FUJI_RPC_URL;
 
 export const	publicClient = createPublicClient(
 	{
 		chain: avalancheFuji,
-		transport: http(FUJI_RPC_URL)
+		transport: webSocket(VITE_FUJI_RPC_URL)
 	}
 )
 
@@ -22,7 +22,7 @@ export const	TournamentFactoryAbi = TournamentFactoryData.abi;
 // sign using script
 export const walletClient = createWalletClient({
   chain: avalancheFuji,
-  transport: http(FUJI_RPC_URL)
+  transport: webSocket(VITE_FUJI_RPC_URL)
 })
  
 // sign with metamask

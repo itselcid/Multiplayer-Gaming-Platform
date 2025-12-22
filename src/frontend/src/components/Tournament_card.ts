@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/15 01:14:19 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/02 02:17:51 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/12/13 11:55:15 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,7 @@ import { login_state } from "../core/appStore";
 import { addElement, Component } from "../core/Component";
 import type { Tournament } from "../web3/getters";
 import { bigint_to_date } from "../tools/date";
-import { get_tournament_status } from "../tools/get_tournament_status";
+import { get_tournament_status } from "../tools/tournament_tools";
 import { navigate } from "../core/router";
 import { Tournament_status } from "./Tournament_status";
 

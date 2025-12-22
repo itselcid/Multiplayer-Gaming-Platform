@@ -6,13 +6,13 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/20 15:00:55 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/11/25 13:49:24 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/12/13 11:55:15 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { formatEther } from "viem";
 import { addElement, Component } from "../core/Component";
-import { get_tournament_status } from "../tools/get_tournament_status";
+import { get_tournament_status } from "../tools/tournament_tools";
 import type { Tournament } from "../web3/getters";
 import { Tournament_status } from "./Tournament_status";
 import { bigint_to_date } from "../tools/date";

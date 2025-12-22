@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/05 00:34:36 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/11/26 01:49:11 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/12/05 22:44:41 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,6 @@ export function shortenEthAddress(
   startChars = 4,
   endChars = 4
 ): string {
-	console.log(address);
   if (!address || typeof address !== 'string') return '';
 
   const addr = address.trim();

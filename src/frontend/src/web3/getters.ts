@@ -6,11 +6,16 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 20:42:15 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/02 02:30:55 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/12/16 00:46:20 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 // import { localhost, avalancheFuji } from 'viem/chains';
+import { encodePacked, keccak256 } from "viem";
+import { Tournament_card } from "../components/Tournament_card";
+import { addTouranamentState, tournament_tab, updateTournamentState } from "../core/appStore";
+import { cachedTournaments } from "../main";
+import { get_tournament_status } from "../tools/tournament_tools";
 import { TournamentFactoryAbi, TournamentFactoryAddress, publicClient, TRIZcoinAbi, TRIZcoinAddress } from "./contracts/contracts";
 
 export interface Tournament {
@@ -38,17 +43,17 @@ export interface Match {
     status: number;
 }
 
-export const	getTournaments = async () : Promise<Tournament[]> => {
-	const	tournaments = await publicClient.readContract(
-		{
-			address: TournamentFactoryAddress,
-			abi: TournamentFactoryAbi,
-			functionName: 'getTournaments'
-		}
-	) as Tournament[];
-	// console.log(tournaments);
-	return (tournaments);
-}
+// export const	getTournaments = async () : Promise<Tournament[]> => {
+// 	const	tournaments = await publicClient.readContract(
+// 		{
+// 			address: TournamentFactoryAddress,
+// 			abi: TournamentFactoryAbi,
+// 			functionName: 'getTournaments'
+// 		}
+// 	) as Tournament[];
+// 	// console.log(tournaments);
+// 	return (tournaments);
+// }
 
 export const	getTournamentLength = async () : Promise<bigint> => {
 	const	length = await publicClient.readContract(
@@ -74,6 +79,37 @@ export const	getTournament = async (_id: bigint) : Promise<Tournament> => {
 	return (tournament);
 }
 
+let	loading_batch = false;
+export const	get_tournament_batch = async (batch_size: number): Promise<void> => {
+	if (loading_batch)
+		return;
+	loading_batch = true;
+	let	index = 0n;
+	if (cachedTournaments.length) {
+		// tournaments already retrieved
+		index = cachedTournaments[cachedTournaments.length -1].id -1n;
+	} else {
+		// fresh start
+		index = await getTournamentLength() -1n;
+	}
+	const	container = document.getElementById('tournaments-container');
+	for (let retrieved = 0; retrieved < batch_size && index !== -1n ; index--, retrieved++) {
+		// console.log('retrieving tournament id: ', index);
+		const	tournament = await getTournament(index);
+		cachedTournaments.push(tournament);
+		if (container) {
+			if (
+				tournament_tab.get() === 'all' ||
+				tournament_tab.get() === get_tournament_status(tournament)
+			) {
+				const	card = new Tournament_card(tournament);
+				card.mount(container);
+			};
+		}
+	}
+	loading_batch = false;
+}
+
 export const	getPlayer = async (id: bigint, currentRound:bigint, order: bigint): Promise<Player> => {
 	const	player = await publicClient.readContract(
 		{
@@ -96,6 +132,70 @@ export const	getMatch = async (_id:bigint, _round:bigint, _matchId:bigint) => {
 		}
 	) as Match;
 	return (match);
+}
+
+export const	getMatchKey = (_id:bigint, _round:bigint, _matchId:bigint) : `0x${string}` => {
+	return keccak256(
+		encodePacked(
+			["uint256", "uint256", "uint256"],
+			[_id, _round, _matchId]
+		)
+	);
+}
+
+export const	getMatchWithKey = async (_key:`0x${string}`) => {
+	const	match = await publicClient.readContract(
+		{
+			address: TournamentFactoryAddress,
+			abi: TournamentFactoryAbi,
+			functionName: 'getMatchWithKey',
+			args: [_key]
+		}
+	) as Match;
+	return (match);
+}
+
+// events
+export const watchTournamentCreation = () => {
+	publicClient.watchContractEvent(
+		{
+			address: TournamentFactoryAddress,
+			abi: TournamentFactoryAbi,
+			eventName: 'TournamentCreated',
+			onLogs: (logs) => {
+				logs.forEach((log) => {
+					// fix type problem
+					const typedLog = log as typeof log & {
+						args: {
+						_id: bigint;
+						}
+					};
+					addTouranamentState.set(typedLog.args._id);
+				})
+			}
+		}
+	)
+}
+
+export const	watchTournamentStatus = () => {
+	publicClient.watchContractEvent(
+		{
+			address: TournamentFactoryAddress,
+			abi: TournamentFactoryAbi,
+			eventName: 'SetStatus',
+			onLogs: (logs) => {
+				logs.forEach(async (log) => {
+					// fix type problem
+					const typedLog = log as typeof log & {
+						args: {
+						_id: bigint;
+						}
+					};
+					updateTournamentState.set(typedLog.args._id);
+				})
+			}
+		}
+	)
 }
 
 // erc20 functions

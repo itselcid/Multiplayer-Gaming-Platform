@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/05 17:41:32 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/11/15 03:13:27 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/12/15 16:52:33 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,7 @@ import { Player_card } from "../components/Player_card";
 import { Tournament_history } from "../components/Tournament_history";
 import { addElement, Component } from "../core/Component";
 
-export class Profile extends Component {
+export class ProfileView extends Component {
 	constructor() {
 		super('div', 'max-w-6xl mx-auto px-6 py-12 w-full');
 	}

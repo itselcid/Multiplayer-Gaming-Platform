@@ -6,12 +6,14 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/20 15:11:27 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/11/29 02:00:07 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/12/21 19:04:12 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { addElement, Component } from "../core/Component";
-import { getMatch, type Match, type Tournament } from "../web3/getters";
+import { navigate } from "../core/router";
+import { get_match_status, get_round_name } from "../tools/tournament_tools";
+import { getMatch, getMatchKey, type Match, type Tournament } from "../web3/getters";
 
 class Round extends Component {
 	private _tournament: Tournament;
@@ -37,29 +39,18 @@ class Round extends Component {
 				<p class="text-cyan-300/60 text-sm font-bold mb-1 tracking-wide">CURRENT ROUND</p>
 			`);
 		const	round_content_current = addElement('h3', 'text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-neon-cyan', round_content);
-		
-		switch (this._tournament.currentRound) {
-			case 1n:
-				round_content_current.textContent = 'Finals';
-				break;
-			case 2n:
-				round_content_current.textContent = 'Semi Finals';
-				break;
-			case 4n:
-				round_content_current.textContent = 'Quarter Finals';
-				break;
-			default:
-				round_content_current.textContent = 'Round ' + String(this._tournament.currentRound);
-		}
+		round_content_current.textContent = get_round_name(this._tournament.currentRound);
 	}
 }
 
 class LiveMatch extends Component {
+	private	_tournament: Tournament;
 	private _match: Match;
 	private	_id:bigint;
 
-	constructor(match: Match, id:bigint) {
+	constructor(tournament: Tournament, match: Match, id:bigint) {
 		super('div', 'relative group');
+		this._tournament = tournament;
 		this._match = match;
 		this._id = id
 	}
@@ -110,15 +101,21 @@ class LiveMatch extends Component {
 		second_score_username.textContent = this._match.player2.username;
 		const	second_score = addElement('div', 'text-5xl font-black transition-all text-transparent bg-clip-text bg-gradient-to-br from-purple-400 to-pink-400', second_score_container);
 		second_score.textContent = String(this._match.player2Score);
+
+		this.el.onclick = () => {
+			navigate('/match/' + getMatchKey(this._tournament.id, this._tournament.currentRound, this._id));
+		}
 	}
 }
 
 class	PendingMatch extends Component {
+	private	_tournament: Tournament;
 	private _match: Match;
 	private	_id:bigint;
 
-	constructor(match: Match, id:bigint) {
+	constructor(tournament: Tournament, match: Match, id:bigint) {
 		super('div', 'relative group');
+		this._tournament = tournament;
 		this._match = match;
 		this._id = id
 	}
@@ -160,6 +157,91 @@ class	PendingMatch extends Component {
 		const	second_score = addElement('div', 'text-5xl font-black transition-all text-slate-600', second_score_container);
 		second_score.textContent = String(this._match.player2Score);
 		
+		this.el.onclick = () => {
+			navigate('/match/' + getMatchKey(this._tournament.id, this._tournament.currentRound, this._id));
+		}
+	}
+}
+
+class	FinishedMatch extends Component {
+	private	_tournament: Tournament;
+	private _match: Match;
+	private	_id:bigint;
+
+	constructor(tournament: Tournament, match: Match, id:bigint) {
+		super('div', 'relative group');
+		this._tournament = tournament;
+		this._match = match;
+		this._id = id
+	}
+
+	render(): void {
+		let	winner;
+		let	loser;
+		let	winner_score;
+		let loser_score;
+		if (this._match.player1Score > this._match.player2Score) {
+			winner = this._match.player1;
+			winner_score = this._match.player1Score;
+			loser = this._match.player2;
+			loser_score = this._match.player2Score;
+		} else {
+			loser = this._match.player1;
+			loser_score = this._match.player1Score;
+			winner = this._match.player2;
+			winner_score = this._match.player2Score;
+		}
+		const	match_container = addElement('div', 'relative backdrop-blur-xl rounded-2xl border p-6 transition-all bg-gradient-to-br from-slate-700/30 to-slate-800/20 hover:border-slate-400/50 border-slate-600/50 shadow-lg shadow-slate-500/20', this.el);
+
+		const	match_header = addElement('div', 'flex items-center justify-between mb-5', match_container);
+		const	match_id = addElement('span', 'text-cyan-300/70 text-sm font-bold tracking-wider', match_header);
+		match_id.textContent = 'MATCH #' + String(this._id);
+		const	match_status = addElement('span', 'px-4 py-1.5 bg-gradient-to-r from-slate-600/50 to-slate-700/50 border border-slate-400/50 rounded-full text-slate-300 text-xs font-black flex items-center gap-2 shadow-lg shadow-slate-500/30', match_header);
+		match_status.insertAdjacentHTML('beforeend', `
+				<svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                        FINISHED
+			`);
+
+		const	live_score = addElement('div', 'grid grid-cols-3 gap-6 items-center', match_container);
+
+		const	first_score_container = addElement('div', 'text-center space-y-3', live_score);
+		const	first_score_username_container = addElement('div', 'p-3 bg-gradient-to-br from-amber-500/20 to-yellow-500/20 rounded-xl border border-amber-400/50 inline-block relative shadow-lg shadow-amber-500/20', first_score_container);
+		const	first_score_username = addElement('p', 'text-white font-black text-base tracking-tight', first_score_username_container);
+		first_score_username.textContent = winner.username;
+		first_score_username_container.insertAdjacentHTML('beforeend', `
+			<div class="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-full flex items-center justify-center shadow-lg shadow-amber-500/50">
+                                <svg class="w-4 h-4 text-slate-900" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                </svg>
+                            </div>
+			`);
+		const	first_score = addElement('div', 'text-5xl font-black transition-all text-transparent bg-clip-text bg-gradient-to-br from-amber-400 to-yellow-500', first_score_container);
+		first_score.textContent = String(winner_score);
+
+		live_score.insertAdjacentHTML('beforeend', `
+				<div class="text-center">
+					<div class="relative">
+						<div class="absolute inset-0 bg-slate-500/20 blur-xl">
+						</div>
+						<span class="relative text-slate-400 font-black text-xl tracking-widest">
+							VS
+						</span>
+					</div>
+				</div>
+			`);
+
+		const	second_score_container = addElement('div', 'text-center space-y-3', live_score);
+		const	second_score_username_container = addElement('div', 'p-3 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-xl border border-purple-400/30 inline-block opacity-60', second_score_container);
+		const	second_score_username = addElement('p', 'text-white font-black text-base tracking-tight', second_score_username_container);
+		second_score_username.textContent = loser.username;
+		const	second_score = addElement('div', 'text-5xl font-black transition-all text-slate-600', second_score_container);
+		second_score.textContent = String(loser_score);
+		
+		this.el.onclick = () => {
+			navigate('/match/' + getMatchKey(this._tournament.id, this._tournament.currentRound, this._id));
+		}
 	}
 }
 
@@ -174,10 +256,19 @@ class Matches extends Component {
 	async render(): Promise<void> {
 		for (let i = 0n; i < this._tournament.currentRound; i++) {
 			const	match = await getMatch(this._tournament.id, this._tournament.currentRound, i);
-			const	live_match = new LiveMatch(match, i);
-			live_match.mount(this.el);
-			const	pending_match = new PendingMatch(match, i);
-			pending_match.mount(this.el);
+			const	match_status = get_match_status(match);
+			console.log(match);
+			if (match_status === 'pending') {
+				// should be a cooldown period of 5 min before starting the match after its creation
+				const	live_match = new LiveMatch(this._tournament, match, i);
+				live_match.mount(this.el);
+			} else {
+				const	finished_match = new FinishedMatch(this._tournament, match, i);
+				finished_match.mount(this.el);
+			}
+			// ui for cooldown period
+			// const	pending_match = new PendingMatch(this._tournament, match, i);
+			// pending_match.mount(this.el);
 		}
 		
 	}

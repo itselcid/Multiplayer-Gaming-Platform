@@ -1,4 +1,4 @@
-import { createPublicClient, createWalletClient, getAddress, http, type Address } from 'viem';
+import { createPublicClient, createWalletClient, getAddress, http, webSocket, type Address } from 'viem';
 import TournamentFactoryData from './TournamentFactory/TournamentFactory.json';
 import { avalancheFuji } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
@@ -12,7 +12,7 @@ const FUJI_RPC_URL = process.env.FUJI_RPC_URL;
 export const	publicClient = createPublicClient(
 	{
 		chain: avalancheFuji,
-		transport: http(FUJI_RPC_URL)
+		transport: webSocket(FUJI_RPC_URL)
 	}
 )
 
@@ -23,7 +23,7 @@ export const	TournamentFactoryAbi = TournamentFactoryData.abi;
 // sign using script
 export const walletClient = createWalletClient({
   chain: avalancheFuji,
-  transport: http(FUJI_RPC_URL)
+  transport: webSocket(FUJI_RPC_URL)
 })
  
 // Local Account
@@ -44,4 +44,18 @@ export interface Tournament {
 	currentRound: bigint;
 	startTime: bigint;
 	status: number;
+}
+
+export interface Player {
+    addr: string;
+    claimed: boolean;
+    username: string;
+}
+
+export interface Match {
+	player1: Player;
+	player1Score: bigint;
+    player2: Player;
+	player2Score: bigint;
+    status: number;
 }

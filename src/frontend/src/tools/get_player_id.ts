@@ -6,7 +6,6 @@ export const get_player_id = async (_tournament: Tournament, account:string) : P
 	for (;i < _tournament.maxParticipants; i++) {
 		const	player = await getPlayer(_tournament.id, _tournament.currentRound, i);
 		if (lowerCaseAddress(player.addr) === lowerCaseAddress(account)) {
-			console.log('address found: ', account, player.addr);
 			break;
 		}
 	}

@@ -6,21 +6,57 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/18 18:01:17 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/02 23:23:48 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/12/07 00:04:05 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { parseEther } from "viem";
 import { addElement, Component } from "../core/Component";
 import { date_to_bigint } from "../tools/date";
-import { create_tournament } from "../web3/setters";
+import { approveAllowence, create_tournament } from "../web3/setters";
+import { getAllowance } from "../web3/getters";
+import { walletClientMetamask } from "../web3/contracts/contracts";
+import { Metamask_error } from "./Metamask_error";
+
+class	PendingButton extends Component {
+	constructor() {
+		super('button', 'relative flex-1 px-8 py-4 rounded-xl text-white font-black text-lg uppercase tracking-wider overflow-hidden group transition-all duration-300 shadow-2xl bg-gradient-to-r from-gray-600 via-gray-700 to-gray-800 shadow-gray-600/50 disabled:hover:scale-100')
+	}
+	
+	render(): void {
+		const button = this.el as HTMLButtonElement;
+		button.disabled = true;
+
+		// ripple effect
+		this.el.insertAdjacentHTML('beforeend', `
+				<div class="absolute inset-0 flex items-center justify-center">
+					<div class="w-20 h-20 border-2 border-white/30 rounded-full animate-ping" style="animation-duration: 2s">
+					</div>
+				</div>
+				<div class="absolute inset-0 flex items-center justify-center">
+					<div class="w-20 h-20 border-2 border-white/20 rounded-full animate-ping" style="animation-duration: 2s; animation-delay: 0.5s">
+					</div>
+				</div>
+			`);
+
+		const	text_container = addElement('span', 'absolute inset-0 flex flex-col items-center justify-center', this.el);
+		text_container.insertAdjacentHTML('beforeend', `<span class="relative z-10 animate-pulse text-base mb-1">Processing</span>`);
+		const	text_container_animation = addElement('div', 'flex gap-1', text_container);
+		[0, 1, 2].map((i) => {text_container_animation.insertAdjacentHTML('beforeend', `
+				<div
+					class="w-1 h-1 bg-white rounded-full animate-bounce"
+					style="animation-delay: ${i * 0.15}s; animation-duration: 0.6s">
+				</div>
+			`)})
+	}
+}
 
 export class CreateTournament extends Component {
 	constructor() {
 		super('div', 'fixed inset-0 z-10 bg-black/40 backdrop-blur-sm overflow-y-auto overscroll-y-auto no-scrollbar flex justify-center items-start');
 	}
 
-	render(): void {
+	async render(): Promise<void> {
 		const	logged = false;
 
 		const	container = addElement('div', 'relative max-w-2xl w-full my-8', this.el);
@@ -159,25 +195,60 @@ export class CreateTournament extends Component {
 		const	cancel_button = addElement('button', 'flex-1 px-8 py-4 bg-slate-800/50 border-2 border-slate-600 rounded-xl text-slate-400 font-bold text-lg uppercase tracking-wider hover:border-slate-400 hover:text-slate-300 hover:bg-slate-800 transition-all duration-300 hover:scale-105', buttons);
 		cancel_button.textContent = 'Cancel';
 		cancel_button.onclick = () => {this.unmount();}
-		const	create_button = addElement('button', 'relative flex-1 px-8 py-4 bg-gradient-to-r from-neon-cyan via-neon-purple to-pink-500 rounded-xl text-white font-black text-lg uppercase tracking-wider overflow-hidden group hover:scale-105 transition-all duration-300 shadow-2xl shadow-neon-cyan/50', buttons);
-		create_button.insertAdjacentHTML('beforeend', `
-				<div class="absolute inset-0 bg-gradient-to-r from-pink-500 via-neon-purple to-neon-cyan"></div>
-					<span class="relative flex items-center justify-center gap-2">
-					<span class="text-2xl">🚀</span>
-					Create
-					<span class="text-2xl">🚀</span>
-				</span>
-			`);
-		create_button.onclick = async () => {
-			await create_tournament(
-				title_input.value,
-				parseEther(entryFee_input.value),
-				BigInt(participants_input.value),
-				date_to_bigint(startTime_input.value),
-				logged? 'user input from db': username_input.value
-			);
-			this.unmount();
-		};
+		const	create_button = addElement('button', 'relative flex-1 px-8 py-4 bg-gradient-to-r from-neon-cyan via-neon-purple to-pink-500 rounded-xl text-white font-black text-lg uppercase tracking-wider overflow-hidden group hover:scale-105 transition-all duration-300 shadow-2xl shadow-neon-cyan/50', buttons) as HTMLButtonElement;
+		if (!walletClientMetamask)
+				return;
 		
+		const	accounts = await walletClientMetamask.getAddresses();
+		const	account = accounts[0];
+		let		allowance = await getAllowance(account);
+
+		if (allowance == 0n){
+			create_button.textContent = 'Approve';
+		} else {
+			create_button.textContent = 'Create';
+		}
+		create_button.onclick = async () => {
+			create_button.disabled = true;
+			const	pend_button = new PendingButton();
+			try {
+				allowance = await getAllowance(account);	
+				const	entryFeeValue:bigint = parseEther(entryFee_input.value);
+				
+				if (allowance < entryFeeValue) {
+					create_button.hidden = true;
+					pend_button.mount(buttons);
+					await approveAllowence(entryFeeValue);
+					pend_button.unmount();
+					create_button.textContent = 'Create';
+					create_button.hidden = false
+				} else {
+					create_button.hidden = true;
+					pend_button.mount(buttons);
+					await create_tournament(
+						title_input.value,
+						entryFeeValue,
+						BigInt(participants_input.value),
+						date_to_bigint(startTime_input.value),
+						logged? 'user input from db': username_input.value
+					);
+					this.unmount();
+				}
+	
+			} catch(err) {
+				const	root = document.getElementById('app');
+				if (root) {
+					pend_button.unmount();
+					create_button.hidden = false;
+					const	metamask_error = new Metamask_error(
+						"Action Canceled",
+						"The transaction was rejected. Please approve it in your wallet if you want to continue.",
+						false
+					);
+					metamask_error.mount(root);
+				}
+			}
+			create_button.disabled = false;
+		};
 	}
 }

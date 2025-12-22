@@ -6,19 +6,111 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/21 15:12:27 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/02 22:08:29 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/12/20 18:17:16 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { formatEther } from "viem";
 import { addElement, Component } from "../core/Component";
-import { getPlayer, type Tournament } from "../web3/getters";
+import { getAllowance, getPlayer, type Tournament } from "../web3/getters";
 import { bigint_to_date } from "../tools/date";
 import { web3auth } from "../core/appStore";
 import { lowerCaseAddress, nullAddress } from "../web3/tools";
-import { join_tournament } from "../web3/setters";
+import { approveAllowence, join_tournament } from "../web3/setters";
 import { join_tournament_inactive } from "./Tournament_card";
 import { get_player_id } from "../tools/get_player_id";
+import { Metamask_error } from "./Metamask_error";
+import { logged } from "../main";
+import { getRevertReason } from "../tools/errors";
+
+export	const fill_tournament_recrute = async (tournament: Tournament, tournament_recrute: HTMLElement) => {
+	const	account = await web3auth.getEthAddress();
+	if (await web3auth.isLoggedIn()) {
+		const i = await get_player_id(tournament, account || nullAddress);
+		if (i < tournament.maxParticipants) {
+			const	registered = new Tournament_recrute_registered(tournament);
+			registered.mount(tournament_recrute);
+		} else if (tournament.participants === tournament.maxParticipants) {
+			const	full = new Tournament_recrute_full();
+			full.mount(tournament_recrute);
+		} else {
+			const	register = new Tournament_recrute_register(tournament);
+			register.mount(tournament_recrute);
+		}
+	} else {
+		if (tournament.participants === tournament.maxParticipants) {
+			const	full = new Tournament_recrute_full();
+			full.mount(tournament_recrute);
+		} else {
+			const	not_connected = new join_tournament_inactive();
+			not_connected.mount(tournament_recrute);
+		}
+	}
+}
+
+class	PendingButton extends Component {
+	constructor() {
+		super('button', 'relative w-full h-20 py-6 rounded-2xl text-white font-black text-lg uppercase tracking-wider overflow-hidden group transition-all duration-300 shadow-2xl bg-gradient-to-r from-gray-600 via-gray-700 to-gray-800 shadow-gray-600/50 disabled:hover:scale-100')
+	}
+	
+	render(): void {
+		const button = this.el as HTMLButtonElement;
+		button.disabled = true;
+
+		// ripple effect
+		this.el.insertAdjacentHTML('beforeend', `
+				<div class="absolute inset-0 flex items-center justify-center">
+					<div class="w-20 h-20 border-2 border-white/30 rounded-full animate-ping" style="animation-duration: 2s">
+					</div>
+				</div>
+				<div class="absolute inset-0 flex items-center justify-center">
+					<div class="w-20 h-20 border-2 border-white/20 rounded-full animate-ping" style="animation-duration: 2s; animation-delay: 0.5s">
+					</div>
+				</div>
+			`);
+
+		const	text_container = addElement('span', 'absolute inset-0 flex flex-col items-center justify-center', this.el);
+		text_container.insertAdjacentHTML('beforeend', `<span class="relative z-10 animate-pulse text-base mb-1">Processing</span>`);
+		const	text_container_animation = addElement('div', 'flex gap-1', text_container);
+		[0, 1, 2].map((i) => {text_container_animation.insertAdjacentHTML('beforeend', `
+				<div
+					class="w-1 h-1 bg-white rounded-full animate-bounce"
+					style="animation-delay: ${i * 0.15}s; animation-duration: 0.6s">
+				</div>
+			`)})
+	}
+}
+
+class	Tournament_recrute_register_button extends Component {
+	private	_tournament: Tournament;
+
+	constructor(tournament: Tournament) {
+		super('button', 'w-full py-6 rounded-2xl font-black text-xl tracking-wide transition-all transform bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white shadow-2xl shadow-cyan-500/50 hover:scale-105 border-2 border-cyan-400');
+		this._tournament = tournament;
+	}
+
+	async render(): Promise<void> {
+		const	allowence = await getAllowance(await web3auth.getEthAddress());
+		let		button_text = '';
+		if (!allowence) {
+			button_text = 'Approve TRIZcoin';
+		} else {
+			button_text = `REGISTER NOW - ${formatEther(this._tournament.entryFee)} TRIZcoin`;
+		}
+
+		console.log('text: ', button_text);
+		
+		this.el.innerHTML = `
+                  
+                    <span class="flex items-center justify-center gap-3">
+						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users w-7 h-7" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><path d="M16 3.128a4 4 0 0 1 0 7.744"></path><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><circle cx="9" cy="7" r="4"></circle></svg>
+						${button_text}
+                    </span>
+		`;
+
+		
+	}
+}
 
 class Tournament_recrute_register extends Component {
 	private	_tournament: Tournament;
@@ -28,9 +120,9 @@ class Tournament_recrute_register extends Component {
 		this._tournament = tournament;
 	}
 
-	render(): void {
-		const	logged = false;
+	async render(): Promise<void> {
 		let	username_input: HTMLInputElement;
+		
 		if (!logged) {
 			const	username_container = addElement('div', 'mb-6', this.el);
 			username_container.insertAdjacentHTML('beforeend', `
@@ -48,19 +140,55 @@ class Tournament_recrute_register extends Component {
 			username_input.type = 'text';
 			username_input.placeholder = 'Enter your username...';
 		}
-		const register_button = addElement('button', 'w-full py-6 rounded-2xl font-black text-xl tracking-wide transition-all transform bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white shadow-2xl shadow-cyan-500/50 hover:scale-105 border-2 border-cyan-400', this.el);
+		// const register_button = addElement('button', 'w-full py-6 rounded-2xl font-black text-xl tracking-wide transition-all transform bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white shadow-2xl shadow-cyan-500/50 hover:scale-105 border-2 border-cyan-400', this.el);
 		
-		register_button.innerHTML = `
-                  
-                    <span class="flex items-center justify-center gap-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users w-7 h-7" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><path d="M16 3.128a4 4 0 0 1 0 7.744"></path><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><circle cx="9" cy="7" r="4"></circle></svg>
-                      REGISTER NOW - ${formatEther(this._tournament.entryFee)} TRIZcoin
-                    </span>
-		`;
+		const	register_button = new Tournament_recrute_register_button(this._tournament);
 		
-		register_button.onclick = async () => {
-			await join_tournament(this._tournament, logged? 'username from db': username_input.value);
+		register_button.mount(this.el);
+		register_button.el.onclick = async () => {
+			const	pend_button = new PendingButton();
+			try {
+				const	allowence = await getAllowance(await web3auth.getEthAddress());
+				register_button.el.hidden = true;
+				pend_button.mount(this.el);
+				if (!allowence) {
+					await approveAllowence(this._tournament.entryFee);
+					pend_button.unmount();
+					register_button.render();
+					register_button.el.hidden = false;
+				} else {
+					await join_tournament(this._tournament, logged? 'username from db': username_input.value);
+					const	registered = new Tournament_recrute_registered(this._tournament);
+					registered.render();
+					this.el.innerHTML = registered.el.innerHTML;
+					this._tournament.participants++;
+					const	current_participants = document.getElementById('tournament-recrute-current-participants');
+					const	current_progress = document.getElementById('tournament-recrute-progress');
+					const	spots = document.getElementById("left-spots");
+					if (current_participants && current_progress && spots) {
+						current_participants.textContent = String(this._tournament.participants);
+						const percentage = String((Number(this._tournament.participants) / Number(this._tournament.maxParticipants)) * 100);
+						console.log(percentage, this._tournament.participants, this._tournament.maxParticipants, this._tournament.participants / this._tournament.maxParticipants);
+						current_progress.style.width = `${percentage}%`;
+						spots.textContent = String(this._tournament.maxParticipants - this._tournament.participants) + ' spots left';
+					}
+				}
+			} catch (err) {
+				pend_button.unmount();
+				register_button.el.hidden = false;
+				const	root = document.getElementById('app');
+				if (root) {
+					// console.log(err);
+					const	metamask_error = new Metamask_error(
+						"Transaction failed",
+						"The transaction failed for the following reason: " + getRevertReason(err),
+						false
+					);
+					metamask_error.mount(root);
+				}
+			}
 		}
+		
 	}
 }
 
@@ -120,8 +248,7 @@ export class Tournament_recrute extends Component {
 		this._tournament = tournament;
 	}
 
-	async render() {
-		const	account = await web3auth.getEthAddress();
+	render() {
 		const progressPercentage = Number(this._tournament.participants) / Number(this._tournament.maxParticipants) * 100;
 		this.el.innerHTML = `
 		<div class="relative group">
@@ -135,7 +262,7 @@ export class Tournament_recrute extends Component {
                     <p class="text-cyan-300/60 font-bold">Secure your place in the arena</p>
                   </div>
                   <div class="text-right">
-                    <p class="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">
+                    <p id="tournament-recrute-current-participants" class="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">
                       ${this._tournament.participants}
                     </p>
                     <p class="text-cyan-300/60 text-sm font-bold">/ ${this._tournament.maxParticipants}</p>
@@ -145,12 +272,13 @@ export class Tournament_recrute extends Component {
                 <div class="mb-8">
                   <div class="flex justify-between mb-3">
                     <span class="text-cyan-300 text-sm font-bold">Players Registered</span>
-                    <span class="text-cyan-300 text-sm font-bold">${Number(this._tournament.maxParticipants) - Number(this._tournament.participants)} spots left</span>
+                    <span class="text-cyan-300 text-sm font-bold" id="left-spots">${Number(this._tournament.maxParticipants) - Number(this._tournament.participants)} spots left</span>
                   </div>
                   <div class="h-4 bg-slate-800/50 rounded-full overflow-hidden border border-cyan-500/30">
-                    <div 
-                      class="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-500"
-                      style="width: ${progressPercentage}%"
+                    <div
+						id="tournament-recrute-progress"
+						class="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-500"
+						style="width: ${progressPercentage}%"
                     >
                   </div>
                   </div>
@@ -165,29 +293,7 @@ export class Tournament_recrute extends Component {
 			`;
 
 		const	tournament_recrute : HTMLElement = this.el.querySelector('#tournament-recrute') as HTMLElement;
-		if (this._tournament.participants === this._tournament.maxParticipants) {
-			const	full = new Tournament_recrute_full();
-			full.mount(tournament_recrute);
-		}
-		else if (!(await web3auth.isLoggedIn())) {
-			const	not_connected = new join_tournament_inactive();
-			not_connected.mount(tournament_recrute);
-		} else {
-			const i = await get_player_id(this._tournament, account || nullAddress);
-			// for (;i < this._tournament.maxParticipants; i++) {
-			// 	const	player = await getPlayer(this._tournament.id, this._tournament.currentRound, i);
-			// 	if (lowerCaseAddress(player.addr) === lowerCaseAddress(account)) {
-			// 		console.log('address found: ', account, player.addr);
-			// 		break;
-			// 	}
-			// }
-			if (i < this._tournament.maxParticipants) {
-				const	registered = new Tournament_recrute_registered(this._tournament);
-				registered.mount(tournament_recrute);
-			} else {
-				const	register = new Tournament_recrute_register(this._tournament);
-				register.mount(tournament_recrute);
-			}
-		}
+		fill_tournament_recrute(this._tournament, tournament_recrute);
+		
 	}
 }

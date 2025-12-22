@@ -1,5 +1,5 @@
 {
-  "address": "0x5d7b5ff8e4f6efd95d5bb1a4462c9036158c186f",
+  "address": "0xcb1dd27f41e66fbdf00d33b8b3fac1df95d310f5",
   "abi": [
     {
       "inputs": [
@@ -38,6 +38,56 @@
       "anonymous": false,
       "inputs": [
         {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "_id",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "_round",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "_matchId",
+          "type": "uint256"
+        }
+      ],
+      "name": "MatchCreated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "_id",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "_round",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "_matchId",
+          "type": "uint256"
+        }
+      ],
+      "name": "MatchFinished",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
           "indexed": true,
           "internalType": "address",
           "name": "previousOwner",
@@ -59,36 +109,164 @@
         {
           "indexed": false,
           "internalType": "uint256",
-          "name": "id",
+          "name": "_id",
           "type": "uint256"
-        },
+        }
+      ],
+      "name": "SetStatus",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
         {
           "indexed": false,
           "internalType": "uint256",
-          "name": "entryFee",
+          "name": "_id",
           "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint8",
-          "name": "participants",
-          "type": "uint8"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "startDate",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "enum TournamentFactory.Status",
-          "name": "status",
-          "type": "uint8"
         }
       ],
       "name": "TournamentCreated",
       "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_id",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_index",
+          "type": "uint256"
+        }
+      ],
+      "name": "claimPrize",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_id",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_index",
+          "type": "uint256"
+        }
+      ],
+      "name": "claimRefunds",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_id",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_round",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_matchId",
+          "type": "uint256"
+        },
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "addr",
+              "type": "address"
+            },
+            {
+              "internalType": "bool",
+              "name": "claimed",
+              "type": "bool"
+            },
+            {
+              "internalType": "string",
+              "name": "username",
+              "type": "string"
+            }
+          ],
+          "internalType": "struct TournamentFactory.Player",
+          "name": "p1",
+          "type": "tuple"
+        },
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "addr",
+              "type": "address"
+            },
+            {
+              "internalType": "bool",
+              "name": "claimed",
+              "type": "bool"
+            },
+            {
+              "internalType": "string",
+              "name": "username",
+              "type": "string"
+            }
+          ],
+          "internalType": "struct TournamentFactory.Player",
+          "name": "p2",
+          "type": "tuple"
+        }
+      ],
+      "name": "createMatch",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_id",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256[]",
+          "name": "order",
+          "type": "uint256[]"
+        }
+      ],
+      "name": "createNextRound",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_id",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256[]",
+          "name": "order",
+          "type": "uint256[]"
+        }
+      ],
+      "name": "createRound",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
     },
     {
       "inputs": [
@@ -103,9 +281,9 @@
           "type": "uint256"
         },
         {
-          "internalType": "uint8",
+          "internalType": "uint256",
           "name": "_maxParticipants",
-          "type": "uint8"
+          "type": "uint256"
         },
         {
           "internalType": "uint256",
@@ -245,19 +423,99 @@
     {
       "inputs": [
         {
+          "internalType": "bytes32",
+          "name": "_key",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getMatchWithKey",
+      "outputs": [
+        {
+          "components": [
+            {
+              "components": [
+                {
+                  "internalType": "address",
+                  "name": "addr",
+                  "type": "address"
+                },
+                {
+                  "internalType": "bool",
+                  "name": "claimed",
+                  "type": "bool"
+                },
+                {
+                  "internalType": "string",
+                  "name": "username",
+                  "type": "string"
+                }
+              ],
+              "internalType": "struct TournamentFactory.Player",
+              "name": "player1",
+              "type": "tuple"
+            },
+            {
+              "internalType": "uint256",
+              "name": "player1Score",
+              "type": "uint256"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "address",
+                  "name": "addr",
+                  "type": "address"
+                },
+                {
+                  "internalType": "bool",
+                  "name": "claimed",
+                  "type": "bool"
+                },
+                {
+                  "internalType": "string",
+                  "name": "username",
+                  "type": "string"
+                }
+              ],
+              "internalType": "struct TournamentFactory.Player",
+              "name": "player2",
+              "type": "tuple"
+            },
+            {
+              "internalType": "uint256",
+              "name": "player2Score",
+              "type": "uint256"
+            },
+            {
+              "internalType": "enum TournamentFactory.Status",
+              "name": "status",
+              "type": "uint8"
+            }
+          ],
+          "internalType": "struct TournamentFactory.Match",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
           "internalType": "uint256",
           "name": "tournamentId",
           "type": "uint256"
         },
         {
-          "internalType": "uint8",
+          "internalType": "uint256",
           "name": "round",
-          "type": "uint8"
+          "type": "uint256"
         },
         {
-          "internalType": "uint16",
+          "internalType": "uint256",
           "name": "index",
-          "type": "uint16"
+          "type": "uint256"
         }
       ],
       "name": "getPlayer",
@@ -345,14 +603,14 @@
               "type": "uint256"
             },
             {
-              "internalType": "uint8",
+              "internalType": "uint256",
               "name": "participants",
-              "type": "uint8"
+              "type": "uint256"
             },
             {
-              "internalType": "uint8",
+              "internalType": "uint256",
               "name": "maxParticipants",
-              "type": "uint8"
+              "type": "uint256"
             },
             {
               "internalType": "uint256",
@@ -413,14 +671,14 @@
               "type": "uint256"
             },
             {
-              "internalType": "uint8",
+              "internalType": "uint256",
               "name": "participants",
-              "type": "uint8"
+              "type": "uint256"
             },
             {
-              "internalType": "uint8",
+              "internalType": "uint256",
               "name": "maxParticipants",
-              "type": "uint8"
+              "type": "uint256"
             },
             {
               "internalType": "uint256",
@@ -528,12 +786,27 @@
           "type": "uint256"
         },
         {
-          "internalType": "uint16",
-          "name": "_index",
-          "type": "uint16"
+          "internalType": "uint256",
+          "name": "_round",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_matchId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_score_1",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_score_2",
+          "type": "uint256"
         }
       ],
-      "name": "takeRefunds",
+      "name": "submitMatchScore",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -577,14 +850,14 @@
           "type": "uint256"
         },
         {
-          "internalType": "uint8",
+          "internalType": "uint256",
           "name": "participants",
-          "type": "uint8"
+          "type": "uint256"
         },
         {
-          "internalType": "uint8",
+          "internalType": "uint256",
           "name": "maxParticipants",
-          "type": "uint8"
+          "type": "uint256"
         },
         {
           "internalType": "uint256",

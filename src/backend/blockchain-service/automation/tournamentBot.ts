@@ -1,4 +1,6 @@
-import { publicClient, signingAccount, Tournament, TournamentFactoryAbi, TournamentFactoryAddress, walletClient } from "../contract/contracts";
+import { Match, publicClient, signingAccount, Tournament, TournamentFactoryAbi, TournamentFactoryAddress, walletClient } from "../contract/contracts";
+
+let processing = false;
 
 const	get_shuffled_array = (len: number) : bigint[] => {
 	const numbers = Array.from({ length: len }, (_, i) => BigInt(i));
@@ -32,26 +34,24 @@ const	waitForTxSafe = async (hash: `0x${string}`, retries = 20, delayMs = 3000) 
 	return (null);
 }
 
-const	transact = async(_functionName: string, _args: unknown[]) => {
-	const nonce = await publicClient.getTransactionCount({
-        address: signingAccount.address,
-        blockTag: 'pending'
-    });
-
+const	transact = async(_functionName: string, _args: unknown[]) : Promise<boolean> => {
+	if (processing)
+		return (false) ;
+	processing = true;
 	const	{ request } = await publicClient.simulateContract({
-		address: TournamentFactoryAddress,
-		abi: TournamentFactoryAbi,
-		functionName: _functionName,
-		args: _args.length ? _args: undefined,
-		account: signingAccount,
-		nonce: nonce
+			address: TournamentFactoryAddress,
+			abi: TournamentFactoryAbi,
+			functionName: _functionName,
+			args: _args.length ? _args: undefined,
+			account: signingAccount
 	}) ;
 	let tx: `0x${string}`;
 	try {
 		tx = await walletClient.writeContract(request);
 	} catch(err) {
 		console.error("❌ Failed to broadcast tx:", err);
-        return ;
+		processing = false;
+		return (false) ;
 	}
 	console.log("📨 Sent tx:", tx);
 	console.log("⏳ Waiting for confirmation...");
@@ -61,6 +61,8 @@ const	transact = async(_functionName: string, _args: unknown[]) => {
 		console.log("✅ Transaction confirmed");
 	else
 		console.error("❌ ransaction Failed");
+	processing = false;
+	return (true);
 }
 
 const	getTournamentLength = async (): Promise<bigint> => {
@@ -82,9 +84,22 @@ const	getTournament = async (_id: bigint): Promise<Tournament> => {
 	return (tournament);
 }
 
+export const	getMatch = async (_id:bigint, _round:bigint, _matchId:bigint) => {
+	const	match = await publicClient.readContract(
+		{
+			address: TournamentFactoryAddress,
+			abi: TournamentFactoryAbi,
+			functionName: 'getMatch',
+			args: [_id, _round, _matchId]
+		}
+	) as Match;
+	return (match);
+}
+
 async function checkAndStart() {
 	// console.log('called');
-	
+	if (processing)
+		return ;
 	try {
 		// console.log('shuffled array:', get_shuffled_array(8));
 		const length = await getTournamentLength();
@@ -97,11 +112,14 @@ async function checkAndStart() {
 			if (tournament.startTime < BigInt(currentTime) && tournament.status === 0) {
 				console.log('condition matched')
 				if (tournament.participants === tournament.maxParticipants) {
+					console.log('deadline and max players reached. creating matches and starting the tournament...');
 					const	order = get_shuffled_array(Number(tournament.maxParticipants));
 					await transact('startTournament', [tournament.id, order]);
+					console.log('tournament started')
 				}
 				else
 					await transact('setTournamentStatus', [3, i]);
+				break;
 			}
 		}
 		
@@ -111,12 +129,85 @@ async function checkAndStart() {
 	// setTimeout(checkAndStart, 5000);
 }
 
+const	checkFinishedRounds = async (tournament: Tournament): Promise<boolean> => {
+	let finished: boolean = true;
+	const	currentRound = tournament.currentRound;
+	for (let matchId = 0n; matchId < currentRound; matchId++) {
+		const	match = await getMatch(tournament.id, currentRound, matchId);
+		if (match.status === 0) {
+			finished = false;
+			break;
+		}
+	}
+	return (finished);
+}
+
+const watchFinishedMatches = () => {
+	publicClient.watchContractEvent(
+		{
+			address: TournamentFactoryAddress,
+			abi: TournamentFactoryAbi,
+			eventName: 'MatchFinished',
+			onLogs: (logs) => {
+				logs.forEach(async (log) => {
+					// fix type problem
+					const typedLog = log as typeof log & {
+						args: {
+						_id: bigint;
+						_round: bigint;
+						_matchId: bigint;
+						}
+					};
+					console.log('obj:', typedLog, '_id: ', typedLog.args._id, '_round', typedLog.args._round, '_matchId', typedLog.args._matchId);
+					const	tournament = await getTournament(typedLog.args._id);
+					if (await checkFinishedRounds(tournament)) {
+						// create next round or set tournament as finished in case current round is 1
+						if (tournament.currentRound === 1n) {
+							console.log('tournament finished, changing its status');
+							let success = false;
+							while (!success) {
+								success = await transact('setTournamentStatus', [2, tournament.id]);
+							}
+						} else {
+							// create new round with the winners from the first round
+							// the winners are saved in (tournament id, current round(new round), index (0 to max players))
+							const	order = get_shuffled_array(Number(tournament.currentRound)); // current round because its not changed yet so current round is also the remaining players in the tournament
+							let success = false;
+							while (!success) {
+								success = await transact('createNextRound', [tournament.id, order]);
+							}
+						}
+					}
+				})
+			}
+		}
+	)
+}
+
 export const	automationBot = () => {
 	console.log("🟢 Automation bot started");
-	// checkAndStart();
-	publicClient.watchBlocks({
-		onBlock: async () => {
-			await checkAndStart();
-		}
-	})
+	watchFinishedMatches();
+	// publicClient.watchBlocks({
+	// 	onBlock: async () => {
+	// 		await checkAndStart();
+	// 	}
+	// })
+	const now = new Date();
+
+	const msUntilNextMinutePlus1 =
+	(60 - now.getSeconds()) * 1000 +
+	1000 - // +1 second
+	now.getMilliseconds();
+
+	setTimeout(() => {
+	// first run at mm:01
+	checkAndStart().catch(console.error);
+
+	// subsequent runs every minute at mm:01
+	setInterval(() => {
+		checkAndStart().catch(console.error);
+	}, 60_000);
+
+	}, msUntilNextMinutePlus1);
+
 }

@@ -6,26 +6,25 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/04 12:18:56 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/05 00:03:29 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/12/15 01:43:25 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { Metamask_error } from "../components/Metamask_error";
-import { Metamask_warning } from "../components/Metamask_warning";
+import { Metamask_account_warning, Metamask_network_warning } from "../components/Metamask_warning";
 import { Pending_wallet_connection } from "../components/Pending_wallet_connection";
 import { Success_wallet_connection } from "../components/Success_wallet_connection";
-import { currentWeb3Account, login_state } from "../core/appStore";
-import { user_address } from "../main";
+import { currentWeb3Account, login_state, web3auth } from "../core/appStore";
+import { logged, user_address } from "../main";
 
 export class Web3Auth {
 	private _storageKey = 'wallet_address';
-	private	_address = '';
 
 	private	polling(): void {
 		setInterval(async () => {
 			const	eth = window.ethereum;
 
-			if (typeof(eth) === 'undefined')
+			if (typeof(eth) === 'undefined' || !await web3auth.isLoggedIn())
 				return ;
 
 			const	accounts = await eth.request({
@@ -39,15 +38,33 @@ export class Web3Auth {
 				currentWeb3Account.set(accounts[0]);
 			}
 
+			// keep displaying metamask warning in case of being on wrong network
 			const VITE_FUJI_CHAIN_ID = import.meta.env.VITE_FUJI_CHAIN_ID;
 			if (chainId !== VITE_FUJI_CHAIN_ID) {
-				const	metamask_warning = document.getElementById('metamask-warning');
+				const	metamask_warning = document.getElementById('metamask-network-warning');
 				if (!metamask_warning) {
 					const	root = document.getElementById('app');
 					if (root) {
-						const	warning_page = new Metamask_warning(chainId);
+						const	warning_page = new Metamask_network_warning(chainId);
 						warning_page.mount(root);
 					}
+				}
+			}
+
+			// keep displaying metamask warning in case of being logged in and on wrong metamask account
+			if (logged && currentWeb3Account.get() !== user_address) {
+				const	metamask_warning = document.getElementById('metamask-account-warning');
+				if (!metamask_warning) {
+					const	root = document.getElementById('app');
+					if (root) {
+						const	warning_page = new Metamask_account_warning(currentWeb3Account.get(), user_address);
+						warning_page.mount(root);
+					}
+				}
+			} else if (logged && currentWeb3Account.get() === user_address) {
+				const	metamask_warning = document.getElementById('metamask-account-warning');
+				if (metamask_warning) {
+					metamask_warning.remove();
 				}
 			}
 		}, 1000);
@@ -63,19 +80,23 @@ export class Web3Auth {
 	};
 
 	login = async() : Promise<string | null> => {
-		console.log('trying to login...');
-
-		if (typeof window.ethereum === 'undefined') {
-			console.error('wallet is not installed');
-			return (null);
-		}
-
 		const	pend = new Pending_wallet_connection();
 		const	root = document.getElementById('app');
 		if (root)
 			pend.mount(root);
 		else {
 			console.error('root not found');
+			return (null);
+		}
+
+		if (typeof window.ethereum === 'undefined') {
+			const	metamask_error = new Metamask_error(
+				"MetaMask Not Detected",
+				"It looks like MetaMask isn’t installed on your browser. Please install MetaMask to connect your wallet and continue.",
+				false
+			);
+			pend.unmount();
+			metamask_error.mount(root);
 			return (null);
 		}
 
@@ -91,9 +112,15 @@ export class Web3Auth {
 
 
 			const address = accounts[0];
-			if (address !== user_address)
+			if (logged && address !== user_address)
 			{
-				console.error('incorrect address');
+				const metamask_error = new Metamask_error(
+					'Wallet Mismatch',
+					"It looks like you're trying to connect with a wallet that isn't linked to your account. Please reconnect using your registered wallet address to continue.",
+					true
+				)
+				pend.unmount();
+				metamask_error.mount(root);
 				return (null);
 			}
 			localStorage.setItem(this._storageKey, address);
@@ -101,16 +128,19 @@ export class Web3Auth {
 			login_state.set('connected');
 
 			//this.setupAccountListener();
-			console.log('Logged in with account ', address);
+			// console.log('Logged in with account ', address);
 			pend.unmount();
 			const	succ = new Success_wallet_connection();
 			succ.mount(root);
 			return (address);
 		} catch (err) {
 			pend.unmount();
-			const	error_page = new Metamask_error();
+			const	error_page = new Metamask_error(
+				'Connection Rejected',
+				'You rejected the MetaMask connection request. To access game features, please approve the connection.',
+				true
+			);
 			error_page.mount(root);
-			console.error('Error connecting to wallet: ', err);
 			return (null);
 		}
 	};
@@ -149,7 +179,6 @@ export class Web3Auth {
 	async getEthAddress(): Promise<string> {
 	// Make sure MetaMask (or another wallet) is installed
 		if (typeof window.ethereum === 'undefined') {
-			console.error('MetaMask is not installed');
 			return ('');
 		}
 

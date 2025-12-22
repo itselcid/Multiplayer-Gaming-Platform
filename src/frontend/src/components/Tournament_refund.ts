@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/21 20:13:50 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/11/30 10:46:09 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/12/21 22:44:40 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,8 +15,42 @@ import { addElement, Component } from "../core/Component";
 import { getPlayer, type Tournament } from "../web3/getters";
 import { web3auth } from "../core/appStore";
 import { lowerCaseAddress, nullAddress } from "../web3/tools";
-import { take_refund } from "../web3/setters";
 import { get_player_id } from "../tools/get_player_id";
+import { Metamask_error } from "./Metamask_error";
+import { claim_refunds } from "../web3/setters";
+
+export class	PendingButton extends Component {
+	constructor() {
+		super('button', 'relative w-full h-20 py-6 rounded-2xl text-white font-black text-lg uppercase tracking-wider overflow-hidden group transition-all duration-300 shadow-2xl bg-gradient-to-r from-gray-600 via-gray-700 to-gray-800 shadow-gray-600/50 disabled:hover:scale-100')
+	}
+	
+	render(): void {
+		const button = this.el as HTMLButtonElement;
+		button.disabled = true;
+
+		// ripple effect
+		this.el.insertAdjacentHTML('beforeend', `
+				<div class="absolute inset-0 flex items-center justify-center">
+					<div class="w-20 h-20 border-2 border-white/30 rounded-full animate-ping" style="animation-duration: 2s">
+					</div>
+				</div>
+				<div class="absolute inset-0 flex items-center justify-center">
+					<div class="w-20 h-20 border-2 border-white/20 rounded-full animate-ping" style="animation-duration: 2s; animation-delay: 0.5s">
+					</div>
+				</div>
+			`);
+
+		const	text_container = addElement('span', 'absolute inset-0 flex flex-col items-center justify-center', this.el);
+		text_container.insertAdjacentHTML('beforeend', `<span class="relative z-10 animate-pulse text-base mb-1">Processing</span>`);
+		const	text_container_animation = addElement('div', 'flex gap-1', text_container);
+		[0, 1, 2].map((i) => {text_container_animation.insertAdjacentHTML('beforeend', `
+				<div
+					class="w-1 h-1 bg-white rounded-full animate-bounce"
+					style="animation-delay: ${i * 0.15}s; animation-duration: 0.6s">
+				</div>
+			`)})
+	}
+}
 
 class Tournament_refund_claim extends Component {
 	private	_tournament: Tournament;
@@ -43,8 +77,32 @@ class Tournament_refund_claim extends Component {
 						  CLAIM REFUND - ${formatEther(this._tournament.entryFee)} TRIZcoin
 						</span>
 			`);
-		claim_button.onclick = async () => {
-			await take_refund(this._tournament.id, this._index);
+
+			claim_button.onclick = async () => {
+			const	pend_button = new PendingButton();
+			try {
+				claim_button.hidden = true;
+				pend_button.mount(this.el);
+				await claim_refunds(this._tournament.id, this._index);
+				this.unmount();
+				const	container = document.getElementById('tournament-refund');
+				if (container) {
+					const claimed = new Tournament_refund_claimed();
+					claimed.mount(container);
+				}
+			} catch {
+				pend_button.unmount();
+				claim_button.hidden = false;
+				const	root = document.getElementById('app');
+				if (root) {
+					const	metamask_error = new Metamask_error(
+						"Action Canceled",
+						"The transaction was rejected. Please approve it in your wallet if you want to continue.",
+						false
+					);
+					metamask_error.mount(root);
+				}
+			}
 		}
 	}
 }
@@ -78,6 +136,23 @@ class Tournament_refund_claim_processed extends Component {
 				Refund processed successfully
 			</p>
 		`;
+	}
+}
+
+export const render_claim_refund_button = async(tournament: Tournament, tournament_refund: HTMLElement) => {
+	if (await web3auth.isLoggedIn()) {
+		const	account = await web3auth.getEthAddress();
+		const	i = await get_player_id(tournament, account || nullAddress);
+		if (i < tournament.maxParticipants) {
+			const	player = await getPlayer(tournament.id, tournament.currentRound, i);
+			if (!player.claimed) {
+				const	claim = new Tournament_refund_claim(tournament, i);
+				claim.mount(tournament_refund);
+			} else {
+				const	claimed = new Tournament_refund_claimed();
+				claimed.mount(tournament_refund);
+			}
+		}
 	}
 }
 
@@ -124,20 +199,23 @@ export class Tournament_refund extends Component {
               </p>
             </div>
 		`;
-		if (await web3auth.isLoggedIn()) {
-			const	account = await web3auth.getEthAddress();
-			const	tournament_refund = this.el.querySelector('#tournament-refund') as HTMLElement;
-			const	i = await get_player_id(this._tournament, account || nullAddress);
-			if (i < this._tournament.maxParticipants) {
-				const	player = await getPlayer(this._tournament.id, this._tournament.currentRound, i);
-				if (!player.claimed) {
-					const	claim = new Tournament_refund_claim(this._tournament, i);
-					claim.mount(tournament_refund);
-				} else {
-					const	claimed = new Tournament_refund_claimed();
-					claimed.mount(tournament_refund);
-				}
-			}
+		const	tournament_refund = this.el.querySelector('#tournament-refund') as HTMLElement | null;
+		if (tournament_refund) {
+			render_claim_refund_button(this._tournament, tournament_refund);
 		}
+		// if (await web3auth.isLoggedIn()) {
+		// 	const	account = await web3auth.getEthAddress();
+		// 	const	i = await get_player_id(this._tournament, account || nullAddress);
+		// 	if (i < this._tournament.maxParticipants) {
+		// 		const	player = await getPlayer(this._tournament.id, this._tournament.currentRound, i);
+		// 		if (!player.claimed) {
+		// 			const	claim = new Tournament_refund_claim(this._tournament, i);
+		// 			claim.mount(tournament_refund);
+		// 		} else {
+		// 			const	claimed = new Tournament_refund_claimed();
+		// 			claimed.mount(tournament_refund);
+		// 		}
+		// 	}
+		// }
 	}
 }
