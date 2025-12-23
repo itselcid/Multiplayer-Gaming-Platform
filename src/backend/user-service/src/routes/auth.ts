@@ -2,7 +2,7 @@
 import { FastifyInstance } from 'fastify';
 import bcrypt from 'bcrypt';
 import { LoginInput, RegisterInput, JWTPayload, CreateUserInput, PasswordResetInput, GithubProfile } from '../types';
-import { createPasswordResetToken, createUser, deletePasswordResetToken, deleteTwoFactorCode, findOrCreateGithubUser, findPasswordResetToken, findTwoFactorCode, generateTwoFactorCode, getUserByUsername, getUserForAuth, updateUser } from '../db';
+import { createPasswordResetToken, createUser, deletePasswordResetToken, deleteTwoFactorCode, findOrCreateGithubUser, findPasswordResetToken, findTwoFactorCode, generateTwoFactorCode, getUserByRefreshToken, getUserByUsername, getUserForAuth, saveRefreshToken, updateUser } from '../db';
 import { send2faEmailCode, sendPasswordResetEmail } from '../services/email.js';
 import speakeasy from 'speakeasy';
 
@@ -112,17 +112,18 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
         const payload: JWTPayload = {
             userId: user.id,
             username: user.username,
-            requires2FA: user.twoFactor ? true : false
+            requires2FA: user.twoFactor ? true : false,
+            type: 'access'
         }
 
-        const jwToken = server.jwt.sign(payload, { expiresIn: '7d' });
+        const jwToken = server.jwt.sign(payload, { expiresIn: '15m' });
 
         reply.setCookie('authToken', jwToken, {
             httpOnly: true,
             secure: true,   // MUST BE TRUE
             sameSite: 'none', // MUST BE 'None' for cross-site/port requests
             path: '/',
-            maxAge: 7 * 24 * 60 * 60 * 1000
+            maxAge: 15 * 60 // 15 min
         });
 
         if (user.twoFactor) {
@@ -136,6 +137,23 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
                 expiresIn: '10 minutes'
             });
         }
+
+        const refreshToken = server.jwt.sign({
+            userId: user.id,
+            username: user.username,
+            requires2FA: false,
+            type: 'refresh'
+        }, { expiresIn: '7 days' });
+
+        await saveRefreshToken(user.id, refreshToken);
+
+        reply.setCookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: true,   // MUST BE TRUE
+            sameSite: 'none', // MUST BE 'None' for cross-site/port requests
+            path: '/',
+            maxAge: 7 //* 24 * 60 * 60 // 7 days
+        });
 
         return reply.send({
             message: 'Login successful',
@@ -198,8 +216,63 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
             path: '/',
         });
 
+        reply.clearCookie('refreshToken', {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none',
+            path: '/',
+        });
+
         return reply.send({
             message: 'Logout successful. Token invalidated.'
+        });
+    });
+
+    // refresh access token endpoint
+    server.post('/refresh', async (_request, reply) => {
+
+        const token = _request.cookies.refreshToken;
+        if (!token) {
+            return reply.code(401).send({ error: 'Refresh token not found' });
+        }
+
+        const user = await getUserByRefreshToken(token);
+
+        if (!user) {
+            return reply.code(401).send({ error: 'Invalid refresh token' });
+        }
+
+        reply.clearCookie('authToken', {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none',
+            path: '/',
+        });
+
+        const payload: JWTPayload = {
+            userId: user.id,
+            username: user.username,
+            requires2FA: false,
+            type: 'access'
+        }
+
+        const jwToken = server.jwt.sign(payload, { expiresIn: '15m' });
+
+        reply.setCookie('authToken', jwToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none',
+            path: '/',
+            maxAge: 15 * 60 // 15 min
+        });
+
+        return reply.send({
+            message: 'Refresh token successful.',
+            user: {
+                id: user.id,
+                username: user.username,
+                email: user.email
+            }
         });
     });
 
@@ -343,7 +416,8 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
             const payload: JWTPayload = {
                 userId: user.id,
                 username: user.username,
-                requires2FA: user.twoFactor ? true : false
+                requires2FA: user.twoFactor ? true : false,
+                type: 'access'
             };
 
             const jwToken = server.jwt.sign(payload, { expiresIn: '7d' });
@@ -354,7 +428,7 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
                 secure: true, // change to -> process.env.NODE_ENV === 'production',
                 sameSite: 'none',  // change for more secure approach
                 path: '/',
-                maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+                maxAge: 7 * 24 * 60 * 60 // 7 days
             });
 
             // Redirect to frontend
@@ -415,7 +489,8 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
         const payload: JWTPayload = {
             userId: user.id,
             username: user.username,
-            requires2FA: false
+            requires2FA: false,
+            type: 'access'
         };
 
         const jwToken = server.jwt.sign(payload, { expiresIn: '7d' });
@@ -425,7 +500,24 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
             secure: true, // change to -> process.env.NODE_ENV === 'production',
             sameSite: 'none',  // change for more secure approach
             path: '/',
-            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+            maxAge: 15 * 60 // 15 min
+        });
+
+        const refreshToken = server.jwt.sign({
+            userId: user.id,
+            username: user.username,
+            requires2FA: false,
+            type: 'refresh'
+        }, { expiresIn: '7 days' });
+
+        await saveRefreshToken(user.id, refreshToken);
+
+        reply.setCookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: true,   // MUST BE TRUE
+            sameSite: 'none', // MUST BE 'None' for cross-site/port requests
+            path: '/',
+            maxAge: 7 * 24 * 60 * 60 // 7 days
         });
 
         return reply.send({

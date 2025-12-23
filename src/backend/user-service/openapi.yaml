@@ -1,8 +1,8 @@
 openapi: 3.0.0
 info:
   title: User Management API
-  description: REST API for user authentication and management with role-based access control
-  version: 1.0.0
+  description: REST API for user authentication, management, and 2FA with role-based access control.
+  version: 1.1.0
   contact:
     name: API Support
 
@@ -12,19 +12,24 @@ servers:
 
 tags:
   - name: Authentication
-    description: User authentication endpoints
+    description: User authentication (Login, Register, Refresh, OAuth, 2FA Verify)
+  - name: TwoFactor
+    description: Two-Factor Authentication Management (Setup, Confirm, Disable)
   - name: Users
-    description: User management endpoints
+    description: User profile management
   - name: Admin
-    description: Admin-only endpoints
+    description: Admin-only user management
 
 components:
   securitySchemes:
-    BearerAuth:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: authToken
+    bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: JWT token obtained from login endpoint
 
   schemas:
     User:
@@ -32,156 +37,87 @@ components:
       properties:
         id:
           type: integer
-          description: User ID
         username:
           type: string
-          description: Username
         email:
           type: string
           format: email
-          description: User email
+        avatar:
+          type: string
+          nullable: true
+        twoFactor:
+          type: object
+          nullable: true
+          properties:
+            method:
+              type: string
+              enum: [email, totp]
         role:
           type: string
           enum: [user, admin]
-          description: User role
       example:
         id: 1
         username: johndoe
         email: john@example.com
+        twoFactor: { method: "email" }
         role: user
 
     LoginRequest:
       type: object
-      required:
-        - username
-        - password
+      required: [username, password]
       properties:
-        username:
-          type: string
-          description: Username
-        password:
-          type: string
-          format: password
-          description: User password
-      example:
-        username: johndoe
-        password: password123
+        username: { type: string }
+        password: { type: string, format: password }
 
     RegisterRequest:
       type: object
-      required:
-        - username
-        - email
-        - password
+      required: [username, email, password]
       properties:
-        username:
+        username: { type: string, minLength: 4 }
+        email: { type: string, format: email }
+        password: { type: string, minLength: 4 }
+
+    Verify2FARequest:
+      type: object
+      required: [code]
+      properties:
+        code: 
           type: string
-          description: Username
-        email:
+          description: 6-digit verification code
+
+    Setup2FARequest:
+      type: object
+      required: [method, password]
+      properties:
+        method:
           type: string
-          format: email
-          description: User email
+          enum: [email, totp]
         password:
           type: string
-          format: password
-          minLength: 4
-          description: User password (minimum 4 characters)
-      example:
-        username: johndoe
-        email: john@example.com
-        password: password123
+          description: Current password for verification
 
-    UpdateProfileRequest:
+    Confirm2FARequest:
       type: object
+      required: [code]
       properties:
-        email:
-          type: string
-          format: email
-          description: New email address
-        password:
-          type: string
-          format: password
-          minLength: 4
-          description: New password (minimum 4 characters)
-      example:
-        email: newemail@example.com
-        password: newpassword123
+        code: { type: string }
 
-    UpdateUserRequest:
+    Disable2FARequest:
       type: object
+      required: [password]
       properties:
-        email:
-          type: string
-          format: email
-          description: New email address
-        password:
-          type: string
-          format: password
-          minLength: 4
-          description: New password (minimum 4 characters)
-        role:
-          type: string
-          enum: [user, admin]
-          description: New user role
-      example:
-        email: newemail@example.com
-        role: admin
-
-    ForgotPasswordRequest:
-      type: object
-      required:
-        - email
-      properties:
-        email:
-          type: string
-          format: email
-          description: User's email address
-      example:
-        email: john@example.com
-
-    ResetPasswordRequest:
-      type: object
-      required:
-        - token
-        - newPassword
-      properties:
-        token:
-          type: string
-          description: Password reset token received via email
-        newPassword:
-          type: string
-          format: password
-          minLength: 4
-          description: New password (minimum 4 characters)
-      example:
-        token: abc123xyz789
-        newPassword: newSecurePassword123
+        password: { type: string }
 
     Error:
       type: object
       properties:
-        error:
-          type: string
-          description: Error message
-      example:
-        error: Invalid username or password
-
-    Success:
-      type: object
-      properties:
-        message:
-          type: string
-          description: Success message
-      example:
-        message: Operation completed successfully
+        error: { type: string }
 
 paths:
   /auth/login:
     post:
-      tags:
-        - Authentication
+      tags: [Authentication]
       summary: Login user
-      description: Authenticate user with username and password, returns JWT token
       requestBody:
         required: true
         content:
@@ -190,49 +126,50 @@ paths:
               $ref: '#/components/schemas/LoginRequest'
       responses:
         '200':
-          description: Login successful
+          description: Login successful (or 2FA required)
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  message:
-                    type: string
-                    example: Login successful
-                  token:
-                    type: string
-                    description: JWT token (expires in 15 minutes)
-                  user:
+                  message: { type: string }
+                  requires2FA: { type: boolean }
+                  user: 
                     $ref: '#/components/schemas/User'
-        '400':
-          description: Missing credentials
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                error: username and password are requierd!
+                  devCode: 
+                    type: string
+                    description: Development only code (if 2FA required)
         '401':
           description: Invalid credentials
+
+  /auth/login/verify:
+    post:
+      tags: [Authentication]
+      summary: Verify 2FA code during login
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Verify2FARequest'
+      responses:
+        '200':
+          description: 2FA Verified, full session granted
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                error: Invalid username or password
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+                type: object
+                properties:
+                  message: { type: string }
+                  user:
+                    $ref: '#/components/schemas/User'
 
   /auth/register:
     post:
-      tags:
-        - Authentication
+      tags: [Authentication]
       summary: Register new user
-      description: Create a new user account
       requestBody:
         required: true
         content:
@@ -241,239 +178,46 @@ paths:
               $ref: '#/components/schemas/RegisterRequest'
       responses:
         '201':
-          description: User registered successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: User registered successfully
-                  user:
-                    $ref: '#/components/schemas/User'
+          description: User registered
         '400':
-          description: Invalid input or user already exists
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              examples:
-                missingFields:
-                  value:
-                    error: username, email and password are required
-                shortPassword:
-                  value:
-                    error: Password must be at least 4 characters
-                userExists:
-                  value:
-                    error: Username or email already exists
+          description: Validation error
 
-  /users:
-    get:
-      tags:
-        - Admin
-      summary: Get all users
-      description: Retrieve all users (Admin only)
-      security:
-        - BearerAuth: []
+  /auth/refresh:
+    post:
+      tags: [Authentication]
+      summary: Refresh Access Token
+      description: Uses the httpOnly refreshToken cookie to issue a new authToken.
       responses:
         '200':
-          description: List of all users
+          description: Token refreshed
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  users:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/User'
-        '401':
-          description: Unauthorized - Invalid or missing token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '403':
-          description: Forbidden - Admin access required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /users/{id}:
-    get:
-      tags:
-        - Admin
-      summary: Get user by ID
-      description: Retrieve a specific user by ID (Admin only)
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: User ID
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: User found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
+                  message: { type: string }
                   user:
                     $ref: '#/components/schemas/User'
         '401':
-          description: Unauthorized - Invalid or missing token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '403':
-          description: Forbidden - Admin access required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '404':
-          description: User not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                error: User not Found
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          description: Invalid or missing refresh token
 
-    put:
-      tags:
-        - Admin
-      summary: Update user by ID
-      description: Update any user's profile (Admin only)
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: User ID
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateUserRequest'
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Logout user
+      description: Clears auth cookies
       responses:
         '200':
-          description: Profile updated successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Profile updated successfully
-                  user:
-                    $ref: '#/components/schemas/User'
-        '400':
-          description: Invalid input
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              examples:
-                missingFields:
-                  value:
-                    error: Provide email or password to update
-                updateFailed:
-                  value:
-                    error: Email already exists or update failed
-        '401':
-          description: Unauthorized - Invalid or missing token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '403':
-          description: Forbidden - Admin access required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-    delete:
-      tags:
-        - Admin
-      summary: Delete user by ID
-      description: Delete any user account (Admin only)
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: User ID
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: Account deleted successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Account deleted successfully
-        '401':
-          description: Unauthorized - Invalid or missing token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '403':
-          description: Forbidden - Admin access required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          description: Logout successful
 
   /users/me:
     get:
-      tags:
-        - Users
+      tags: [Users]
       summary: Get current user profile
-      description: Retrieve logged-in user's profile
       security:
-        - BearerAuth: []
+        - cookieAuth: []
       responses:
         '200':
-          description: User profile retrieved
           content:
             application/json:
               schema:
@@ -481,193 +225,60 @@ paths:
                 properties:
                   user:
                     $ref: '#/components/schemas/User'
-        '401':
-          description: Unauthorized - Invalid or missing token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '404':
-          description: User not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                error: User not Found
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
 
-    put:
-      tags:
-        - Users
-      summary: Update current user profile
-      description: Update logged-in user's email or password
+  /2fa/setup:
+    post:
+      tags: [TwoFactor]
+      summary: Initialize 2FA Setup
       security:
-        - BearerAuth: []
+        - cookieAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateProfileRequest'
+              $ref: '#/components/schemas/Setup2FARequest'
       responses:
         '200':
-          description: Profile updated successfully
+          description: Setup initialized. Returns QR code (TOTP) or sends Email.
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  message:
-                    type: string
-                    example: Profile updated successfully
-                  user:
-                    $ref: '#/components/schemas/User'
-        '400':
-          description: Invalid input
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              examples:
-                missingFields:
-                  value:
-                    error: Provide email or password to update
-                shortPassword:
-                  value:
-                    error: Password must be at least 4 characters
-                updateFailed:
-                  value:
-                    error: Email already exists or update failed
-        '401':
-          description: Unauthorized - Invalid or missing token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+                  message: { type: string }
+                  method: { type: string }
+                  secret: { type: string }
+                  qrCode: { type: string }
+                  devCode: { type: string }
 
     delete:
-      tags:
-        - Users
-      summary: Delete current user account
-      description: Delete logged-in user's account
+      tags: [TwoFactor]
+      summary: Disable 2FA
       security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: Account deleted successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Account deleted successfully
-        '401':
-          description: Unauthorized - Invalid or missing token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /auth/forgot-password:
-    post:
-      tags:
-        - Authentication
-      summary: Request password reset
-      description: Send password reset token to user's email
+        - cookieAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ForgotPasswordRequest'
+              $ref: '#/components/schemas/Disable2FARequest'
       responses:
         '200':
-          description: Reset link sent (always returns success for security)
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: A reset link has been sent
-                  devToken:
-                    type: string
-                    description: Token for development only (remove in production)
-        '400':
-          description: Missing email
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                error: Email is required!
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          description: 2FA disabled successfully
 
-  /auth/reset-password:
+  /2fa/confirm:
     post:
-      tags:
-        - Authentication
-      summary: Reset password with token
-      description: Reset user password using the token received via email
+      tags: [TwoFactor]
+      summary: Confirm and Enable 2FA
+      security:
+        - cookieAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ResetPasswordRequest'
+              $ref: '#/components/schemas/Confirm2FARequest'
       responses:
         '200':
-          description: Password reset successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Password reset successfully
-        '400':
-          description: Invalid input or expired token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              examples:
-                missingFields:
-                  value:
-                    error: Token and new password are required
-                shortPassword:
-                  value:
-                    error: Password must be at least 6 characters
-                invalidToken:
-                  value:
-                    error: Invalid or expired token
-        '500':
-          description: Server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                error: Server error            
-                  
+          description: 2FA enabled successfully
