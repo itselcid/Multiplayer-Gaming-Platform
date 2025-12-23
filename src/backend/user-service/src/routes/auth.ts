@@ -5,6 +5,7 @@ import { LoginInput, RegisterInput, JWTPayload, CreateUserInput, PasswordResetIn
 import { createPasswordResetToken, createUser, deletePasswordResetToken, deleteTwoFactorCode, findOrCreateGithubUser, findPasswordResetToken, findTwoFactorCode, generateTwoFactorCode, getUserByRefreshToken, getUserByUsername, getUserForAuth, saveRefreshToken, updateUser } from '../db';
 import { send2faEmailCode, sendPasswordResetEmail } from '../services/email.js';
 import speakeasy from 'speakeasy';
+import { env } from '../env';
 
 const LoginSchema = {
     body: {
@@ -348,7 +349,7 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
 
     // github login endpoint
     server.get('/github', async (_request, reply) => {
-        const clientId = process.env.GITHUB_CLIENT_ID;
+        const clientId = env.GITHUB_CLIENT_ID;
         const redirectUri = 'http://localhost:3000/api/auth/github/callback';  // change this to var
         const scope = 'read:user user:email';
 
@@ -378,8 +379,8 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
                     'Accept': 'application/json'
                 },
                 body: JSON.stringify({
-                    client_id: process.env.GITHUB_CLIENT_ID,
-                    client_secret: process.env.GITHUB_CLIENT_SECRET,
+                    client_id: env.GITHUB_CLIENT_ID,
+                    client_secret: env.GITHUB_CLIENT_SECRET,
                     code
                 })
             });
@@ -425,14 +426,14 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
             // Set authentication cookie
             reply.setCookie('authToken', jwToken, {
                 httpOnly: true,
-                secure: true, // change to -> process.env.NODE_ENV === 'production',
+                secure: true, // change to -> env.NODE_ENV === 'production',
                 sameSite: 'none',  // change for more secure approach
                 path: '/',
                 maxAge: 7 * 24 * 60 * 60 // 7 days
             });
 
             // Redirect to frontend
-            return reply.redirect(`${process.env.FRONTEND_URL}/profile`, 303);
+            return reply.redirect(`${env.FRONTEND_URL}/profile`, 303);
 
         } catch (err) {
             console.error('[GitHub OAuth error]:', err);
@@ -497,7 +498,7 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
 
         reply.setCookie('authToken', jwToken, {
             httpOnly: true,
-            secure: true, // change to -> process.env.NODE_ENV === 'production',
+            secure: true, // change to -> env.NODE_ENV === 'production',
             sameSite: 'none',  // change for more secure approach
             path: '/',
             maxAge: 15 * 60 // 15 min
