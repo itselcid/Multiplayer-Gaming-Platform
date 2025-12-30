@@ -82,14 +82,23 @@ export async function getUserById(id: number): Promise<UserData | null> {
     return user;
 }
 
-export async function getUserByUsername(usernameOrEmail: string): Promise<UserData | null> {
-    const user = await prisma.user.findFirst({
-        where: {
+export async function getUserByUsername(usernameOrEmail: string, email?: string): Promise<UserData | null> {
+    const whereClause = email
+        ? {
+            OR: [
+                { username: usernameOrEmail },
+                { email: email }
+            ]
+        }
+        : {
             OR: [
                 { username: usernameOrEmail },
                 { email: usernameOrEmail }
             ]
-        },
+        };
+
+    const user = await prisma.user.findFirst({
+        where: whereClause,
         select: {
             id: true,
             username: true,
@@ -97,7 +106,8 @@ export async function getUserByUsername(usernameOrEmail: string): Promise<UserDa
             avatar: true,
             twoFactor: {
                 select: {
-                    method: true
+                    method: true,
+                    enabled: true
                 }
             },
             githubId: true,
