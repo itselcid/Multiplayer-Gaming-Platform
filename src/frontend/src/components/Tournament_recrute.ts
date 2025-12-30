@@ -6,22 +6,23 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/21 15:12:27 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/20 18:17:16 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/12/25 10:57:45 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { formatEther } from "viem";
 import { addElement, Component } from "../core/Component";
-import { getAllowance, getPlayer, type Tournament } from "../web3/getters";
+import { getAllowance, type Tournament } from "../web3/getters";
 import { bigint_to_date } from "../tools/date";
 import { web3auth } from "../core/appStore";
-import { lowerCaseAddress, nullAddress } from "../web3/tools";
+import { nullAddress } from "../web3/tools";
 import { approveAllowence, join_tournament } from "../web3/setters";
 import { join_tournament_inactive } from "./Tournament_card";
 import { get_player_id } from "../tools/get_player_id";
 import { Metamask_error } from "./Metamask_error";
 import { logged } from "../main";
 import { getRevertReason } from "../tools/errors";
+import { formatNumber } from "../tools/tournament_tools";
 
 export	const fill_tournament_recrute = async (tournament: Tournament, tournament_recrute: HTMLElement) => {
 	const	account = await web3auth.getEthAddress();
@@ -95,7 +96,7 @@ class	Tournament_recrute_register_button extends Component {
 		if (!allowence) {
 			button_text = 'Approve TRIZcoin';
 		} else {
-			button_text = `REGISTER NOW - ${formatEther(this._tournament.entryFee)} TRIZcoin`;
+			button_text = `REGISTER NOW - ${formatNumber(formatEther(this._tournament.entryFee))} TRIZcoin`;
 		}
 
 		console.log('text: ', button_text);
@@ -151,7 +152,7 @@ class Tournament_recrute_register extends Component {
 				const	allowence = await getAllowance(await web3auth.getEthAddress());
 				register_button.el.hidden = true;
 				pend_button.mount(this.el);
-				if (!allowence) {
+				if (allowence < this._tournament.entryFee) {
 					await approveAllowence(this._tournament.entryFee);
 					pend_button.unmount();
 					register_button.render();

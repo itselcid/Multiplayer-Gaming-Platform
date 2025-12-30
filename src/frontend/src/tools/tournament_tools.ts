@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/19 12:29:34 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/21 19:02:53 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/12/24 23:03:07 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,4 +57,14 @@ export const	get_round_name = (round: bigint) : string => {
 		default:
 			return ('Round of ' + String(round));
 	}
+}
+
+export const formatNumber = (num: string, maxLength = 10): string => {
+	const n = Number(num);
+
+	if (num.length > maxLength) {
+		return n.toExponential(2);
+	}
+
+	return num;
 }

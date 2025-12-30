@@ -1,4 +1,4 @@
-import { createPublicClient, createWalletClient, getAddress, http, webSocket, type Address } from 'viem';
+import { createPublicClient, createWalletClient, getAddress, webSocket, type Address } from 'viem';
 import TournamentFactoryData from './TournamentFactory/TournamentFactory.json';
 import { avalancheFuji } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';

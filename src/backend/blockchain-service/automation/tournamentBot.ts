@@ -3,8 +3,8 @@ import { Match, publicClient, signingAccount, Tournament, TournamentFactoryAbi, 
 let processing = false;
 
 const	get_shuffled_array = (len: number) : bigint[] => {
-	const numbers = Array.from({ length: len }, (_, i) => BigInt(i));
-	const shuffled = [...numbers]; // Create a copy to avoid mutating the original
+	const shuffled = Array.from({ length: len }, (_, i) => BigInt(i));
+	// const shuffled = [...numbers]; // Create a copy to avoid mutating the original
   
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -119,7 +119,7 @@ async function checkAndStart() {
 				}
 				else
 					await transact('setTournamentStatus', [3, i]);
-				break;
+				// break;
 			}
 		}
 		
@@ -158,7 +158,7 @@ const watchFinishedMatches = () => {
 						_matchId: bigint;
 						}
 					};
-					console.log('obj:', typedLog, '_id: ', typedLog.args._id, '_round', typedLog.args._round, '_matchId', typedLog.args._matchId);
+					// console.log('obj:', typedLog, '_id: ', typedLog.args._id, '_round', typedLog.args._round, '_matchId', typedLog.args._matchId);
 					const	tournament = await getTournament(typedLog.args._id);
 					if (await checkFinishedRounds(tournament)) {
 						// create next round or set tournament as finished in case current round is 1
@@ -184,8 +184,21 @@ const watchFinishedMatches = () => {
 	)
 }
 
+// const	createTournamentHorde = async () => {
+// 	for (let index = 0; index < 30; index++) {
+// 		await transact('createTournament', ['expired'+index, 1n, 2n, BigInt(Math.floor(new Date().getTime() / 1000)) + 300n, 'user'+index]);
+// 		await transact('createTournament', ['pending'+index, 1n, 2n, BigInt(Math.floor(new Date().getTime() / 1000)) + 2592000n, 'user'+index]);
+// 		await transact('createTournament', ['ongoing'+index, 1n, 2n, BigInt(Math.floor(new Date().getTime() / 1000)) + 3000n, 'user'+index]);
+// 		await transact('createTournament', ['finished'+index, 1n, 2n, BigInt(Math.floor(new Date().getTime() / 1000)) + 3000n, 'user'+index]);
+// 	}
+// }
+
+// export const	automationBot = async () => {
 export const	automationBot = () => {
 	console.log("🟢 Automation bot started");
+	// await createTournamentHorde();
+	// console.log('tournaments created')
+	// await transact('createTournament', ['expired0', 10000000000n, 2n, BigInt(Math.floor(new Date().getTime() / 1000)) + 300n, 'user0']);
 	watchFinishedMatches();
 	// publicClient.watchBlocks({
 	// 	onBlock: async () => {

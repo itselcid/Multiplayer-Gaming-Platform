@@ -6,14 +6,14 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 20:42:15 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/16 00:46:20 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/12/26 01:47:16 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 // import { localhost, avalancheFuji } from 'viem/chains';
 import { encodePacked, keccak256 } from "viem";
 import { Tournament_card } from "../components/Tournament_card";
-import { addTouranamentState, tournament_tab, updateTournamentState } from "../core/appStore";
+import { addTouranamentState, finishedMatchesState, tournament_tab, updateTournamentState } from "../core/appStore";
 import { cachedTournaments } from "../main";
 import { get_tournament_status } from "../tools/tournament_tools";
 import { TournamentFactoryAbi, TournamentFactoryAddress, publicClient, TRIZcoinAbi, TRIZcoinAddress } from "./contracts/contracts";
@@ -93,9 +93,10 @@ export const	get_tournament_batch = async (batch_size: number): Promise<void> =>
 		index = await getTournamentLength() -1n;
 	}
 	const	container = document.getElementById('tournaments-container');
-	for (let retrieved = 0; retrieved < batch_size && index !== -1n ; index--, retrieved++) {
+	for (let retrieved = 0; retrieved < batch_size && index !== -1n ; index--) {
 		// console.log('retrieving tournament id: ', index);
 		const	tournament = await getTournament(index);
+		// console.log('tournament id', index, 'retrieved');
 		cachedTournaments.push(tournament);
 		if (container) {
 			if (
@@ -104,6 +105,7 @@ export const	get_tournament_batch = async (batch_size: number): Promise<void> =>
 			) {
 				const	card = new Tournament_card(tournament);
 				card.mount(container);
+				retrieved++;
 			};
 		}
 	}
@@ -192,6 +194,52 @@ export const	watchTournamentStatus = () => {
 						}
 					};
 					updateTournamentState.set(typedLog.args._id);
+				})
+			}
+		}
+	)
+}
+
+export const	watchFinishedMatches = () => {
+	publicClient.watchContractEvent(
+		{
+			address: TournamentFactoryAddress,
+			abi: TournamentFactoryAbi,
+			eventName: 'MatchFinished',
+			onLogs: (logs) => {
+				logs.forEach(async (log) => {
+					// fix type problem
+					const typedLog = log as typeof log & {
+						args: {
+						_id: bigint;
+						_round: bigint;
+						_matchId: bigint;
+						}
+					};
+					// call back function
+					finishedMatchesState.set(typedLog.args._id);
+				})
+			}
+		}
+	)
+}
+
+export const	watchCreatedRounds = () => {
+	publicClient.watchContractEvent(
+		{
+			address: TournamentFactoryAddress,
+			abi: TournamentFactoryAbi,
+			eventName: 'RoundsCreated',
+			onLogs: (logs) => {
+				logs.forEach(async (log) => {
+					// fix type problem
+					const typedLog = log as typeof log & {
+						args: {
+						_id: bigint;
+						}
+					};
+					// call back function
+					finishedMatchesState.set(typedLog.args._id);
 				})
 			}
 		}

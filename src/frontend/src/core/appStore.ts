@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/03 15:31:14 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/21 22:45:45 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/12/25 10:59:03 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,14 +15,16 @@ import { Navbar_connect_wallet, Navbar_connected_wallet } from "../components/Na
 import { Sign_in } from "../components/sign_in";
 import { Tournament_card } from "../components/Tournament_card";
 import { render_claim_prize_button } from "../components/Tournament_claim_prize";
+import { render_tournament_matches_history } from "../components/tournament_matches_history";
 import { fill_tournament_recrute } from "../components/Tournament_recrute";
 import { render_claim_refund_button } from "../components/Tournament_refund";
+import { Matches, Round } from "../components/Tournament_rounds_matches";
 import { cachedTournaments } from "../main";
 import { TournamentView } from "../pages/Tournament";
 import { TournamentsDisplay, TournamentTab } from "../pages/Tournaments";
 import { get_tournament_status, tournament_id_to_index } from "../tools/tournament_tools";
 import { Web3Auth } from "../web3/auth";
-import { get_tournament_batch, getTournament, watchTournamentCreation, watchTournamentStatus } from "../web3/getters";
+import { get_tournament_batch, getTournament, watchCreatedRounds, watchFinishedMatches, watchTournamentCreation, watchTournamentStatus } from "../web3/getters";
 import { shortenEthAddress } from "../web3/tools";
 import { matchRoute } from "./router";
 import { State } from "./state";
@@ -43,14 +45,34 @@ export const active_tab = new State(
 export const active_tab_sub = () => {
 	active_tab.subscribe(() => {
 		const aT = active_tab.get();
+		let	old_wide = aT.old;
+		let	new_wide = aT.new;
+		let	old_mobile = aT.old;
+		let new_mobile = aT.new;
+		if (aT.old.includes('Mobile'))
+			old_wide = old_wide.slice(0, -6);
+		else
+			old_mobile += 'Mobile';
+		if (aT.new.includes('Mobile'))
+			new_wide = new_wide.slice(0, -6);
+		else
+			new_mobile += 'Mobile';
 		if (aT.old) {
-			const	old_tab = document.getElementById(aT.old);
-			if (old_tab)
+			const	old_tab = document.getElementById(old_wide);
+			const	old_tab_mobile = document.getElementById(old_mobile);
+			// console.log(old_tab_mobile)
+			if (old_tab && old_tab_mobile) {
 				old_tab.className = 'transition-all text-gray-300 hover:text-neon-cyan';
+				old_tab_mobile.className = 'block text-center transition-all text-gray-300 hover:text-neon-cyan';
+			}
 		}
-		const new_tab = document.getElementById(aT.new);
-		if (new_tab)
+		const new_tab = document.getElementById(new_wide);
+		const new_tab_mobile = document.getElementById(new_mobile);
+		// console.log(new_tab_mobile, aT.new);
+		if (new_tab && new_tab_mobile) {
 			new_tab.className = 'transition-all text-neon-cyan drop-shadow-[0_0_8px_rgba(0,240,255,0.8)]';
+			new_tab_mobile.className = 'block text-center transition-all text-neon-cyan drop-shadow-[0_0_8px_rgba(0,240,255,0.8)]';
+		}
 	});
 }
 
@@ -63,22 +85,31 @@ export const login_state = new State(
 export const web3_login_sub = () => {
 	login_state.subscribe(() => {
 		const	auth = document.getElementById('auth');
+		const	authMobile = document.getElementById('authMobile');
+		// console.log(authMobile)
 		const	disconnect_container = document.getElementById('disconnect_container');
-		if (!auth) {
+		if (!auth || !authMobile) {
+		// if (!auth) {
 			console.error('cant find auth id');
 			return ;
 		}
 		if (login_state.get() === 'sign in')
 		{
 			const	sign_in = new Sign_in();
+			const	sign_in_mobile = new Sign_in();
 			auth.innerHTML = '';
+			authMobile.innerHTML = '';
 			sign_in.mount(auth)
+			sign_in_mobile.mount(authMobile)
 		}
 		else if (login_state.get() === 'connected')
 		{
 			const	navbar_connected_wallet = new Navbar_connected_wallet();
+			const	navbar_connected_wallet_mobile = new Navbar_connected_wallet();
 			auth.innerHTML = '';
+			authMobile.innerHTML = '';
 			navbar_connected_wallet.mount(auth);
+			navbar_connected_wallet_mobile.mount(authMobile);
 			if (disconnect_container) {
 				disconnect_container.innerHTML = '';
 				const	disconnect = new Disconnect_wallet();
@@ -87,8 +118,11 @@ export const web3_login_sub = () => {
 			
 		} else {
 			const	navbar_connect_wallet = new Navbar_connect_wallet();
+			const	navbar_connect_wallet_mobile = new Navbar_connect_wallet();
 			auth.innerHTML = '';
+			authMobile.innerHTML = '';
 			navbar_connect_wallet.mount(auth);
+			navbar_connect_wallet_mobile.mount(authMobile);
 			if (disconnect_container) {
 				disconnect_container.innerHTML = '';
 			}
@@ -123,9 +157,11 @@ export const	currentWeb3Account = new State(await web3auth.getEthAddress());
 export const	currentWeb3AccountSub = () => {
 	currentWeb3Account.subscribe(async () => {
 		// display wallet address
-		const	account_container = document.getElementById('current-web3-account');
+		const	account_container = document.querySelectorAll('.current-web3-account');
 		if (account_container) {
-			account_container.textContent = shortenEthAddress(await web3auth.getEthAddress());
+			account_container.forEach(async(el) => {
+				el.textContent = shortenEthAddress(await web3auth.getEthAddress());
+			});
 		}
 
 		const	match = matchRoute(location.pathname);
@@ -219,6 +255,39 @@ export const	updateTournamentStateSub = () => {
 				if (root) {
 					root.innerHTML = '';
 					new View(params).mount(root);
+				}
+			}
+		}
+	})
+}
+
+// update finished matches
+export const finishedMatchesState = new State(-1n);
+export const finishedMatchesStateSub = () => {
+	watchFinishedMatches();
+	watchCreatedRounds();
+	finishedMatchesState.subscribe(async (_id) => {
+		if (_id === -1n) {
+			return;
+		}
+		const	tournament = await getTournament(_id);
+		const	match = matchRoute(location.pathname);
+		if (match) {
+			const { view: View, params } = match;
+			if (View === TournamentView && params.id === String(_id)) {
+				const	matches_history = document.getElementById('tournament-match-histrory');
+				// const	tournament_view = document.getElementById('tournament-view');
+				const	tournament_rounds_matches = document.getElementById('tournament-rounds-matches');
+				if (matches_history && tournament_rounds_matches) {
+					matches_history.innerHTML = '';
+					tournament_rounds_matches.innerHTML = '';
+					const	round = new Round(tournament);
+					round.mount(tournament_rounds_matches);
+
+					const	matches = new Matches(tournament);
+					matches.mount(tournament_rounds_matches);
+
+					render_tournament_matches_history(tournament, matches_history);
 				}
 			}
 		}

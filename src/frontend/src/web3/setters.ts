@@ -6,13 +6,13 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/19 02:15:08 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/21 01:18:36 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/12/25 11:01:22 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { Metamask_error } from "../components/Metamask_error";
 import { publicClient, TournamentFactoryAbi, TournamentFactoryAddress, walletClientMetamask, TRIZcoinAbi, TRIZcoinAddress } from "./contracts/contracts";
-import { getAllowance, getBalance, type Tournament } from "./getters";
+import { getBalance, type Tournament } from "./getters";
 
 export const	approveAllowence = async (amount: bigint) => {
 	if (!walletClientMetamask)

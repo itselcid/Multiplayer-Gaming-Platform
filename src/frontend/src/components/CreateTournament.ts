@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/18 18:01:17 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/07 00:04:05 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/12/23 00:56:22 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,7 @@ import { approveAllowence, create_tournament } from "../web3/setters";
 import { getAllowance } from "../web3/getters";
 import { walletClientMetamask } from "../web3/contracts/contracts";
 import { Metamask_error } from "./Metamask_error";
+import { getRevertReason } from "../tools/errors";
 
 class	PendingButton extends Component {
 	constructor() {
@@ -241,8 +242,8 @@ export class CreateTournament extends Component {
 					pend_button.unmount();
 					create_button.hidden = false;
 					const	metamask_error = new Metamask_error(
-						"Action Canceled",
-						"The transaction was rejected. Please approve it in your wallet if you want to continue.",
+						"Transaction failed",
+						"The transaction failed for the following reason: " + getRevertReason(err),
 						false
 					);
 					metamask_error.mount(root);

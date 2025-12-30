@@ -6,12 +6,12 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/15 16:43:52 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/21 10:34:15 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/12/25 10:59:27 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { Component } from "../core/Component";
-import { getMatchWithKey, type Match } from "../web3/getters";
+import { getMatchWithKey } from "../web3/getters";
 import { tobedeleted_submit_match_score } from "../web3/setters";
 import { nullAddress } from "../web3/tools";
 

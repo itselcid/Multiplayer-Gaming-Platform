@@ -6,16 +6,15 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/15 01:14:19 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/13 11:55:15 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/12/25 10:56:44 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { formatEther } from "viem";
-import { login_state } from "../core/appStore";
 import { addElement, Component } from "../core/Component";
 import type { Tournament } from "../web3/getters";
 import { bigint_to_date } from "../tools/date";
-import { get_tournament_status } from "../tools/tournament_tools";
+import { formatNumber, get_tournament_status } from "../tools/tournament_tools";
 import { navigate } from "../core/router";
 import { Tournament_status } from "./Tournament_status";
 
@@ -51,7 +50,7 @@ export class Tournament_card extends Component {
 			  <span>
 				Entry Fee:
 				<span class="text-neon-gold font-semibold">
-				  ${formatEther(this.tournament.entryFee)} TRIZcoin
+					${formatNumber(formatEther(this.tournament.entryFee))} TRIZcoin
 				</span>
 			  </span>
 			</div>
@@ -69,7 +68,7 @@ export class Tournament_card extends Component {
 		prize_pool.insertAdjacentHTML('beforeend', `
 			<div class="text-sm text-gray-400 mb-1">Prize Pool</div>
 			<div class="text-2xl font-bold text-neon-gold">
-			  ${formatEther(this.tournament.entryFee * BigInt(this.tournament.maxParticipants))} TRIZcoin
+			  ${formatNumber(formatEther(this.tournament.entryFee * BigInt(this.tournament.maxParticipants)))} TRIZcoin
 			</div>
 			`);
 	  

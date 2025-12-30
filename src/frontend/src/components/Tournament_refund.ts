@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/21 20:13:50 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/21 22:44:40 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/12/25 10:58:40 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,7 @@ import { formatEther } from "viem";
 import { addElement, Component } from "../core/Component";
 import { getPlayer, type Tournament } from "../web3/getters";
 import { web3auth } from "../core/appStore";
-import { lowerCaseAddress, nullAddress } from "../web3/tools";
+import { nullAddress } from "../web3/tools";
 import { get_player_id } from "../tools/get_player_id";
 import { Metamask_error } from "./Metamask_error";
 import { claim_refunds } from "../web3/setters";
@@ -123,21 +123,21 @@ class Tournament_refund_claimed extends Component {
 	}
 }
 
-class Tournament_refund_claim_processed extends Component {
+// class Tournament_refund_claim_processed extends Component {
 	
-	constructor() {
-		super('div', 'mt-6 p-4 bg-green-500/10 border border-green-500/30 rounded-xl');
-	}
+// 	constructor() {
+// 		super('div', 'mt-6 p-4 bg-green-500/10 border border-green-500/30 rounded-xl');
+// 	}
 
-	render(): void {
-		this.el.innerHTML = `
-			<p class="text-green-400 text-center font-bold flex items-center justify-center gap-2">
-				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check-big w-5 h-5" aria-hidden="true"><path d="M21.801 10A10 10 0 1 1 17 3.335"></path><path d="m9 11 3 3L22 4"></path></svg>
-				Refund processed successfully
-			</p>
-		`;
-	}
-}
+// 	render(): void {
+// 		this.el.innerHTML = `
+// 			<p class="text-green-400 text-center font-bold flex items-center justify-center gap-2">
+// 				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check-big w-5 h-5" aria-hidden="true"><path d="M21.801 10A10 10 0 1 1 17 3.335"></path><path d="m9 11 3 3L22 4"></path></svg>
+// 				Refund processed successfully
+// 			</p>
+// 		`;
+// 	}
+// }
 
 export const render_claim_refund_button = async(tournament: Tournament, tournament_refund: HTMLElement) => {
 	if (await web3auth.isLoggedIn()) {

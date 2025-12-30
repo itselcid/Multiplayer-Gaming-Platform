@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/19 17:54:21 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/21 19:25:04 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/12/24 21:25:49 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,6 +31,7 @@ export class TournamentView extends Component {
 	}
 
 	async render(): Promise<void> {
+		this.el.id = 'tournament-view';
 		const id = Number(this.params.id);
 		const	tournament_length = await getTournamentLength();
 
@@ -52,7 +53,7 @@ export class TournamentView extends Component {
 			tournament = await getTournament(BigInt(id));
 
 		const	tournament_status = get_tournament_status(tournament);
-		
+
 		let	header_title = '';
 		let	header_title_classes = 'text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 pb-3 tracking-tight';
 		let	header_text = '';
@@ -92,6 +93,7 @@ export class TournamentView extends Component {
 
 		// tournament info, matches
 		const	tournament_infos = addElement('div', 'grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8', this.el);
+		tournament_infos.id = 'tournament-infos-container';
 
 		const	tournament_info = addElement('div', 'lg:col-span-1', tournament_infos);
 		const	tournament_info_component = new Tournament_info(tournament);

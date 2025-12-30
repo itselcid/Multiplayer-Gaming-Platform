@@ -46,6 +46,7 @@ contract TournamentFactory is Ownable {
     Tournament[] public tournaments;
     mapping(bytes32 => Match) matches;
     mapping(bytes32 => Player) players;
+    mapping(bytes32 => bool) private usedUsername;
 
     function getMatchKey(
         uint tournamentId,
@@ -77,26 +78,21 @@ contract TournamentFactory is Ownable {
         uint _startTime,
         string memory _username
     ) external {
-        require(
-            token.transferFrom(msg.sender, address(this), _entryFee),
-            "not enough cash stranger"
-        );
-
-        // 1. Title length: 3–20 characters
+        // 1. Title length: 3–18 characters
         uint titleLength = bytes(_title).length;
-        require(titleLength >= 3 && titleLength <= 20, "Title length invalid");
+        require(titleLength >= 3 && titleLength <= 18, "Title length invalid");
 
-        // 2. Username length: 3–20 characters
+        // 2. Username length: 3–18 characters
         uint usernameLength = bytes(_username).length;
         require(
-            usernameLength >= 3 && usernameLength <= 20,
+            usernameLength >= 3 && usernameLength <= 18,
             "Username length invalid"
         );
 
         // 3. Entry fee must be positive
         require(_entryFee > 0, "Entry fee must be > 0");
 
-        // 4. Max participants must be a power of two (1, 2, 4, 8, 16, ...)
+        // 4. Max participants must be a power of two (2, 4, 8, 16, ...)
         require(
             _maxParticipants > 1 &&
                 (_maxParticipants & (_maxParticipants - 1)) == 0,
@@ -107,6 +103,15 @@ contract TournamentFactory is Ownable {
         require(
             _startTime > block.timestamp,
             "Start time must be in the future"
+        );
+
+        require(
+            token.balanceOf(msg.sender) >= _entryFee,
+            "Not enough cash stranger"
+        );
+        require(
+            token.transferFrom(msg.sender, address(this), _entryFee),
+            "Token transfer failed"
         );
 
         tournaments.push(
@@ -132,6 +137,9 @@ contract TournamentFactory is Ownable {
             getPlayerKey(tournaments.length - 1, _maxParticipants / 2, 0)
         ] = player;
 
+        usedUsername[
+            keccak256(abi.encodePacked(tournaments.length - 1, _username))
+        ] = true;
         emit TournamentCreated(tournaments.length - 1);
     }
 
@@ -145,7 +153,7 @@ contract TournamentFactory is Ownable {
 
     event SetStatus(uint _id);
 
-    function setTournamentStatus(Status _statue, uint _id) external {
+    function setTournamentStatus(Status _statue, uint _id) external onlyOwner {
         Tournament storage t = tournaments[_id];
         t.status = _statue;
         emit SetStatus(_id);
@@ -164,6 +172,15 @@ contract TournamentFactory is Ownable {
         require(t.status == Status.Pending, "tournament isn't pending");
         require(t.startTime > block.timestamp, "deadline reached");
         require(t.participants < t.maxParticipants, "tournament is full");
+        uint usernameLength = bytes(_username).length;
+        require(
+            usernameLength >= 3 && usernameLength <= 18,
+            "Username length invalid"
+        );
+        require(
+            !usedUsername[keccak256(abi.encodePacked(_id, _username))],
+            "Username already used"
+        );
         require(
             token.transferFrom(msg.sender, address(this), t.entryFee),
             "not enough cash stranger"
@@ -177,6 +194,7 @@ contract TournamentFactory is Ownable {
             username: _username
         });
         players[getPlayerKey(_id, t.currentRound, t.participants - 1)] = player;
+        usedUsername[keccak256(abi.encodePacked(_id, _username))] = true;
     }
 
     function claimRefunds(uint _id, uint _index) external {
@@ -223,6 +241,8 @@ contract TournamentFactory is Ownable {
         token.transfer(msg.sender, t.entryFee * t.maxParticipants);
     }
 
+    event RoundsCreated(uint _id);
+
     function createRound(uint _id, uint[] calldata order) public onlyOwner {
         Tournament memory t = tournaments[_id];
         uint j = 0;
@@ -236,6 +256,7 @@ contract TournamentFactory is Ownable {
             createMatch(_id, t.currentRound, j, p1, p2);
             j++;
         }
+        emit RoundsCreated(_id);
     }
 
     function startTournament(

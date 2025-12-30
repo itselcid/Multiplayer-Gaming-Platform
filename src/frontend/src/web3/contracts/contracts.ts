@@ -1,7 +1,18 @@
-import { createPublicClient, createWalletClient, custom, getAddress, http, webSocket, type Address } from 'viem';
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   contracts.ts                                       :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/12/25 10:59:44 by kez-zoub          #+#    #+#             */
+/*   Updated: 2025/12/25 10:59:47 by kez-zoub         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+import { createPublicClient, createWalletClient, custom, getAddress, webSocket, type Address } from 'viem';
 import TournamentFactoryData from './TournamentFactory/TournamentFactory.json';
 import { avalancheFuji } from 'viem/chains';
-import { privateKeyToAccount } from 'viem/accounts';
 import TRIZcoinData from './TRIZcoin/TRIZcoin.json';
 
 

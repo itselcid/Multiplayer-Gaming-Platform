@@ -6,18 +6,16 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/13 22:19:50 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/22 20:42:12 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/12/25 10:59:16 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { Home } from "../components/Home";
 import { Page404} from "../components/Page404";
-import { cachedTournaments } from "../main";
 import { MatchView } from "../pages/Match";
 import { ProfileView } from "../pages/Profile";
 import { TournamentView } from "../pages/Tournament";
 import { TournamentsView } from "../pages/Tournaments";
-import { getTournamentLength } from "../web3/getters";
 
 // --- Route Definitions ---
 const routes: Record<string, any> = {

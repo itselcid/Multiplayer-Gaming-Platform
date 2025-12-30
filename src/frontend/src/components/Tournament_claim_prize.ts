@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/21 01:41:54 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/21 22:16:35 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/12/25 10:57:26 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,7 @@ import { PendingButton } from "./Tournament_refund";
 import { claim_prize } from "../web3/setters";
 import { get_player_id } from "../tools/get_player_id";
 import { Metamask_error } from "./Metamask_error";
+import { formatNumber } from "../tools/tournament_tools";
 
 export const render_claim_prize_button = async (tournament: Tournament, button_container: HTMLElement) => {
 	if (await web3auth.isLoggedIn()) {
@@ -36,7 +37,7 @@ export const render_claim_prize_button = async (tournament: Tournament, button_c
 				const button = new Claimed_button();
 				button.mount(button_container);
 			} else {
-				const button = new Claim_button(tournament, match, i);
+				const button = new Claim_button(tournament, i);
 				button.mount(button_container);
 			}
 		}
@@ -62,13 +63,11 @@ class Claimed_button extends Component {
 
 class Claim_button extends Component {
 	private	_tournament: Tournament;
-	private	_match: Match;
 	private _index: bigint;
 	
-	constructor(tournament: Tournament, match: Match, index: bigint) {
+	constructor(tournament: Tournament, index: bigint) {
 		super('button', "w-full py-5 rounded-2xl font-black text-lg tracking-wide transition-all transform bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-black shadow-2xl shadow-yellow-500/50 hover:scale-105 border-2 border-yellow-400");
 		this._tournament = tournament;
-		this._match = match;
 		this._index = index;
 	}
 
@@ -142,7 +141,7 @@ export class Tournament_claim_prize extends Component {
 					</h3>
 					
 					<p class="text-cyan-300/60 text-lg font-bold mb-2">Champion</p>
-					<p class="text-4xl font-black text-white mb-8">Prize: ${formatEther(this._tournament.entryFee * BigInt(this._tournament.maxParticipants))} TRIZcoin</p>
+					<p class="text-4xl font-black text-white mb-8">Prize: ${formatNumber(formatEther(this._tournament.entryFee * BigInt(this._tournament.maxParticipants)))} TRIZcoin</p>
 					
 					<div class="flex justify-center gap-8 mb-8">
 						<div class="text-center">

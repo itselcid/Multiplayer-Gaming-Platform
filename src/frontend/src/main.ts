@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/12 15:53:05 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/15 01:54:50 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/12/25 11:01:07 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,7 @@ import { renderRoute } from "./core/router.ts"
 import { addElement } from './core/Component.ts';
 import { Navbar } from './components/Navbar.ts';
 import { subs } from './core/state.ts';
-import { Shouting_stars, startShootingStars } from './pages/Shouting_stars.ts';
+import { Shouting_stars } from './pages/Shouting_stars.ts';
 import { TestBG } from './pages/TestBG.ts';
 import { type Tournament } from './web3/getters.ts';
 

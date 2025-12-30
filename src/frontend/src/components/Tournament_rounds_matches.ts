@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/20 15:11:27 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/21 19:04:12 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/12/24 21:33:12 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,7 @@ import { navigate } from "../core/router";
 import { get_match_status, get_round_name } from "../tools/tournament_tools";
 import { getMatch, getMatchKey, type Match, type Tournament } from "../web3/getters";
 
-class Round extends Component {
+export class Round extends Component {
 	private _tournament: Tournament;
 
 	constructor(tournament: Tournament) {
@@ -245,11 +245,11 @@ class	FinishedMatch extends Component {
 	}
 }
 
-class Matches extends Component {
+export class Matches extends Component {
 	private _tournament: Tournament;
 
 	constructor(tournament: Tournament) {
-		super('div', 'space-y-4');
+		super('div', 'space-y-5');
 		this._tournament = tournament;
 	}
 
@@ -283,6 +283,7 @@ export class Tournament_rounds_matches extends Component {
 	}
 
 	render(): void {
+		this.el.id = 'tournament-rounds-matches';
 		const	round = new Round(this._tournament);
 		round.mount(this.el);
 

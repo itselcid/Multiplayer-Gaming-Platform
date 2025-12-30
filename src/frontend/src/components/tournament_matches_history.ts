@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/20 15:33:28 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/21 19:37:31 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2025/12/24 21:29:59 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -76,6 +76,18 @@ class	History_match extends Component {
 	}
 }
 
+export const render_tournament_matches_history = async (_tournament: Tournament, matches_list: HTMLElement) => {
+	for(let round = 1n; round !== _tournament.maxParticipants; round *= 2n) {
+		for (let index = 0n; index < round; index++) {
+			const match = await getMatch(_tournament.id, round, index);
+			if (match.status === 0)
+				continue;
+			const history_match = new History_match(match, round);
+			history_match.mount(matches_list);
+		}
+	}
+}
+
 export class Tournament_matches_history extends Component {
 	private _tournament: Tournament;
 	
@@ -98,6 +110,8 @@ export class Tournament_matches_history extends Component {
 				</h3>
 			`);
 		const	matches_list = addElement('div', 'space-y-3', matches_history);
+		matches_list.id = 'tournament-match-histrory';
+
 		for(let round = 1n; round !== this._tournament.maxParticipants; round *= 2n) {
 			for (let index = 0n; index < round; index++) {
 				const match = await getMatch(this._tournament.id, round, index);
