@@ -19,6 +19,8 @@ tags:
     description: User profile management
   - name: Admin
     description: Admin-only user management
+  - name: Friends
+    description: Friendship management
 
 components:
   securitySchemes:
@@ -112,6 +114,13 @@ components:
       type: object
       properties:
         error: { type: string }
+
+    Friend:
+      type: object
+      properties:
+        id: { type: integer }
+        username: { type: string }
+        avatar: { type: string }
 
 paths:
   /auth/login:
@@ -282,3 +291,177 @@ paths:
       responses:
         '200':
           description: 2FA enabled successfully
+
+  /users/friends:
+    get:
+      tags: [Friends]
+      summary: Get all friends
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  friends:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Friend'
+
+  /users/friends/requests/received:
+    get:
+      tags: [Friends]
+      summary: Get received friend requests
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  friends:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Friend'
+
+  /users/friends/requests/sent:
+    get:
+      tags: [Friends]
+      summary: Get sent friend requests
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  friends:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Friend'
+
+  /users/friends/requests/send/{friendId}:
+    put:
+      tags: [Friends]
+      summary: Send a friend request
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: friendId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Request sent
+        '400':
+          description: Invalid request (self, existing friendship)
+        '404':
+          description: User not found
+
+  /users/friends/requests/accept/{friendId}:
+    put:
+      tags: [Friends]
+      summary: Accept a friend request
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: friendId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Request accepted
+        '404':
+          description: Request not found
+
+  /users/friends/requests/reject/{friendId}:
+    post:
+      tags: [Friends]
+      summary: Reject a friend request
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: friendId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Request rejected
+
+  /users/friends/remove/{friendId}:
+    delete:
+      tags: [Friends]
+      summary: Remove a friend
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: friendId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Friend removed
+
+  /users/friends/block/{friendId}:
+    put:
+      tags: [Friends]
+      summary: Block a user
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: friendId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User blocked
+
+  /users/friends/unblock/{friendId}:
+    put:
+      tags: [Friends]
+      summary: Unblock a user
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: friendId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User unblocked
+
+  /users/friends/blocked:
+    get:
+      tags: [Friends]
+      summary: Get blocked users
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  friends:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Friend'

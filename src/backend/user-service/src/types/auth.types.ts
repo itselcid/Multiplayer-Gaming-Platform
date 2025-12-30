@@ -42,6 +42,7 @@ export interface UserAuthData {
     twoFactor?: {
         method: string | null;
         totpSecret: string | null;
+        enabled: boolean;
     } | null;
     createdAt: Date;
     updatedAt: Date;

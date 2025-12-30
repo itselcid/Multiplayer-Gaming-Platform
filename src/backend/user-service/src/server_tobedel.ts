@@ -10,6 +10,7 @@ import { createTestUserIfNeeded } from './db';
 import { testEmailConnection } from './services/email';
 import twoFactorRoutes from './routes/2fa';
 import { env } from './env';
+import friendsRoutes from './routes/friends';
 
 const fastifyServer = Fastify({
     logger: true,
@@ -90,6 +91,7 @@ async function startServer(): Promise<void> {
         fastifyServer.register(userRoutes, { prefix: '/api/users' });
         fastifyServer.register(authRoutes, { prefix: '/api/auth' });
         fastifyServer.register(twoFactorRoutes, { prefix: '/api/2fa' });
+        fastifyServer.register(friendsRoutes, { prefix: '/api/users/friends' });
 
 
         // health check
@@ -99,7 +101,7 @@ async function startServer(): Promise<void> {
         // register end;
 
         await fastifyServer.listen({
-            port: Number(env.PORT) || 3000,
+            port: Number(env.PORT),
             host: '127.0.0.1'
         });
 

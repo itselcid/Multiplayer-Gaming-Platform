@@ -69,7 +69,8 @@ export async function getUserById(id: number): Promise<UserData | null> {
             avatar: true,
             twoFactor: {
                 select: {
-                    method: true
+                    method: true,
+                    enabled: true
                 }
             },
             githubId: true,
@@ -119,7 +120,8 @@ export async function getUserForAuth(username: string): Promise<UserAuthData> {
             twoFactor: {
                 select: {
                     method: true,
-                    totpSecret: true
+                    totpSecret: true,
+                    enabled: true
                 }
             },
             githubId: true,
@@ -378,9 +380,198 @@ export async function deleteTwoFactorCode(userId: number) {
 }
 
 
+// Friendships functions
+export async function sendFriendRequest(requesterId: number, addresseeId: number) {
+    const existing = await getFriendship(requesterId, addresseeId);
+    if (existing) {
+        if (existing.status === 'BLOCKED') throw new Error('Cannot send request');
+        if (existing.status === 'ACCEPTED') throw new Error('Already friends');
+        if (existing.status === 'PENDING') throw new Error('Request already pending');
+    }
+
+    await prisma.friendship.create({
+        data: {
+            requesterId,
+            addresseeId,
+            status: 'PENDING'
+        }
+    });
+}
+
+export async function acceptFriendRequest(userId: number, friendId: number) {
+    // Find the friendship where friendId sent request to userId
+    const friendship = await prisma.friendship.findFirst({
+        where: {
+            requesterId: friendId,
+            addresseeId: userId,
+            status: 'PENDING'
+        }
+    });
+
+    if (!friendship) {
+        throw new Error('Friend request not found');
+    }
+
+    await prisma.friendship.update({
+        where: { id: friendship.id },
+        data: { status: 'ACCEPTED' }
+    });
+}
+
+export async function removeFriend(userId: number, friendId: number) {
+    // Delete friendship in either direction
+    await prisma.friendship.deleteMany({
+        where: {
+            OR: [
+                { requesterId: userId, addresseeId: friendId },
+                { requesterId: friendId, addresseeId: userId }
+            ]
+        }
+    });
+}
+
+export async function blockFriend(userId: number, friendId: number) {
+    // 1. Remove any existing relationship
+    await removeFriend(userId, friendId);
+
+    // 2. Create new BLOCK record where requester = blocker
+    await prisma.friendship.create({
+        data: {
+            requesterId: userId,
+            addresseeId: friendId,
+            status: 'BLOCKED'
+        }
+    });
+}
+
+export async function unblockFriend(userId: number, friendId: number) {
+    // Only unblock if userId attempted to block friendId
+    await prisma.friendship.deleteMany({
+        where: {
+            requesterId: userId,
+            addresseeId: friendId,
+            status: 'BLOCKED'
+        }
+    });
+}
+
+export async function getFriends(userId: number) {
+    const friends = await prisma.friendship.findMany({
+        where: {
+            OR: [
+                {
+                    requesterId: userId,
+                    status: 'ACCEPTED'
+                },
+                {
+                    addresseeId: userId,
+                    status: 'ACCEPTED'
+                }
+            ]
+        },
+        include: {
+            requester: {
+                select: {
+                    id: true,
+                    username: true,
+                    avatar: true
+                }
+            },
+            addressee: {
+                select: {
+                    id: true,
+                    username: true,
+                    avatar: true
+                }
+            }
+        }
+    });
+
+    return friends.map(f => {
+        return f.requesterId === userId ? f.addressee : f.requester;
+    });
+}
+
+export async function getFriendship(userId: number, otherUserId: number) {
+    const friendship = await prisma.friendship.findFirst({
+        where: {
+            OR: [
+                { requesterId: userId, addresseeId: otherUserId },
+                { requesterId: otherUserId, addresseeId: userId }
+            ]
+        },
+        select: {
+            id: true,
+            status: true,
+            requesterId: true,
+            addresseeId: true
+        }
+    });
+    return friendship;
+}
 
 
+export async function getReceivedFriendRequests(addresseeId: number) {
+    const friendRequests = await prisma.friendship.findMany({
+        where: {
+            addresseeId,
+            status: 'PENDING'
+        },
+        select: {
+            requesterId: true,
+            requester: {
+                select: {
+                    id: true,
+                    username: true,
+                    avatar: true
+                }
+            }
+        }
+    });
 
+    return friendRequests;
+}
+
+export async function getBlockedFriends(userId: number) {
+    const blockedFriends = await prisma.friendship.findMany({
+        where: {
+            requesterId: userId,
+            status: 'BLOCKED'
+        },
+        select: {
+            addresseeId: true,
+            addressee: {
+                select: {
+                    id: true,
+                    username: true,
+                    avatar: true
+                }
+            }
+        }
+    });
+
+    return blockedFriends;
+}
+
+export async function getSentFriendRequests(requesterId: number) {
+    const friendRequestsSent = await prisma.friendship.findMany({
+        where: {
+            requesterId,
+            status: 'PENDING'
+        },
+        select: {
+            addressee: {
+                select: {
+                    id: true,
+                    username: true,
+                    avatar: true
+                }
+            }
+        }
+    });
+
+    return friendRequestsSent;
+}
 
 
 

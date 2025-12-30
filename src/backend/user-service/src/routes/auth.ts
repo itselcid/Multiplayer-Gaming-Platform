@@ -113,7 +113,7 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
         const payload: JWTPayload = {
             userId: user.id,
             username: user.username,
-            requires2FA: user.twoFactor ? true : false,
+            requires2FA: user.twoFactor?.enabled ? true : false,
             type: 'access'
         }
 
@@ -127,12 +127,15 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
             maxAge: 15 * 60 // 15 min
         });
 
-        if (user.twoFactor) {
-            const code = await generateTwoFactorCode(user.id);
-            await send2faEmailCode(user.email, code);
+        if (user.twoFactor?.enabled) {
+            let code: string | undefined;
+            if (user.twoFactor.method === 'email') {
+                code = await generateTwoFactorCode(user.id);
+                await send2faEmailCode(user.email, code);
+            }
 
             return reply.send({
-                message: 'need to verify 2FA, code sent to your email',
+                message: code ? 'need to verify 2FA, code sent to your email' : 'need to verify 2FA, use TOTP',
                 requires2FA: true,
                 devCode: code,
                 expiresIn: '10 minutes'
@@ -153,7 +156,7 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
             secure: true,   // MUST BE TRUE
             sameSite: 'none', // MUST BE 'None' for cross-site/port requests
             path: '/',
-            maxAge: 7 //* 24 * 60 * 60 // 7 days
+            maxAge: 7 * 24 * 60 * 60 // 7 days
         });
 
         return reply.send({

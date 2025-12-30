@@ -27,9 +27,37 @@ model User {
     passwordResets PasswordReset[]
 
     // 2FA fields
-    twoFactor      UserTwoFactor?
-    twoFactorCodes TwoFactorCode[]
-    refreshTokens  RefreshToken[]
+    twoFactor              UserTwoFactor?
+    twoFactorCodes         TwoFactorCode[]
+    refreshTokens          RefreshToken[]
+    sentFriendRequests     Friendship[]    @relation("FriendshipRequester")
+    receivedFriendRequests Friendship[]    @relation("FriendshipAddressee")
+}
+
+// friends table 
+model Friendship {
+    id Int @id @default(autoincrement())
+
+    requesterId Int // User who sent the friend request
+    requester   User @relation("FriendshipRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+
+    addresseeId Int // User who received the friend request
+    addressee   User @relation("FriendshipAddressee", fields: [addresseeId], references: [id], onDelete: Cascade)
+
+    status FriendshipStatus @default(PENDING)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([requesterId, addresseeId]) // Prevent duplicate requests
+    @@index([requesterId, status])
+    @@index([addresseeId, status])
+}
+
+enum FriendshipStatus {
+    PENDING
+    ACCEPTED
+    BLOCKED
 }
 
 // password reset token table

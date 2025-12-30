@@ -18,6 +18,7 @@ export interface UserData {
     avatar: string | null;
     twoFactor?: {
         method: string | null;
+        enabled?: boolean;
     } | null;
     createdAt: Date;
     updatedAt: Date;
@@ -49,6 +50,12 @@ export interface RegisterInput {
     username: string;
     email: string;
     password: string;
+}
+
+export interface Friend {
+    id: number;
+    username: string;
+    avatar: string | null;
 }
 
 
