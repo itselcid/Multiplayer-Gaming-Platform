@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/03 15:31:14 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/25 10:59:03 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/12 02:13:32 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,9 @@ import { get_tournament_batch, getTournament, watchCreatedRounds, watchFinishedM
 import { shortenEthAddress } from "../web3/tools";
 import { matchRoute } from "./router";
 import { State } from "./state";
+
+import { AuthService } from "../services/auth";
+import type { User } from "../services/auth";
 
 // nav bar active tab state
 // state init
@@ -128,6 +131,32 @@ export const web3_login_sub = () => {
 			}
 		}
 	})
+}
+
+
+// ===== USER AUTHENTICATION STATE =====
+export const userState = new State<User | null>(null);
+
+// Initialize: Check if user is already logged in
+export async function initAuth() {
+	const user = await AuthService.getCurrentUser();
+	if (user)
+		userState.set(user);  // Will be null if not logged in
+}
+
+// Subscribe to user state changes
+export const user_state_sub = () => {
+	userState.subscribe((user) => {
+		// When user state changes, update the UI
+		if (user) {
+		console.log('User logged in:', user.username);
+		// TODO: Update navbar to show user avatar/username
+		// TODO: Show logout button
+		} else {
+		console.log('User logged out');
+		// TODO: Update navbar to show login button
+		}
+	});
 }
 
 // tournament tabs

@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/12 15:53:05 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/01 22:10:56 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/12 02:12:00 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,11 @@ import { Navbar } from './components/Navbar.ts';
 import { subs } from './core/state.ts';
 import { Shouting_stars } from './pages/Shouting_stars.ts';
 import { TestBG } from './pages/TestBG.ts';
+import { AuthService } from './services/auth';
+import { initAuth } from './core/appStore.ts';
+(window as any).AuthService = AuthService;                    // delme !!!
+import { userState } from './core/appStore';
+(window as any).userState = userState;                           // delme !!!
 import { type Tournament } from './web3/getters.ts';
 
 //  TODO: get user address from database for auth
@@ -42,6 +47,12 @@ renderRoute();
 // page.mount(document.getElementById('app'));
 
 subs();
+
+initAuth().then(() => {
+  // Render the initial route after checking auth
+  console.error("wooooooooooooooooooooh");
+  renderRoute();
+});
 
 // const	canva = document.getElementById('starfield') as HTMLCanvasElement;
 // if (canva)

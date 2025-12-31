@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/14 14:43:40 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/23 12:58:56 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/12 02:18:26 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,6 +65,7 @@ export class Navbar extends Component {
 	link('a', 'transition-all text-gray-300 hover:text-neon-cyan', links_container, 'Tournaments', 'tournaments', '/tournaments');
 	link('a', 'transition-all text-gray-300 hover:text-neon-cyan', links_container, 'Leaderboard', 'leaderboard', '/leaderboard');
 	link('a', 'transition-all text-gray-300 hover:text-neon-cyan', links_container, 'Profile', 'profile', '/profile');
+	link('a', 'transition-all text-gray-300 hover:text-neon-cyan', links_container, 'Login', 'login', '/login');
 
 
 	const	auth = addElement('div', 'hidden lg:block', container2);

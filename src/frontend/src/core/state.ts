@@ -6,11 +6,11 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/18 00:04:38 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/24 18:32:12 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/12 02:18:08 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-import { active_tab_sub, addTouranamentStateSub, currentWeb3AccountSub, finishedMatchesStateSub, tournament_tab_sub, updateTournamentStateSub, web3_login_sub } from "./appStore";
+import { active_tab_sub, addTouranamentStateSub, currentWeb3AccountSub, finishedMatchesStateSub, tournament_tab_sub, updateTournamentStateSub, user_state_sub, web3_login_sub } from "./appStore";
 
 	type Subscriber<T> = (value: T) => void;
 
@@ -46,13 +46,14 @@ import { active_tab_sub, addTouranamentStateSub, currentWeb3AccountSub, finished
 		this.subscribers.forEach(fn => fn(this.value));
 	}
 
-	// Subscribe to changes
-	subscribe(fn: Subscriber<T>) {
-		this.subscribers.add(fn);
-		fn(this.value); // run once immediately
-		return () => this.subscribers.delete(fn);
-	}
-	}
+  // Subscribe to changes
+  subscribe(fn: Subscriber<T>) {
+    this.subscribers.add(fn);
+    fn(this.value); // run once immediately
+    return () => this.subscribers.delete(fn);
+  }
+}
+
 
 export const subs = () => {
 	active_tab_sub();
@@ -62,5 +63,6 @@ export const subs = () => {
 	addTouranamentStateSub();
 	updateTournamentStateSub();
 	finishedMatchesStateSub();
+  	user_state_sub();
 }
 
