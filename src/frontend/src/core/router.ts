@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/13 22:19:50 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/12 02:16:02 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/12 02:33:48 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@ import { TournamentView } from "../pages/Tournament";
 import { TournamentsView } from "../pages/Tournaments";
 import { Login } from "../pages/login.ts";
 import { Register } from "../pages/register.ts";
+import { chat } from "../components/chat";
 
 // --- Route Definitions ---
 const routes: Record<string, any> = {
@@ -28,7 +29,8 @@ const routes: Record<string, any> = {
 	"/tournaments/:id": TournamentView,
 	"/match/:key": MatchView,
 	"/login": Login,
-	"/register": Register
+	"/register": Register,
+  	"/chat": chat,
 };
 
 // --- Scroll Position Store ---
