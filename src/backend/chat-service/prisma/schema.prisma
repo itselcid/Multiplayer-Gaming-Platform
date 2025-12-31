@@ -1,0 +1,31 @@
+// backend_chat/prisma/schema.prisma
+//npx prisma generate
+//npx prisma migrate dev --name init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       Int      @id @default(autoincrement())
+  username String   @unique
+  messagesSent     Message[] @relation("sent")
+  messagesReceived Message[] @relation("received")
+}
+
+model Message {
+  id         Int      @id @default(autoincrement())
+  content    String
+  createdAt  DateTime @default(now())
+
+  senderId   Int
+  receiverId Int
+
+  sender     User @relation("sent", fields: [senderId], references: [id])
+  receiver   User @relation("received", fields: [receiverId], references: [id])
+}
