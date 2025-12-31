@@ -1,12 +1,13 @@
 
 import { FastifyInstance } from 'fastify';
 import bcrypt from 'bcrypt';
-import { LoginInput, RegisterInput, JWTPayload, CreateUserInput, PasswordResetInput, GithubProfile } from '../types';
+import { LoginInput, RegisterInput, CreateUserInput, PasswordResetInput, GithubProfile } from '../types';
 import { createPasswordResetToken, createUser, deletePasswordResetToken, deleteTwoFactorCode, findOrCreateGithubUser, findPasswordResetToken, findTwoFactorCode, generateTwoFactorCode, getUserByRefreshToken, getUserByUsername, getUserForAuth, saveRefreshToken, updateUser } from '../db';
 import { send2faEmailCode, sendPasswordResetEmail } from '../services/email.js';
 import speakeasy from 'speakeasy';
 import { env } from '../env';
 import createHttpError from 'http-errors';
+import { tokenService } from '../services/auth';
 
 const LoginSchema = {
     body: {
@@ -104,22 +105,8 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
         if (!isValidPassword)
             throw createHttpError(401, 'Invalid username or password!');
 
-        const payload: JWTPayload = {
-            userId: user.id,
-            username: user.username,
-            requires2FA: user.twoFactor?.enabled ? true : false,
-            type: 'access'
-        }
-
-        const jwToken = server.jwt.sign(payload, { expiresIn: '15m' });
-
-        reply.setCookie('authToken', jwToken, {
-            httpOnly: true,
-            secure: true,   // MUST BE TRUE
-            sameSite: 'none', // MUST BE 'None' for cross-site/port requests
-            path: '/',
-            maxAge: 15 * 60 // 15 min
-        });
+        const accessToken = tokenService.generateToken(server, user, 'access');
+        tokenService.setCookie(reply, accessToken, 'authToken');
 
         if (user.twoFactor?.enabled) {
             let code: string | undefined;
@@ -136,22 +123,9 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
             });
         }
 
-        const refreshToken = server.jwt.sign({
-            userId: user.id,
-            username: user.username,
-            requires2FA: false,
-            type: 'refresh'
-        }, { expiresIn: '7 days' });
-
+        const refreshToken = tokenService.generateToken(server, user, 'refresh');
         await saveRefreshToken(user.id, refreshToken);
-
-        reply.setCookie('refreshToken', refreshToken, {
-            httpOnly: true,
-            secure: true,   // MUST BE TRUE
-            sameSite: 'none', // MUST BE 'None' for cross-site/port requests
-            path: '/',
-            maxAge: 7 * 24 * 60 * 60 // 7 days
-        });
+        tokenService.setCookie(reply, refreshToken, 'refreshToken');
 
         return reply.send({
             message: 'Login successful',
@@ -203,20 +177,8 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
 
     // logout endpoint
     server.post('/logout', async (_request, reply) => {
-        reply.clearCookie('authToken', {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'none',
-            path: '/',
-        });
-
-        reply.clearCookie('refreshToken', {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'none',
-            path: '/',
-        });
-
+        tokenService.clearCookie(reply, 'authToken');
+        tokenService.clearCookie(reply, 'refreshToken');
         return reply.send({
             message: 'Logout successful. Token invalidated.'
         });
@@ -234,29 +196,10 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
         if (!user)
             throw createHttpError(401, 'Invalid refresh token');
 
-        reply.clearCookie('authToken', {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'none',
-            path: '/',
-        });
+        tokenService.clearCookie(reply, 'authToken');
 
-        const payload: JWTPayload = {
-            userId: user.id,
-            username: user.username,
-            requires2FA: false,
-            type: 'access'
-        }
-
-        const jwToken = server.jwt.sign(payload, { expiresIn: '15m' });
-
-        reply.setCookie('authToken', jwToken, {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'none',
-            path: '/',
-            maxAge: 15 * 60 // 15 min
-        });
+        const accessToken = tokenService.generateToken(server, user, 'access');
+        tokenService.setCookie(reply, accessToken, 'authToken');
 
         return reply.send({
             message: 'Refresh token successful.',
@@ -385,25 +328,24 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
             // Create or find user in database
             const user = await findOrCreateGithubUser(githubUser);
 
-            //! should i make a function to generate the token? repeated code!?
             // Generate JWT token   
-            const payload: JWTPayload = {
-                userId: user.id,
-                username: user.username,
-                requires2FA: user.twoFactor ? true : false,
-                type: 'access'
-            };
+            const accessToken = tokenService.generateToken(server, user, 'access');
+            tokenService.setCookie(reply, accessToken, 'authToken');
 
-            const jwToken = server.jwt.sign(payload, { expiresIn: '7d' });
+            if (user.twoFactor?.enabled) {
+                let code: string | undefined;
+                if (user.twoFactor.method === 'email') {
+                    code = await generateTwoFactorCode(user.id);
+                    await send2faEmailCode(user.email, code);
+                    console.log('> > > code sent to email: ' + code);
+                }
 
-            // Set authentication cookie
-            reply.setCookie('authToken', jwToken, {
-                httpOnly: true,
-                secure: true, // change to -> env.NODE_ENV === 'production',
-                sameSite: 'none',  // change for more secure approach
-                path: '/',
-                maxAge: 7 * 24 * 60 * 60 // 7 days
-            });
+                return reply.redirect(`${env.FRONTEND_URL}/login/verify`, 303);
+            }
+
+            const refreshToken = tokenService.generateToken(server, user, 'refresh');
+            await saveRefreshToken(user.id, refreshToken);
+            tokenService.setCookie(reply, refreshToken, 'refreshToken');
 
             // Redirect to frontend
             return reply.redirect(`${env.FRONTEND_URL}/profile`, 303);
@@ -457,39 +399,12 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
                 throw createHttpError(401, 'Invalid code');
         }
 
-        const payload: JWTPayload = {
-            userId: user.id,
-            username: user.username,
-            requires2FA: false,
-            type: 'access'
-        };
+        const accessToken = tokenService.generateToken(server, user, 'access', true);
+        tokenService.setCookie(reply, accessToken, 'authToken');
 
-        const jwToken = server.jwt.sign(payload, { expiresIn: '7d' });
-
-        reply.setCookie('authToken', jwToken, {
-            httpOnly: true,
-            secure: true, // change to -> env.NODE_ENV === 'production',
-            sameSite: 'none',  // change for more secure approach
-            path: '/',
-            maxAge: 15 * 60 // 15 min
-        });
-
-        const refreshToken = server.jwt.sign({
-            userId: user.id,
-            username: user.username,
-            requires2FA: false,
-            type: 'refresh'
-        }, { expiresIn: '7 days' });
-
+        const refreshToken = tokenService.generateToken(server, user, 'refresh');
         await saveRefreshToken(user.id, refreshToken);
-
-        reply.setCookie('refreshToken', refreshToken, {
-            httpOnly: true,
-            secure: true,   // MUST BE TRUE
-            sameSite: 'none', // MUST BE 'None' for cross-site/port requests
-            path: '/',
-            maxAge: 7 * 24 * 60 * 60 // 7 days
-        });
+        tokenService.setCookie(reply, refreshToken, 'refreshToken');
 
         return reply.send({
             message: '2FA verified successfully',

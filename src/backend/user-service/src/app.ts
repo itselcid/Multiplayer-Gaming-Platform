@@ -19,7 +19,7 @@ export default async function buildServer() {
     await fastifyServer.register(authPlugin);
     await fastifyServer.register(swaggerPlugin);
     await fastifyServer.register(import('@fastify/rate-limit'), {
-        max: 1000,              // reduce later for better security
+        max: 100,
         timeWindow: '1 minute',
         keyGenerator: (request) => {
             return request.user?.userId || request.ip; // use userId if available
