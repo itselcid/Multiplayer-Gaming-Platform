@@ -13,8 +13,15 @@ export function setupSocket(io: Server)
   {
     console.log("socket conected")
 
-    socket.on("join", async (userId: number) =>
+    socket.on("join", async (payload: any) =>
     {
+      const userId = typeof payload === 'object' && 'id' in payload ? Number(payload.id) : Number(payload);
+
+      if (isNaN(userId)) {
+        console.error("Invalid userId received:", payload);
+        return;
+      }
+
       await prisma.user.upsert({
         where: { id: userId },
         update: {},
