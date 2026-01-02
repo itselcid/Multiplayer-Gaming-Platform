@@ -53,29 +53,42 @@ export default async function userRoutes(server: FastifyInstance): Promise<void>
         preHandler: [server.authenticate],
         schema: UpdateProfileSchema
     }, async (request, reply) => {
+        try {
 
-        const { email } = request.body;
+            const { email } = request.body;
 
-        if (!email)
-            throw createHttpError(400, 'Provide email to update');
+            if (!email) {
+                return reply.code(400).send({
+                    error: 'Provide email to update'
+                });
+            }
 
-        const user = await updateUser(request.user!.userId, { email });
+            const user = await updateUser(request.user!.userId, { email });
 
-        return reply.send({
-            message: 'Profile updated successfully',
-            user
-        });
+            return reply.send({
+                message: 'Profile updated successfully',
+                user
+            });
+
+        } catch (err) {
+            return reply.code(400).send({ error: 'Email already exists or update failed' });
+        }
     });
 
     // delete logged in user account
     server.delete('/me', {
         preHandler: [server.authenticate]
     }, async (request, reply) => {
+        try {
 
-        await deleteUser(request.user!.userId);
-        return reply.send({ message: 'Account deleted successfully' });
+            await deleteUser(request.user!.userId);
 
-    });
+            return reply.send({ message: 'Account deleted successfully' });
+
+        } catch (error) {
+            return reply.code(500).send({ error: 'Internal server error' });
+        }
+    })
 
     // get user by id
     server.get<{
@@ -84,18 +97,28 @@ export default async function userRoutes(server: FastifyInstance): Promise<void>
         preHandler: [server.authenticate],
         schema: UserIdSchema
     }, async (request, reply) => {
+        try {
 
-        const userId = parseInt(request.params.id, 10);
+            const userId = parseInt(request.params.id, 10);
 
-        if (isNaN(userId))
-            throw createHttpError(400, 'Invalid user ID');
+            if (isNaN(userId)) {
+                return reply.code(400).send({
+                    error: 'Invalid user ID'
+                });
+            }
 
-        const user = await getUserById(userId);
+            const user = await getUserById(userId);
 
-        if (!user)
-            throw createHttpError(404, 'User not found');
+            if (!user) {
+                return reply.code(404).send({ error: 'User not found' });
+            }
 
-        return reply.send({ user });
+            return reply.send({ user });
+
+        } catch (error) {
+            return reply.code(500).send({ error: 'Internal server error' });
+        }
     });
+
 }
 

@@ -1,9 +1,8 @@
-import { FastifyInstance, FastifyRequest } from "fastify";
+import { FastifyInstance } from "fastify";
 import jwt from '@fastify/jwt';
 import { env } from '../env';
 import fastifyCookie from "@fastify/cookie";
 import fp from 'fastify-plugin';
-import createHttpError from "http-errors";
 
 
 export default fp(function authPlugin(server: FastifyInstance) {
@@ -21,25 +20,28 @@ export default fp(function authPlugin(server: FastifyInstance) {
         }
     });
 
-    const verifyJwt = async (req: FastifyRequest) => {
+    server.decorate('authenticate', async (request, reply) => {
         try {
-            await req.jwtVerify();
+            await request.jwtVerify() // Auto-verifies token from cookie/header
+
+            if (request.user.requires2FA) {
+                return reply.code(403).send({ error: '2FA required' })
+            }
         } catch (err) {
-            if (err instanceof createHttpError.HttpError)
-                throw err;
-            throw createHttpError(401, 'Invalid or expired token');
+            return reply.code(401).send({ error: 'Invalid token' })
         }
-    };
+    })
 
-    server.decorate('authenticate', async (request: FastifyRequest) => {
-        await verifyJwt(request);
-        if (request.user.requires2FA)
-            throw createHttpError(403, '2FA required');
-    });
+    server.decorate('authenticate2FA', async (request, reply) => {
+        try {
+            await request.jwtVerify() // Uses authToken cookie by default
 
-    server.decorate('authenticate2FA', async (request: FastifyRequest) => {
-        await verifyJwt(request);
-        if (!request.user.requires2FA)
-            throw createHttpError(403, '2FA not required');
-    });
+            if (!request.user.requires2FA) {
+                return reply.code(403).send({ error: '2FA not required' })
+            }
+
+        } catch (err) {
+            return reply.code(401).send({ error: 'Invalid or expired token' })
+        }
+    })
 });

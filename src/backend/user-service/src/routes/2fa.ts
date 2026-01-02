@@ -5,7 +5,6 @@ import bcrypt from 'bcrypt';
 import { send2faEmailCode } from "../services/email";
 import speakeasy from 'speakeasy';
 import QRCode from 'qrcode';
-import createHttpError from "http-errors";
 
 const Setup2FASchema = {
     body: {
@@ -47,18 +46,23 @@ export default async function twoFactorRoutes(server: FastifyInstance): Promise<
 
         const user = await getUserForAuth(request.user.username);
 
-        if (!user)
-            throw createHttpError(404, 'User not found');
+        if (!user) {
+            return reply.code(404).send({ error: 'User not found' });
+        }
 
         // 2. Check if 2FA already exists
-        if (user.twoFactor)
-            throw createHttpError(400, '2FA is already configured. Please delete existing setup first.');
+        if (user.twoFactor) {
+            return reply.code(400).send({
+                error: "2FA is already configured. Please delete existing setup first."
+            });
+        }
 
         // 3. Verify password
         const isValidPassword = await bcrypt.compare(password, user.password);
 
-        if (!isValidPassword)
-            throw createHttpError(401, 'Invalid password');
+        if (!isValidPassword) {
+            return reply.code(401).send({ error: "Invalid password" });
+        }
 
         // 4. save settings
         if (method === 'email') {
@@ -105,15 +109,19 @@ export default async function twoFactorRoutes(server: FastifyInstance): Promise<
     }, async (request, reply) => {
         const { code } = request.body;
 
-        if (!code)
-            throw createHttpError(400, 'Code is required');
+        if (!code) {
+            return reply.code(400).send({ error: 'Code is required' });
+        }
 
         const user = await getUserForAuth(request.user.username);
 
-        if (!user)
-            throw createHttpError(404, 'User not found');
-        if (!user.twoFactor)
-            throw createHttpError(400, '2FA is not configured');
+        if (!user) {
+            return reply.code(404).send({ error: 'User not found' });
+        }
+
+        if (!user.twoFactor) {
+            return reply.code(400).send({ error: '2FA is not configured' });
+        }
 
         const totpSecret = user.twoFactor.totpSecret;
 
@@ -125,13 +133,15 @@ export default async function twoFactorRoutes(server: FastifyInstance): Promise<
                 window: 2  // Accept codes from ±60 seconds (allows clock drift)
             });
 
-            if (!isValid)
-                throw createHttpError(401, 'Invalid code');
+            if (!isValid) {
+                return reply.code(401).send({ error: 'Invalid code' });
+            }
         } else {
             const isValidCode = await findTwoFactorCode(code);
 
-            if (!isValidCode || isValidCode.code !== code)
-                throw createHttpError(401, 'Invalid code');
+            if (!isValidCode || isValidCode.code !== code) {
+                return reply.code(401).send({ error: 'Invalid code' });
+            }
 
             await deleteTwoFactorCode(request.user.userId);
         }
@@ -163,15 +173,19 @@ export default async function twoFactorRoutes(server: FastifyInstance): Promise<
 
         const user = await getUserForAuth(request.user.username);
 
-        if (!user)
-            throw createHttpError(404, 'User not Found');
-        if (!user.twoFactor)
-            throw createHttpError(400, '2FA is not configured');
+        if (!user) {
+            return reply.code(404).send({ error: 'User not Found' });
+        }
+
+        if (!user.twoFactor) {
+            return reply.code(400).send({ error: '2FA is not configured' });
+        }
 
         const isValidPassword = await bcrypt.compare(password, user.password);
 
-        if (!isValidPassword)
-            throw createHttpError(401, 'Invalid password');
+        if (!isValidPassword) {
+            return reply.code(401).send({ error: 'Invalid password' });
+        }
 
         await deleteTwoFactor(userId);
         await deleteTwoFactorCode(userId);
@@ -179,6 +193,7 @@ export default async function twoFactorRoutes(server: FastifyInstance): Promise<
         return reply.send({
             message: '2FA disabled successfully'
         });
+
     })
 
 }

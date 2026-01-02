@@ -2,7 +2,6 @@
 import { FastifyInstance } from 'fastify';
 import { acceptFriendRequest, blockFriend, getBlockedFriends, getFriends, getFriendship, getReceivedFriendRequests, getSentFriendRequests, getUserById, removeFriend, sendFriendRequest, unblockFriend } from '../db';
 import { Friend } from '../types';
-import createHttpError from 'http-errors';
 
 
 const GetFriendsSchema = {
@@ -92,16 +91,19 @@ export default function friendsRoutes(server: FastifyInstance) {
 
         const friendId = request.params.friendId;
 
-        if (friendId === request.user!.userId)
-            throw createHttpError(400, 'You cannot send a friend request to yourself');
+        if (friendId === request.user!.userId) {
+            return reply.code(400).send({ error: 'You cannot send a friend request to yourself' });
+        }
 
         const friend = await getUserById(friendId);
-        if (!friend)
-            throw createHttpError(404, 'Friend not found');
+        if (!friend) {
+            return reply.code(404).send({ error: 'Friend not found' });
+        }
 
         const friendship = await getFriendship(request.user!.userId, friendId);
-        if (friendship)
-            throw createHttpError(400, 'Friendship already exists, it may be pending or accepted');
+        if (friendship) {
+            return reply.code(400).send({ error: 'Friendship already exists, it may be pending or accepted' });
+        }
 
         await sendFriendRequest(request.user!.userId, friendId);
 
@@ -160,11 +162,13 @@ export default function friendsRoutes(server: FastifyInstance) {
         const friendId = request.params.friendId;
 
         const friendship = await getFriendship(request.user!.userId, friendId);
-        if (!friendship)
-            throw createHttpError(404, 'Friendship not found');
+        if (!friendship) {
+            return reply.code(404).send({ error: 'Friendship not found' });
+        }
 
-        if (friendship.status === 'ACCEPTED')
+        if (friendship.status === 'ACCEPTED') {
             await blockFriend(request.user!.userId, friendId);
+        }
 
         return reply.send({ message: 'User blocked successfully' });
     });
@@ -180,11 +184,13 @@ export default function friendsRoutes(server: FastifyInstance) {
 
         const friendship = await getFriendship(request.user!.userId, friendId);
 
-        if (!friendship)
-            throw createHttpError(404, 'Friendship not found');
+        if (!friendship) {
+            return reply.code(404).send({ error: 'Friendship not found' });
+        }
 
-        if (friendship.status === 'BLOCKED')
+        if (friendship.status === 'BLOCKED') {
             await unblockFriend(request.user!.userId, friendId);
+        }
 
         return reply.send({ message: 'User unblocked successfully' });
     });

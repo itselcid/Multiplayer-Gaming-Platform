@@ -1,13 +1,11 @@
 
 import { FastifyInstance } from 'fastify';
 import bcrypt from 'bcrypt';
-import { LoginInput, RegisterInput, CreateUserInput, PasswordResetInput, GithubProfile } from '../types';
+import { LoginInput, RegisterInput, JWTPayload, CreateUserInput, PasswordResetInput, GithubProfile } from '../types';
 import { createPasswordResetToken, createUser, deletePasswordResetToken, deleteTwoFactorCode, findOrCreateGithubUser, findPasswordResetToken, findTwoFactorCode, generateTwoFactorCode, getUserByRefreshToken, getUserByUsername, getUserForAuth, saveRefreshToken, updateUser } from '../db';
 import { send2faEmailCode, sendPasswordResetEmail } from '../services/email.js';
 import speakeasy from 'speakeasy';
 import { env } from '../env';
-import createHttpError from 'http-errors';
-import { tokenService } from '../services/auth';
 
 const LoginSchema = {
     body: {
@@ -92,21 +90,42 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
 
         const { username, password } = request.body;
 
-        if (!password || !username)
-            throw createHttpError(400, 'username and password are requierd!');
+        if (!password || !username) {
+            return reply.send({ error: "username and password are requierd!" });
+        }
 
         const user = await getUserForAuth(username);
 
-        if (!user)
-            throw createHttpError(401, 'Invalid username or password!');
+        if (!user) {
+            return reply.code(401).send({
+                error: "Invalid username or password!"
+            });
+        }
 
         const isValidPassword = await bcrypt.compare(password, user.password);
 
-        if (!isValidPassword)
-            throw createHttpError(401, 'Invalid username or password!');
+        if (!isValidPassword) {
+            return reply.code(401).send({
+                error: "Invalid username or password!"
+            });
+        }
 
-        const accessToken = tokenService.generateToken(server, user, 'access');
-        tokenService.setCookie(reply, accessToken, 'authToken');
+        const payload: JWTPayload = {
+            userId: user.id,
+            username: user.username,
+            requires2FA: user.twoFactor?.enabled ? true : false,
+            type: 'access'
+        }
+
+        const jwToken = server.jwt.sign(payload, { expiresIn: '15m' });
+
+        reply.setCookie('authToken', jwToken, {
+            httpOnly: true,
+            secure: true,   // MUST BE TRUE
+            sameSite: 'none', // MUST BE 'None' for cross-site/port requests
+            path: '/',
+            maxAge: 15 * 60 // 15 min
+        });
 
         if (user.twoFactor?.enabled) {
             let code: string | undefined;
@@ -123,9 +142,22 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
             });
         }
 
-        const refreshToken = tokenService.generateToken(server, user, 'refresh');
+        const refreshToken = server.jwt.sign({
+            userId: user.id,
+            username: user.username,
+            requires2FA: false,
+            type: 'refresh'
+        }, { expiresIn: '7 days' });
+
         await saveRefreshToken(user.id, refreshToken);
-        tokenService.setCookie(reply, refreshToken, 'refreshToken');
+
+        reply.setCookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: true,   // MUST BE TRUE
+            sameSite: 'none', // MUST BE 'None' for cross-site/port requests
+            path: '/',
+            maxAge: 7 * 24 * 60 * 60 // 7 days
+        });
 
         return reply.send({
             message: 'Login successful',
@@ -146,11 +178,13 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
     }, async (request, reply) => {
         const { username, email, password } = request.body;
 
-        if (!username || !email || !password)
-            throw createHttpError(400, 'username, email and password are required');
+        if (!username || !email || !password) {
+            return reply.code(400).send({ error: "username, email and password are required" });
+        }
 
-        if (password.length < 4) // weaker password for development
-            throw createHttpError(400, 'password must be at least 4 characters long');
+        if (password.length < 4) { // weaker password for development
+            return reply.code(400).send({ error: "password must be at least 4 characters long" });
+        }
 
         const newUser: CreateUserInput = {
             username,
@@ -159,26 +193,40 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
         }
 
 
-        const existingUser = await getUserByUsername(username, email);
+        const existingUser = await getUserByUsername(username);
 
-        if (existingUser)
-            throw createHttpError(409, 'User with this username or email already exists');
+        if (existingUser) {
+            return reply.code(409).send({ error: "User already exists" });
+        }
 
         const user = await createUser(newUser);
 
-        if (!user)
-            throw createHttpError(500);
+        if (user) {
+            return reply.code(201).send({
+                message: "User created successfully",
+                user
+            });
+        }
 
-        return reply.code(201).send({
-            message: "User created successfully",
-            user
-        });
+        return reply.code(500).send({ error: "Internal server error" });
     });
 
     // logout endpoint
     server.post('/logout', async (_request, reply) => {
-        tokenService.clearCookie(reply, 'authToken');
-        tokenService.clearCookie(reply, 'refreshToken');
+        reply.clearCookie('authToken', {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none',
+            path: '/',
+        });
+
+        reply.clearCookie('refreshToken', {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none',
+            path: '/',
+        });
+
         return reply.send({
             message: 'Logout successful. Token invalidated.'
         });
@@ -188,18 +236,39 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
     server.post('/refresh', async (_request, reply) => {
 
         const token = _request.cookies.refreshToken;
-        if (!token)
-            throw createHttpError(401, 'Refresh token not found');
+        if (!token) {
+            return reply.code(401).send({ error: 'Refresh token not found' });
+        }
 
         const user = await getUserByRefreshToken(token);
 
-        if (!user)
-            throw createHttpError(401, 'Invalid refresh token');
+        if (!user) {
+            return reply.code(401).send({ error: 'Invalid refresh token' });
+        }
 
-        tokenService.clearCookie(reply, 'authToken');
+        reply.clearCookie('authToken', {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none',
+            path: '/',
+        });
 
-        const accessToken = tokenService.generateToken(server, user, 'access');
-        tokenService.setCookie(reply, accessToken, 'authToken');
+        const payload: JWTPayload = {
+            userId: user.id,
+            username: user.username,
+            requires2FA: false,
+            type: 'access'
+        }
+
+        const jwToken = server.jwt.sign(payload, { expiresIn: '15m' });
+
+        reply.setCookie('authToken', jwToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none',
+            path: '/',
+            maxAge: 15 * 60 // 15 min
+        });
 
         return reply.send({
             message: 'Refresh token successful.',
@@ -219,25 +288,30 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
     }, async (request, reply) => {
         const { email } = request.body;
 
-        if (!email)
-            throw createHttpError(400, 'email is required');
-
-        const user = await getUserByUsername(email);
-
-        if (user) {
-            const resetToken = await createPasswordResetToken(user.id);
-
-            await sendPasswordResetEmail(user.email, resetToken.token);
-
-            return reply.send({
-                message: "Password reset email sent successfully",
-                // !!! ONLY FOR DEVELOPMENT Remove in production!
-                devToken: resetToken.token
-            })
+        if (!email) {
+            return reply.code(400).send({ error: "email is required" });
         }
-        return reply.send({
-            message: "Password reset email sent successfully"
-        })
+
+        try {
+            const user = await getUserByUsername(email);
+
+            if (user) {
+                const resetToken = await createPasswordResetToken(user.id);
+
+                await sendPasswordResetEmail(user.email, resetToken.token);
+
+                return reply.send({
+                    message: "Password reset email sent successfully",
+                    // !!! ONLY FOR DEVELOPMENT Remove in production!
+                    devToken: resetToken.token
+                })
+            }
+            return reply.send({
+                message: "Password reset email sent successfully"
+            })
+        } catch (error) {
+            return reply.code(500).send({ error: "Internal server error" });
+        }
     });
 
     // reset password endpoint
@@ -248,24 +322,32 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
     }, async (request, reply) => {
         const { token, password } = request.body;
 
-        if (!token || !password)
-            throw createHttpError(400, 'token and password are required');
+        if (!token || !password) {
+            return reply.code(400).send({ error: "token and password are required" });
+        }
 
-        if (password.length < 4)   //! change to 8 in production
-            throw createHttpError(400, 'password must be at least 4 characters long');
+        if (password.length < 4) {   //! change to 8 in production
+            return reply.code(400).send({ error: "password must be at least 4 characters long" });
+        }
 
-        //find and validate token
-        const resetToken = await findPasswordResetToken(token);
+        try {
+            //find and validate token
+            const resetToken = await findPasswordResetToken(token);
 
-        if (!resetToken)
-            throw createHttpError(400, 'Invalid or expired token');
+            if (!resetToken) {
+                return reply.code(400).send({ error: 'Invalid or expired token' })
+            }
 
-        await updateUser(resetToken.userId, { password });
-        await deletePasswordResetToken(token);
+            await updateUser(resetToken.userId, { password });
+            await deletePasswordResetToken(token);
 
-        return reply.send({
-            message: "Password reset successfully"
-        })
+            return reply.send({
+                message: "Password reset successfully"
+            })
+
+        } catch (error) {
+            return reply.code(500).send({ error: "Internal server error" });
+        }
     });
 
     // github login endpoint
@@ -287,8 +369,9 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
     }, async (request, reply) => {
         const { code } = request.query;
 
-        if (!code)
-            throw createHttpError(400, 'Authorization code not provided');
+        if (!code) {
+            return reply.code(400).send({ error: 'Authorization code not provided' });
+        }
 
         try {
             // Exchange code for access token
@@ -307,11 +390,15 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
 
             const tokenData = await tokenResponse.json() as GitHubTokenResponse;
 
-            if (tokenData.error)
-                throw createHttpError(400, tokenData.error_description || 'GitHub authentication failed');
+            if (tokenData.error) {
+                return reply.code(400).send({
+                    error: tokenData.error_description || 'GitHub authentication failed'
+                });
+            }
 
-            if (!tokenData.access_token)
-                throw createHttpError(400, 'No access token received');
+            if (!tokenData.access_token) {
+                return reply.code(400).send({ error: 'No access token received' });
+            }
 
             const githubAccessToken = tokenData.access_token;
 
@@ -328,33 +415,32 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
             // Create or find user in database
             const user = await findOrCreateGithubUser(githubUser);
 
+            //! should i make a function to generate the token? repeated code!?
             // Generate JWT token   
-            const accessToken = tokenService.generateToken(server, user, 'access');
-            tokenService.setCookie(reply, accessToken, 'authToken');
+            const payload: JWTPayload = {
+                userId: user.id,
+                username: user.username,
+                requires2FA: user.twoFactor ? true : false,
+                type: 'access'
+            };
 
-            if (user.twoFactor?.enabled) {
-                let code: string | undefined;
-                if (user.twoFactor.method === 'email') {
-                    code = await generateTwoFactorCode(user.id);
-                    await send2faEmailCode(user.email, code);
-                    console.log('> > > code sent to email: ' + code);
-                }
+            const jwToken = server.jwt.sign(payload, { expiresIn: '7d' });
 
-                return reply.redirect(`${env.FRONTEND_URL}/login/verify`, 303);
-            }
-
-            const refreshToken = tokenService.generateToken(server, user, 'refresh');
-            await saveRefreshToken(user.id, refreshToken);
-            tokenService.setCookie(reply, refreshToken, 'refreshToken');
+            // Set authentication cookie
+            reply.setCookie('authToken', jwToken, {
+                httpOnly: true,
+                secure: true, // change to -> env.NODE_ENV === 'production',
+                sameSite: 'none',  // change for more secure approach
+                path: '/',
+                maxAge: 7 * 24 * 60 * 60 // 7 days
+            });
 
             // Redirect to frontend
             return reply.redirect(`${env.FRONTEND_URL}/profile`, 303);
 
-        } catch (err: any) {
+        } catch (err) {
             console.error('[GitHub OAuth error]:', err);
-            if (err instanceof createHttpError.HttpError)
-                throw createHttpError(err.statusCode, err.message);
-            throw createHttpError(500, 'Authentication failed');
+            return reply.code(500).send({ error: 'Authentication failed' });
         }
     });
 
@@ -368,24 +454,28 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
 
         const { code } = request.body;
 
-        if (!code)
-            throw createHttpError(400, 'Code is required');
+        if (!code) {
+            return reply.code(400).send({ error: 'Code is required' });
+        }
 
         const userId = request.user.userId;
 
-        if (!userId)
-            throw createHttpError(400, 'User ID is required');
+        if (!userId) {
+            return reply.code(400).send({ error: 'User ID is required' });
+        }
 
         const user = await getUserForAuth(request.user.username);
 
-        if (!user)
-            throw createHttpError(404, 'User not found');
+        if (!user) {
+            return reply.code(404).send({ error: 'User not found' });
+        }
 
         if (user.twoFactor.method === 'email') {
             const isValidCode = await findTwoFactorCode(code);
 
-            if (!isValidCode || isValidCode.code !== code)
-                throw createHttpError(401, 'Invalid code');
+            if (!isValidCode || isValidCode.code !== code) {
+                return reply.code(401).send({ error: 'Invalid code' });
+            }
 
             await deleteTwoFactorCode(userId);
         } else if (user.twoFactor.method === 'totp') {
@@ -395,16 +485,44 @@ export default async function authRoutes(server: FastifyInstance): Promise<void>
                 token: code,
                 window: 2
             });
-            if (!isValid)
-                throw createHttpError(401, 'Invalid code');
+            if (!isValid) {
+                return reply.code(401).send({ error: 'Invalid code' });
+            }
         }
 
-        const accessToken = tokenService.generateToken(server, user, 'access', true);
-        tokenService.setCookie(reply, accessToken, 'authToken');
+        const payload: JWTPayload = {
+            userId: user.id,
+            username: user.username,
+            requires2FA: false,
+            type: 'access'
+        };
 
-        const refreshToken = tokenService.generateToken(server, user, 'refresh');
+        const jwToken = server.jwt.sign(payload, { expiresIn: '7d' });
+
+        reply.setCookie('authToken', jwToken, {
+            httpOnly: true,
+            secure: true, // change to -> env.NODE_ENV === 'production',
+            sameSite: 'none',  // change for more secure approach
+            path: '/',
+            maxAge: 15 * 60 // 15 min
+        });
+
+        const refreshToken = server.jwt.sign({
+            userId: user.id,
+            username: user.username,
+            requires2FA: false,
+            type: 'refresh'
+        }, { expiresIn: '7 days' });
+
         await saveRefreshToken(user.id, refreshToken);
-        tokenService.setCookie(reply, refreshToken, 'refreshToken');
+
+        reply.setCookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: true,   // MUST BE TRUE
+            sameSite: 'none', // MUST BE 'None' for cross-site/port requests
+            path: '/',
+            maxAge: 7 * 24 * 60 * 60 // 7 days
+        });
 
         return reply.send({
             message: '2FA verified successfully',
