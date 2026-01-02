@@ -18,9 +18,12 @@ interface User {
   lastSeen: string;
   unread: number;
   typing: boolean;
+  lastMessage?: string;
+  lastMessageTime?: string;
 }
 
 interface Message {
+  id?: number;
   text: string;
   isMine: boolean;
   time: string;
@@ -31,6 +34,7 @@ export class chat extends Component {
   private socket: Socket | null = null;
   private unsubscribeAuth: (() => void) | null = null;
   private currentChatUserId: number | null = null;
+  private oldestMessageId: number | null = null;
   private messageInput: string = '';
   private searchQuery: string = '';
   private activeTab: 'users' | 'tournaments' = 'users';
@@ -41,6 +45,98 @@ export class chat extends Component {
   private users: Record<number, User> = {};
 
   private conversations: Record<number, Message[]> = {};
+
+  async fetchOlderMessages() {
+    if (!this.currentChatUserId || !this.oldestMessageId) return;
+
+    const currentUser = userState.get();
+    if (!currentUser) return;
+
+    try {
+      const res = await fetch(
+        `http://localhost:4000/messages/${this.currentChatUserId}/older?cursor=${this.oldestMessageId}`,
+        { 
+            credentials: 'include',
+            headers: { 
+                'x-user-id': currentUser.id.toString()
+            } 
+        }
+      );
+      const older = await res.json();
+      if (!older.length) return; // no more messages
+
+      // Update oldest message id
+      this.oldestMessageId = older[older.length - 1].id;
+
+      // Reverse older messages to be ASC (Oldest -> Newest)
+      older.reverse();
+
+      const myUserId = currentUser.id;
+
+      // Prepend older messages
+      const oldMsgs = older.map((m: any) => ({
+        text: m.content,
+        isMine: m.senderId === myUserId,
+        time: new Date(m.createdAt).toLocaleTimeString(),
+        id: m.id,
+        reactions: []
+      }));
+
+      if (this.currentChatUserId) {
+        this.conversations[this.currentChatUserId] = [
+            ...oldMsgs,
+            ...this.conversations[this.currentChatUserId]
+        ];
+      }
+
+      this.render();
+
+      // Maintain scroll position (important!)
+      const container = this.el.querySelector('#messages-container');
+      if (container) {
+        container.scrollTop = 50; // adjust as needed
+      }
+    } catch (error) {
+        console.error("Error fetching older messages:", error);
+    }
+  }
+
+  async fetchMessages(userId: number) {
+    const currentUser = userState.get();
+    if (!currentUser) return;
+
+    try {
+        const res = await fetch(`http://localhost:4000/messages/${userId}`, {
+            credentials: 'include',
+            headers: { 
+                'x-user-id': currentUser.id.toString()
+            }
+        });
+        const messages = await res.json();
+
+        const myUserId = currentUser.id;
+
+        // Oldest message id for pagination (messages are DESC, so last one is oldest)
+        this.oldestMessageId = messages[messages.length - 1]?.id || null;
+
+        // Reverse to show oldest first (ASC)
+        messages.reverse();
+
+        // Save in your conversations object
+        this.conversations[userId] = messages.map((m: any) => ({
+            text: m.content,
+            isMine: m.senderId === myUserId,
+            time: new Date(m.createdAt).toLocaleTimeString(),
+            id: m.id,  // keep the id for pagination
+            reactions: []
+        }));
+
+        this.render();
+        this.scrollToBottom();
+    } catch (error) {
+        console.error("Error fetching messages:", error);
+    }
+  }
 
   // Load friends from backend API (user-service)
   private async loadFriends() {
@@ -61,6 +157,8 @@ export class chat extends Component {
 
       // Convert friends to users format
       this.users = {};
+      const friendIds: number[] = [];
+
       friends.forEach((friend: Friend) => {
         this.users[friend.id] = {
           id: friend.id,
@@ -71,13 +169,53 @@ export class chat extends Component {
           unread: 0,
           typing: false
         };
+        friendIds.push(friend.id);
       });
+
+      // Fetch last messages for these friends
+      if (friendIds.length > 0) {
+        this.fetchLastMessages(friendIds);
+      }
 
       this.render();
     } catch (error) {
       console.error('Failed to load friends:', error);
     } finally {
       this.isLoadingFriends = false;
+    }
+  }
+
+  private async fetchLastMessages(userIds: number[]) {
+    const currentUser = userState.get();
+    if (!currentUser) return;
+
+    try {
+      const response = await fetch(`http://localhost:4000/messages/latest-batch`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': currentUser.id.toString()
+        },
+        body: JSON.stringify({ userIds }),
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // data is Record<number, Message>
+        
+        Object.keys(data).forEach((key) => {
+          const userId = Number(key);
+          const msg = data[userId];
+          if (this.users[userId]) {
+            this.users[userId].lastMessage = msg.content;
+            this.users[userId].lastMessageTime = new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          }
+        });
+        this.render();
+      }
+    } catch (error) {
+      console.error('Failed to fetch last messages:', error);
     }
   }
 
@@ -121,27 +259,49 @@ export class chat extends Component {
     const currentUser = userState.get();
     if (!currentUser) return;
 
-    const senderId = message.from;
+    const isMine = message.from === currentUser.id;
+    const otherUserId = isMine ? message.to : message.from;
     
-    if (!this.conversations[senderId]) {
-      this.conversations[senderId] = [];
+    if (!this.conversations[otherUserId]) {
+      this.conversations[otherUserId] = [];
     }
+
+    // Check if message already exists (to avoid duplicates if we optimistically added it)
+    // But currently sendMessage adds it optimistically without ID.
+    // If we receive it back from socket, we might want to update the ID or ignore if we don't care about ID sync yet.
+    // However, since we are syncing across tabs, we should add it if it's not there.
+    // Or better: The optimistic add in sendMessage should probably be replaced by waiting for the socket event 
+    // OR we just handle the duplication check.
+    
+    // Simple duplication check by ID if available
+    const exists = this.conversations[otherUserId].some(m => m.id === message.id);
+    if (exists) return;
 
     const timeStr = new Date(message.createdAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 
-    this.conversations[senderId].push({
+    this.conversations[otherUserId].push({
       text: message.content,
-      isMine: false,
+      isMine: isMine,
       time: timeStr,
+      id: message.id,
       reactions: []
     });
 
-    if (this.currentChatUserId === senderId) {
+    // Update last message in user list
+    if (this.users[otherUserId]) {
+        this.users[otherUserId].lastMessage = message.content;
+        this.users[otherUserId].lastMessageTime = timeStr;
+    }
+
+    if (this.currentChatUserId === otherUserId) {
       this.render();
       this.scrollToBottom();
     } else {
-      if (this.users[senderId]) {
-          this.users[senderId].unread = (this.users[senderId].unread || 0) + 1;
+      if (!isMine && this.users[otherUserId]) {
+          this.users[otherUserId].unread = (this.users[otherUserId].unread || 0) + 1;
+          this.render();
+      } else {
+          // Re-render to show updated last message even if not unread
           this.render();
       }
     }
@@ -228,13 +388,16 @@ export class chat extends Component {
           <div class="flex-1 min-w-0">
             <div class="flex items-center justify-between">
               <h3 class="font-semibold text-gray-200 truncate">${this.escapeHtml(user.name)}</h3>
+              ${user.lastMessageTime ? `<span class="text-[10px] text-gray-500">${user.lastMessageTime}</span>` : ''}
+            </div>
+            <div class="flex justify-between items-center">
+              <p class="text-xs text-gray-500 truncate max-w-[120px]">${user.lastMessage ? this.escapeHtml(user.lastMessage) : this.escapeHtml(user.lastSeen)}</p>
               ${user.unread > 0 ? `
                 <span class="bg-neon-cyan text-space-dark text-xs rounded-full px-2 py-0.5 font-semibold">
                   ${user.unread}
                 </span>
               ` : ''}
             </div>
-            <p class="text-xs text-gray-500 truncate">${this.escapeHtml(user.lastSeen)}</p>
           </div>
         </div>
       </div>
@@ -397,6 +560,16 @@ export class chat extends Component {
   }
 
   attachEventListeners() {
+    // Scroll listener for older messages
+    const container = this.el.querySelector('#messages-container');
+    if (container) {
+      container.addEventListener('scroll', () => {
+        if (container.scrollTop === 0) {
+          this.fetchOlderMessages();
+        }
+      });
+    }
+
     // Tabs
     const tabUsers = this.el.querySelector('#tab-users');
     const tabTournaments = this.el.querySelector('#tab-tournaments');
@@ -515,27 +688,16 @@ export class chat extends Component {
     }
 
     this.messageInput = '';
-    this.render();
-    this.scrollToBottom();
+    this.render(); // Render immediately to show the chat view
+    this.fetchMessages(userId);
   }
 
   sendMessage() {
     const content = this.messageInput.trim();
     if (!content || !this.currentChatUserId) return;
 
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-
-    if (!this.conversations[this.currentChatUserId]) {
-      this.conversations[this.currentChatUserId] = [];
-    }
-
-    this.conversations[this.currentChatUserId].push({
-      text: content,
-      isMine: true,
-      time: timeStr,
-      reactions: []
-    });
+    // Don't add optimistically, wait for socket event to ensure sync and no duplicates
+    // The server will emit 'receive-message' back to us
 
     if (this.socket) {
       this.socket.emit("send_message", {
@@ -545,8 +707,12 @@ export class chat extends Component {
     }
 
     this.messageInput = '';
-    this.render();
-    this.scrollToBottom();
+    // We don't render here, we wait for the message to come back
+    // But we should clear the input in the UI
+    const inputEl = this.el.querySelector('#message-input') as HTMLTextAreaElement;
+    if (inputEl) {
+        inputEl.value = '';
+    }
   }
 
   scrollToBottom() {

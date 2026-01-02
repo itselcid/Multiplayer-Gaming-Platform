@@ -33,8 +33,9 @@ export function setupSocket(io: Server)
         },
       });
       socket.userId = userId;
+      socket.join(userId.toString()); // Join a room with the user's ID
       adduser(userId, socket.id)
-      console.log(`User ${userId} connected`);
+      console.log(`User ${userId} connected and joined room ${userId}`);
     });
     ///// all logic her
 
