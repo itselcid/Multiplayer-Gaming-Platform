@@ -146,10 +146,6 @@ export class Friends extends Component {
     await this.fetchApi(`/users/friends/requests/reject/${friendId}`, { method: 'POST' });
   }
 
-  private async removeFriendApi(friendId: number): Promise<void> {
-    await this.fetchApi(`/users/friends/remove/${friendId}`, { method: 'DELETE' });
-  }
-
   // ============ END API CALLS ============
 
   unmount() {
@@ -199,16 +195,6 @@ export class Friends extends Component {
     }
   }
 
-  private async removeFriend(friendId: number) {
-    if (!confirm('Are you sure you want to remove this friend?')) return;
-    try {
-      await this.removeFriendApi(friendId);
-      await this.loadData();
-    } catch (err: any) {
-      alert(err.message || 'Failed to remove friend');
-    }
-  }
-
   private renderFriendsList() {
     if (this.friends.length === 0) {
       return `
@@ -231,9 +217,6 @@ export class Friends extends Component {
             <p class="text-xs text-neon-cyan/70">Friend</p>
           </div>
         </div>
-        <button class="remove-friend-btn text-red-400 hover:text-red-300 text-sm px-3 py-1 rounded hover:bg-red-500/20 transition" data-id="${friend.id}">
-          Remove
-        </button>
       </div>
     `).join('');
   }
@@ -478,14 +461,6 @@ export class Friends extends Component {
       btn.addEventListener('click', () => {
         const friendId = parseInt((btn as HTMLElement).dataset.id || '0');
         if (friendId) this.rejectRequest(friendId);
-      });
-    });
-
-    // Remove friend buttons
-    this.el.querySelectorAll('.remove-friend-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const friendId = parseInt((btn as HTMLElement).dataset.id || '0');
-        if (friendId) this.removeFriend(friendId);
       });
     });
 
