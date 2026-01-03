@@ -1,15 +1,35 @@
 import { FastifyInstance } from 'fastify';
+import { blockuser, unblockuser } from './utils/block_user.js';
 import { prisma } from "./prisma.js";
 
-declare module 'fastify' {
-  interface FastifyRequest {
-    user: {
-      id: number;
-    };
-  }
-}
+export async function chatRoutes(fastify: FastifyInstance) {
+  // Block a user
+  fastify.post<{ Body: { userId: number } }>('/block', async (req, reply) => {
+    const me = req.user.id;
+    const userId = req.body.userId;
 
-export async function messageRoutes(fastify: FastifyInstance) {
+    try {
+      await blockuser(me, userId);
+      return { success: true, message: 'User blocked' };
+    } catch (err) {
+      reply.code(400).send({ error: 'Failed to block user' });
+    }
+  });
+
+  // Unblock a user
+  fastify.post<{ Body: { userId: number } }>('/unblock', async (req, reply) => {
+    const me = req.user.id;
+    const userId = req.body.userId;
+
+    try {
+      await unblockuser(me, userId);
+      return { success: true, message: 'User unblocked' };
+    } catch (err) {
+      reply.code(400).send({ error: 'Failed to unblock user' });
+    }
+  });
+
+  // Send a message
   fastify.post<{ Body: { receiverId: number; content: string } }>('/messages', async (req, reply) => {
     const senderId = req.user.id;
     const { receiverId, content } = req.body;
@@ -29,6 +49,7 @@ export async function messageRoutes(fastify: FastifyInstance) {
     return message;
   });
 
+  // Get messages with a user
   fastify.get<{ Params: { userId: string } }>('/messages/:userId', async (req, reply) => {
     const me = req.user.id;
     const other = Number(req.params.userId);
@@ -47,6 +68,7 @@ export async function messageRoutes(fastify: FastifyInstance) {
     return messages;
   });
 
+  // Get older messages (pagination)
   fastify.get<{ Params: { userId: string }, Querystring: { cursor: string } }>('/messages/:userId/older', async (req, reply) => {
     const me = req.user.id;
     const other = Number(req.params.userId);
@@ -69,6 +91,7 @@ export async function messageRoutes(fastify: FastifyInstance) {
     return messages;
   });
 
+  // Get latest message for a list of users (for inbox preview)
   fastify.post<{ Body: { userIds: number[] } }>('/messages/latest-batch', async (req, reply) => {
     const me = req.user.id;
     const { userIds } = req.body;

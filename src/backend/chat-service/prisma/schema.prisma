@@ -12,20 +12,35 @@ datasource db {
 }
 
 model User {
-  id       Int      @id @default(autoincrement())
-  username String   @unique
+  id               Int       @id @default(autoincrement())
+  username         String    @unique
   messagesSent     Message[] @relation("sent")
   messagesReceived Message[] @relation("received")
+
+  blocksSent     Block[] @relation("blockedBy")
+  blocksReceived Block[] @relation("blocked")
 }
 
 model Message {
-  id         Int      @id @default(autoincrement())
-  content    String
-  createdAt  DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  content   String
+  createdAt DateTime @default(now())
 
   senderId   Int
   receiverId Int
 
-  sender     User @relation("sent", fields: [senderId], references: [id])
-  receiver   User @relation("received", fields: [receiverId], references: [id])
+  sender   User @relation("sent", fields: [senderId], references: [id])
+  receiver User @relation("received", fields: [receiverId], references: [id])
+}
+
+model Block {
+  id        Int      @id @default(autoincrement())
+  blockerId Int
+  blockedId Int
+  createdAt DateTime @default(now())
+
+  blocker User @relation("blockedBy", fields: [blockerId], references: [id])
+  blocked User @relation("blocked", fields: [blockedId], references: [id])
+
+  @@unique([blockerId, blockedId])
 }

@@ -1,8 +1,8 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import { Server } from "socket.io";
-import { setupSocket } from "./utils_socket/socket.js";
-import { messageRoutes } from "./save_message.js";
+import { setupSocket } from "./utils/socket.js";
+import { chatRoutes } from "./route_chat.js";
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -40,7 +40,7 @@ const io = new Server(fastify.server, {
 
 setupSocket(io);
 
-fastify.register(messageRoutes);
+fastify.register(chatRoutes);
 
 fastify.listen({ port: 4000 }, () => {
   console.log("Backend running on http://localhost:4000");

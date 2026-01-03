@@ -1,5 +1,6 @@
 import { createMessage } from "../prisma.js";
 import { getRoomName, getsocket_id } from "./user.js";
+import { isBlocked } from "./block_user.js";
 
 export function register_message(io: any, socket: any)
 {
@@ -13,6 +14,15 @@ export function register_message(io: any, socket: any)
             }
             
             console.log(`Processing message from ${from} to ${to}`);
+
+            // 1. Check if the receiver has blocked the sender
+            const blocked = await isBlocked(from, to);
+            
+            if (blocked) {
+                // Option B: Send error back to sender
+                socket.emit("error", { message: "You have been blocked by this user." });
+                return; // STOP here. Do not save to DB, do not emit to receiver.
+            }
 
             // save message  in database
             const message = await createMessage(from, to , content);
