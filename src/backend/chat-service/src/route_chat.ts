@@ -5,28 +5,57 @@ import { prisma } from "./prisma.js";
 export async function chatRoutes(fastify: FastifyInstance) {
   // Block a user
   fastify.post<{ Body: { userId: number } }>('/block', async (req, reply) => {
+    if (!req.user?.id) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
     const me = req.user.id;
     const userId = req.body.userId;
+
+    if (!userId) {
+      return reply.code(400).send({ error: 'userId is required' });
+    }
 
     try {
       await blockuser(me, userId);
       return { success: true, message: 'User blocked' };
-    } catch (err) {
-      reply.code(400).send({ error: 'Failed to block user' });
+    } catch (err: any) {
+      reply.code(400).send({ error: err.message || 'Failed to block user' });
     }
   });
 
   // Unblock a user
   fastify.post<{ Body: { userId: number } }>('/unblock', async (req, reply) => {
+    if (!req.user?.id) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
     const me = req.user.id;
     const userId = req.body.userId;
+
+    if (!userId) {
+      return reply.code(400).send({ error: 'userId is required' });
+    }
 
     try {
       await unblockuser(me, userId);
       return { success: true, message: 'User unblocked' };
-    } catch (err) {
-      reply.code(400).send({ error: 'Failed to unblock user' });
+    } catch (err: any) {
+      reply.code(400).send({ error: err.message || 'Failed to unblock user' });
     }
+  });
+
+  // Get list of blocked users
+  fastify.get('/blocked', async (req, reply) => {
+    if (!req.user?.id) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+    const me = req.user.id;
+
+    const blockedUsers = await prisma.block.findMany({
+      where: { blockerId: me },
+      select: { blockedId: true }
+    });
+
+    return { blockedIds: blockedUsers.map(b => b.blockedId) };
   });
 
   // Send a message

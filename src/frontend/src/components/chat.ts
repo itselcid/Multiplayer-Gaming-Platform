@@ -46,6 +46,9 @@ export class chat extends Component {
 
   private conversations: Record<number, Message[]> = {};
 
+  // Set of blocked user IDs
+  private blockedUsers: Set<number> = new Set();
+
   async fetchOlderMessages() {
     if (!this.currentChatUserId || !this.oldestMessageId) return;
 
@@ -219,11 +222,35 @@ export class chat extends Component {
     }
   }
 
+  // Load list of blocked users from backend
+  private async loadBlockedUsers() {
+    const currentUser = userState.get();
+    if (!currentUser) return;
+
+    try {
+      const response = await fetch('http://localhost:4000/blocked', {
+        headers: {
+          'x-user-id': currentUser.id.toString()
+        },
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        this.blockedUsers = new Set(data.blockedIds || []);
+        this.render();
+      }
+    } catch (error) {
+      console.error('Failed to load blocked users:', error);
+    }
+  }
+
   private initSocket() {
     this.unsubscribeAuth = userState.subscribe((user) => {
       if (user) {
-        // Load friends from backend
+        // Load friends and blocked users from backend
         this.loadFriends();
+        this.loadBlockedUsers();
         if (!this.socket || !this.socket.connected) {
             this.connectSocket(user);
         }
@@ -231,6 +258,7 @@ export class chat extends Component {
         // Clear data when logged out
         this.users = {};
         this.conversations = {};
+        this.blockedUsers.clear();
         if (this.socket) {
           this.socket.disconnect();
           this.socket = null;
@@ -408,7 +436,36 @@ export class chat extends Component {
     if (!this.currentChatUserId) return '';
 
     const user = this.users[this.currentChatUserId];
+    const isBlocked = this.blockedUsers.has(this.currentChatUserId);
     const messages = this.conversations[this.currentChatUserId] || [];
+
+    // If user is blocked, show header with unblock button and simple message
+    if (isBlocked) {
+      return `
+        <div class="px-4 py-2 border-b border-neon-cyan/10 bg-space-dark/50 flex items-center justify-between rounded-lg mb-4">
+          <div class="flex items-center gap-2">
+            <div class="relative">
+              <div class="w-8 h-8 bg-gradient-to-br from-neon-purple to-neon-cyan rounded-full flex items-center justify-center overflow-hidden opacity-50">
+                ${this.renderAvatar(user?.avatar)}
+              </div>
+            </div>
+            <div>
+              <h2 class="font-semibold text-gray-400">${this.escapeHtml(user?.name || 'User')}</h2>
+              <p class="text-xs text-red-400">Blocked</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 relative">
+            <button id="unblock-user-btn" class="px-3 py-1 bg-red-500/20 text-red-400 rounded-lg text-sm hover:bg-red-500/30 transition" data-user-id="${this.currentChatUserId}">
+              Unblock
+            </button>
+          </div>
+        </div>
+
+        <div id="messages-container" class="space-y-4 flex-1 overflow-y-auto no-scrollbar flex items-center justify-center">
+          <p class="text-gray-500 text-sm">You have blocked this user</p>
+        </div>
+      `;
+    }
 
     const messagesHtml = messages.map((msg) => `
       <div class="flex ${msg.isMine ? 'justify-end' : 'justify-start'}">
@@ -452,16 +509,7 @@ export class chat extends Component {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
             </svg>
           </button>
-          ${this.activeMenuUserId === user.id ? `
-            <div class="absolute right-0 top-10 bg-space-blue border border-neon-cyan/20 shadow-xl rounded-xl py-2 z-20 w-40 animate-fade-in">
-                <button class="menu-action-play w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-neon-cyan/10 hover:text-neon-cyan flex items-center gap-2 transition-colors" data-user-id="${user.id}">
-                    <span>🎮</span> Play Game
-                </button>
-                <button class="menu-action-block w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors" data-user-id="${user.id}">
-                    <span>🚫</span> Block User
-                </button>
-            </div>
-          ` : ''}
+          <div class="menu-actions-container" data-user-id="${user.id}"></div>
         </div>
       </div>
 
@@ -469,6 +517,35 @@ export class chat extends Component {
         ${messagesHtml}
       </div>
     `;
+  }
+
+  updateMenuDropdown() {
+    const container = this.el.querySelector('.menu-actions-container') as HTMLElement;
+    if (!container) return;
+
+    const userId = parseInt(container.dataset.userId || '0');
+    const isBlocked = this.blockedUsers.has(userId);
+    
+    if (this.activeMenuUserId === userId) {
+      container.innerHTML = `
+        <div class="absolute right-0 top-2 bg-space-blue border border-neon-cyan/20 shadow-xl rounded-xl py-2 z-50 w-40">
+            <button class="menu-action-play w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-neon-cyan/10 hover:text-neon-cyan flex items-center gap-2 transition-colors" data-user-id="${userId}">
+                <span>🎮</span> Play Game
+            </button>
+            ${isBlocked ? `
+              <button class="menu-action-unblock w-full text-left px-4 py-2 text-sm text-green-400 hover:bg-green-500/10 flex items-center gap-2 transition-colors" data-user-id="${userId}">
+                  <span>✅</span> Unblock User
+              </button>
+            ` : `
+              <button class="menu-action-block w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors" data-user-id="${userId}">
+                  <span>🚫</span> Block User
+              </button>
+            `}
+        </div>
+      `;
+    } else {
+      container.innerHTML = '';
+    }
   }
 
   render() {
@@ -535,22 +612,24 @@ export class chat extends Component {
               ${this.renderMessages()}
             </div>
 
-            <div class="p-4 border-t border-neon-cyan/10 bg-space-dark/50">
-              <div class="bg-space-blue/50 border border-neon-cyan/20 rounded-2xl px-4 py-2 flex items-end gap-2">
-                <textarea
-                  id="message-input"
-                  placeholder="Type a message..."
-                  rows="1"
-                  class="flex-1 bg-transparent resize-none focus:outline-none text-gray-200 py-2 placeholder-gray-500"
-                  style="min-height: 24px; max-height: 128px;"
-                >${this.escapeHtml(this.messageInput)}</textarea>
-                <button id="send-btn" class="p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-500 transition">
-                  <svg class="w-5 h-5 transform rotate-90 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
-                  </svg>
-                </button>
+            ${!this.blockedUsers.has(this.currentChatUserId!) ? `
+              <div class="p-4 border-t border-neon-cyan/10 bg-space-dark/50">
+                <div class="bg-space-blue/50 border border-neon-cyan/20 rounded-2xl px-4 py-2 flex items-end gap-2">
+                  <textarea
+                    id="message-input"
+                    placeholder="Type a message..."
+                    rows="1"
+                    class="flex-1 bg-transparent resize-none focus:outline-none text-gray-200 py-2 placeholder-gray-500"
+                    style="min-height: 24px; max-height: 128px;"
+                  >${this.escapeHtml(this.messageInput)}</textarea>
+                  <button id="send-btn" class="p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-500 transition">
+                    <svg class="w-5 h-5 transform rotate-90 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                    </svg>
+                  </button>
+                </div>
               </div>
-            </div>
+            ` : ''}
           `}
         </div>
       </div>
@@ -603,40 +682,61 @@ export class chat extends Component {
         e.stopPropagation();
         if (this.currentChatUserId) {
             this.activeMenuUserId = this.activeMenuUserId === this.currentChatUserId ? null : this.currentChatUserId;
-            this.render();
+            this.updateMenuDropdown();
         }
       });
     }
 
-    // Menu actions
-    this.el.querySelectorAll('.menu-action-play').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+    // Menu actions - use event delegation on the menu container
+    this.el.querySelector('.menu-actions-container')?.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      const playBtn = target.closest('.menu-action-play');
+      const blockBtn = target.closest('.menu-action-block');
+      const unblockBtn = target.closest('.menu-action-unblock');
+      
+      if (playBtn) {
         e.stopPropagation();
-        const userId = parseInt((btn as HTMLElement).dataset.userId || '0');
+        const userId = parseInt((playBtn as HTMLElement).dataset.userId || '0');
         console.log('Play with user', userId);
         this.activeMenuUserId = null;
-        this.render();
-      });
-    });
-
-    this.el.querySelectorAll('.menu-action-block').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+        this.updateMenuDropdown();
+      }
+      
+      if (blockBtn) {
         e.stopPropagation();
-        const userId = parseInt((btn as HTMLElement).dataset.userId || '0');
-        console.log('Block user', userId);
+        const userId = parseInt((blockBtn as HTMLElement).dataset.userId || '0');
+        this.blockUser(userId);
         this.activeMenuUserId = null;
-        this.render();
-      });
+        this.updateMenuDropdown();
+      }
+
+      if (unblockBtn) {
+        e.stopPropagation();
+        const userId = parseInt((unblockBtn as HTMLElement).dataset.userId || '0');
+        this.unblockUser(userId);
+        this.activeMenuUserId = null;
+        this.updateMenuDropdown();
+      }
     });
 
     // Close menu when clicking outside
     this.el.addEventListener('click', (e) => {
         const target = e.target as HTMLElement;
-        if (!target.closest('#chat-header-menu-btn') && this.activeMenuUserId !== null) {
+        if (!target.closest('#chat-header-menu-btn') && !target.closest('.menu-actions-container') && this.activeMenuUserId !== null) {
             this.activeMenuUserId = null;
-            this.render();
+            this.updateMenuDropdown();
         }
     });
+
+    // Unblock button
+    const unblockBtn = this.el.querySelector('#unblock-user-btn');
+    
+    if (unblockBtn) {
+      unblockBtn.addEventListener('click', () => {
+        const userId = parseInt((unblockBtn as HTMLElement).dataset.userId || '0');
+        if (userId) this.unblockUser(userId);
+      });
+    }
 
     // Search
     const searchInput = this.el.querySelector('#search-input') as HTMLInputElement;
@@ -712,6 +812,62 @@ export class chat extends Component {
     const inputEl = this.el.querySelector('#message-input') as HTMLTextAreaElement;
     if (inputEl) {
         inputEl.value = '';
+    }
+  }
+
+  async blockUser(userId: number) {
+    const currentUser = userState.get();
+    if (!currentUser) return;
+
+    try {
+      const res = await fetch('http://localhost:4000/block', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': currentUser.id.toString()
+        },
+        body: JSON.stringify({ userId: userId })
+      });
+
+      if (res.ok) {
+        // Add to blocked users set
+        this.blockedUsers.add(userId);
+        this.render();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to block user');
+      }
+    } catch (error) {
+      console.error('Error blocking user:', error);
+      alert('An error occurred while blocking the user');
+    }
+  }
+
+  async unblockUser(userId: number) {
+    const currentUser = userState.get();
+    if (!currentUser) return;
+
+    try {
+      const res = await fetch('http://localhost:4000/unblock', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': currentUser.id.toString()
+        },
+        body: JSON.stringify({ userId: userId })
+      });
+
+      if (res.ok) {
+        // Remove from blocked users set
+        this.blockedUsers.delete(userId);
+        this.render();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to unblock user');
+      }
+    } catch (error) {
+      console.error('Error unblocking user:', error);
+      alert('An error occurred while unblocking the user');
     }
   }
 
