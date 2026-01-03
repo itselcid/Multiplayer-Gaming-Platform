@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/13 22:19:50 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/12 02:36:30 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/12 02:43:55 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,13 +26,14 @@ const routes: Record<string, any> = {
 	"/": Home,
 	"/home": Home,
 	"/profile": ProfileView,
+	"/profile/:id": ProfileView,
 	"/tournaments": TournamentsView,
 	"/tournaments/:id": TournamentView,
 	"/match/:key": MatchView,
 	"/login": Login,
 	"/register": Register,
   	"/chat": chat,
-  "/friends": Friends,
+  	"/friends": Friends,
 };
 
 // --- Scroll Position Store ---

@@ -491,7 +491,7 @@ export class chat extends Component {
 
     return `
       <div class="px-4 py-2 border-b border-neon-cyan/10 bg-space-dark/50 flex items-center justify-between rounded-lg mb-4">
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition" id="chat-user-profile-link" data-user-id="${user.id}" title="View profile">
           <div class="relative">
             <div class="w-8 h-8 bg-gradient-to-br from-neon-purple to-neon-cyan rounded-full flex items-center justify-center overflow-hidden">
               ${this.renderAvatar(user.avatar)}
@@ -674,6 +674,18 @@ export class chat extends Component {
         this.selectUser(userId);
       });
     });
+
+    // Profile link in chat header
+    const profileLink = this.el.querySelector('#chat-user-profile-link');
+    if (profileLink) {
+      profileLink.addEventListener('click', () => {
+        const userId = (profileLink as HTMLElement).dataset.userId;
+        if (userId) {
+          window.history.pushState({}, '', `/profile/${userId}`);
+          window.dispatchEvent(new PopStateEvent('popstate'));
+        }
+      });
+    }
 
     // Chat header menu button
     const headerMenuBtn = this.el.querySelector('#chat-header-menu-btn');
