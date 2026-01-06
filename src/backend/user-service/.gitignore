@@ -5,7 +5,5 @@ prisma/*.db
 /src/generated/
 
 
-
-
-
 MyFrontEnd/
+uploads/

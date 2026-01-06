@@ -1,8 +1,8 @@
 
 import buildServer from './app';
 import { createTestUserIfNeeded } from './db';
-import { env } from './env';
-import { testEmailConnection } from './services/email';
+import { env } from './config/env';
+import { testEmailConnection } from './services/email.service';
 
 async function start() {
     try {

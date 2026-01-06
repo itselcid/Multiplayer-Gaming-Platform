@@ -17,8 +17,6 @@ tags:
     description: Two-Factor Authentication Management (Setup, Confirm, Disable)
   - name: Users
     description: User profile management
-  - name: Admin
-    description: Admin-only user management
   - name: Friends
     description: Friendship management
 
@@ -54,15 +52,19 @@ components:
             method:
               type: string
               enum: [email, totp]
-        role:
-          type: string
-          enum: [user, admin]
       example:
         id: 1
         username: johndoe
         email: john@example.com
         twoFactor: { method: "email" }
-        role: user
+
+
+    UserSearch:
+      type: object
+      properties:
+        id: { type: integer }
+        username: { type: string }
+        avatar: { type: string }
 
     LoginRequest:
       type: object
@@ -235,6 +237,111 @@ paths:
                   user:
                     $ref: '#/components/schemas/User'
 
+  /users/me/avatar:
+    post:
+      tags: [Users]
+      summary: Upload user avatar
+      security:
+        - cookieAuth: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Avatar uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                  user:
+                    $ref: '#/components/schemas/User'
+
+  /users:
+    get:
+      tags: [Users]
+      summary: Get all users
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+
+  /users/search:
+    get:
+      tags: [Users]
+      summary: Search users by username
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: query
+          name: username
+          required: true
+          schema:
+            type: string
+            minLength: 4
+            maxLength: 20
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserSearch'
+
+  /users/istaken:
+    post:
+      tags: [Users]
+      summary: Check if username is taken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username]
+              properties:
+                username:
+                  type: string
+                  minLength: 3
+                  maxLength: 16
+      responses:
+        '200':
+          description: Username is available
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+        '409':
+          description: Username is already taken
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+
   /2fa/setup:
     post:
       tags: [TwoFactor]
@@ -292,7 +399,7 @@ paths:
         '200':
           description: 2FA enabled successfully
 
-  /users/friends:
+  /friends:
     get:
       tags: [Friends]
       summary: Get all friends
@@ -310,7 +417,7 @@ paths:
                     items:
                       $ref: '#/components/schemas/Friend'
 
-  /users/friends/requests/received:
+  /friends/requests/received:
     get:
       tags: [Friends]
       summary: Get received friend requests
@@ -328,7 +435,7 @@ paths:
                     items:
                       $ref: '#/components/schemas/Friend'
 
-  /users/friends/requests/sent:
+  /friends/requests/sent:
     get:
       tags: [Friends]
       summary: Get sent friend requests
@@ -346,7 +453,7 @@ paths:
                     items:
                       $ref: '#/components/schemas/Friend'
 
-  /users/friends/requests/send/{friendId}:
+  /friends/requests/send/{friendId}:
     put:
       tags: [Friends]
       summary: Send a friend request
@@ -366,7 +473,7 @@ paths:
         '404':
           description: User not found
 
-  /users/friends/requests/accept/{friendId}:
+  /friends/requests/accept/{friendId}:
     put:
       tags: [Friends]
       summary: Accept a friend request
@@ -384,7 +491,7 @@ paths:
         '404':
           description: Request not found
 
-  /users/friends/requests/reject/{friendId}:
+  /friends/requests/reject/{friendId}:
     post:
       tags: [Friends]
       summary: Reject a friend request
@@ -400,7 +507,7 @@ paths:
         '200':
           description: Request rejected
 
-  /users/friends/remove/{friendId}:
+  /friends/remove/{friendId}:
     delete:
       tags: [Friends]
       summary: Remove a friend
@@ -416,7 +523,7 @@ paths:
         '200':
           description: Friend removed
 
-  /users/friends/block/{friendId}:
+  /friends/block/{friendId}:
     put:
       tags: [Friends]
       summary: Block a user
@@ -432,7 +539,7 @@ paths:
         '200':
           description: User blocked
 
-  /users/friends/unblock/{friendId}:
+  /friends/unblock/{friendId}:
     put:
       tags: [Friends]
       summary: Unblock a user
@@ -448,7 +555,7 @@ paths:
         '200':
           description: User unblocked
 
-  /users/friends/blocked:
+  /friends/blocked:
     get:
       tags: [Friends]
       summary: Get blocked users

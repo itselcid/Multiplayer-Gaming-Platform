@@ -1,14 +1,12 @@
 
-import { PrismaClient, TwoFactorCode, UserTwoFactor } from "@prisma/client";
+import { prisma } from "./config/db";
+import { TwoFactorCode, UserTwoFactor } from "@prisma/client";
 import bcrypt from "bcrypt";
-
-import { UserData, CreateUserInput, UpdateUserInput, PasswordResetToken } from "./types";
+import { UserData, CreateUserInput, UpdateUserInput, PasswordResetToken, UserSearchData } from "./types";
 import type { GithubProfile, UserAuthData } from "./types/auth.types.js";
 import crypto from 'crypto';
 
-const prisma = new PrismaClient();
-
-export async function createUser(input: CreateUserInput): Promise<UserData> {
+export async function createUser(input: CreateUserInput): Promise<UserSearchData> {
     const { username, email, password } = input;
 
     const hash = await bcrypt.hash(password, 10);
@@ -17,21 +15,14 @@ export async function createUser(input: CreateUserInput): Promise<UserData> {
         data: {
             username,
             email,
-            password: hash
+            password: hash,
+            avatar: '/public/default-avatar.png',
         },
         select: {
             id: true,
             username: true,
-            email: true,
             avatar: true,
-            twoFactor: {
-                select: {
-                    method: true
-                }
-            },
-            githubId: true,
-            createdAt: true,
-            updatedAt: true
+            createdAt: true
         }
     });
 
@@ -82,14 +73,23 @@ export async function getUserById(id: number): Promise<UserData | null> {
     return user;
 }
 
-export async function getUserByUsername(usernameOrEmail: string): Promise<UserData | null> {
-    const user = await prisma.user.findFirst({
-        where: {
+export async function getUserByUsername(usernameOrEmail: string, email?: string): Promise<UserData | null> {
+    const whereClause = email
+        ? {
+            OR: [
+                { username: usernameOrEmail },
+                { email: email }
+            ]
+        }
+        : {
             OR: [
                 { username: usernameOrEmail },
                 { email: usernameOrEmail }
             ]
-        },
+        };
+
+    const user = await prisma.user.findFirst({
+        where: whereClause,
         select: {
             id: true,
             username: true,
@@ -97,7 +97,8 @@ export async function getUserByUsername(usernameOrEmail: string): Promise<UserDa
             avatar: true,
             twoFactor: {
                 select: {
-                    method: true
+                    method: true,
+                    enabled: true
                 }
             },
             githubId: true,
@@ -106,6 +107,20 @@ export async function getUserByUsername(usernameOrEmail: string): Promise<UserDa
         }
     });
     return user;
+}
+
+export async function searchUsers(search: string): Promise<UserSearchData[]> {
+    const users = await prisma.user.findMany({
+        where: {
+            username: search
+        },
+        select: {
+            id: true,
+            username: true,
+            avatar: true
+        }
+    });
+    return users;
 }
 
 // For authentication (WITH password)
@@ -143,6 +158,10 @@ export async function updateUser(id: number, updates: UpdateUserInput): Promise<
     if (updates.password !== undefined) {
         const hash = await bcrypt.hash(updates.password, 10);
         data.password = hash;
+    }
+
+    if (updates.avatar !== undefined) {
+        data.avatar = updates.avatar;
     }
 
     const user = await prisma.user.update({
@@ -577,15 +596,15 @@ export async function getSentFriendRequests(requesterId: number) {
 
 /////// Temporary ///////
 export async function createTestUserIfNeeded() {
-    let user = await getUserByUsername('test')
+    const user = await getUserByUsername('test')
 
     if (!user) {
-        user = await createUser({
+        const testUser = await createUser({
             username: 'test',
             email: 'test@test.com',
             password: 'test'
         })
-        if (user)
+        if (testUser)
             console.log("\x1b[32m%s\x1b[0m", 'Test user created: username=test, password=test')
     }
 }

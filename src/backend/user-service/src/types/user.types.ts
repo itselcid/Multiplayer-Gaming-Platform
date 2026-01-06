@@ -24,6 +24,12 @@ export interface UserData {
     updatedAt: Date;
 }
 
+export interface UserSearchData {
+    id: number;
+    username: string;
+    avatar: string;
+}
+
 export interface CreateUserInput {
     username: string;
     email: string;
@@ -39,6 +45,7 @@ export interface CreateUserOutput {
 export interface UpdateUserInput {
     email?: string;
     password?: string;
+    avatar?: string;
 }
 
 export interface LoginInput {
