@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/13 22:19:50 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/12 02:43:55 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/12 02:48:03 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,7 @@ import { Login } from "../pages/login.ts";
 import { Register } from "../pages/register.ts";
 import { chat } from "../components/chat";
 import { Friends } from "../components/Friends";
-
+import { Game } from "../pages/Game";
 // --- Route Definitions ---
 const routes: Record<string, any> = {
 	"/": Home,
@@ -34,6 +34,7 @@ const routes: Record<string, any> = {
 	"/register": Register,
   	"/chat": chat,
   	"/friends": Friends,
+  	"/game" : Game,
 };
 
 // --- Scroll Position Store ---
@@ -102,9 +103,20 @@ export async function renderRoute() {
 		return;
 	}
 
-	const { view: View, params } = match;
-
-	new View(params).mount(root);
+  const { view: View, params } = match;
+  if(View === Game){
+    const urlParams = new URLSearchParams(window.location.search);
+    var mode = urlParams.get("mode") || "bot";
+    if(mode !== "bot" && mode !== "local" && mode != "remote"){
+      mode = "bot"; 
+    }
+    const gameobj = new Game(mode);
+    gameobj.mount(root);
+  }
+  else{
+    const page = new View(params);
+    page.mount(root);
+  }
 }
 
 

@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    /* Base Options */
+    "target": "es2020", 
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "rootDir": "./", // Assuming your server.ts is inside a 'src' folder
+    "outDir": "./dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": [
+    "./**/*.ts" // Include all TypeScript files inside the 'src' directory
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
