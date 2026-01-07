@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/13 19:43:15 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/06 14:56:36 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/07 04:44:23 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,18 +21,19 @@ export class Home extends Component {
 
   render() {
 	this.el.innerHTML = `  
-    <div class="flex flex-col">
-	<div class= "flex flex-row">
-	<div class="flex flex-col gap-5 p-6 mt-15">
-	<h1 class="text-5xl font-display text-ctex ">Gear up, space champion</h1>
-	<h2 class="text-5xl font-display text-ctex text-center pl-20 mt-5">It’s game time at Galactik Pingpong!</h2>
+    <div class="flex flex-col items-center px-2 sm:px-4 lg:px-8">
+	<div class= "flex flex-col lg:flex-row items-center w-full gap-8 mt-5">
+	<div class="flex flex-col  text-center lg:text-left">
+	<h1 class="text-3xl sm:text-4xl lg:text-5xl font-display text-ctex ">Gear up, space champion</h1>
+	<h2 class="text-3xl sm:text-4xl lg:text-5xl  font-display text-ctex text-center pl-20 mt-5">It’s game time at Galactik Pingpong!</h2>
 	</div>
-	<img src="/avatar.png" alt="avatar" class="object-contain  w-120 h-120 right-5  mt-5 object-right-top ">
+	<img src="/avatar.png" alt="avatar" class="w-64 h-64 sm:w-96 sm:h-96 lg:w-120 lg:h-120 object-contain ">
 		</div>
-        <button id="Letsplay" class="self-center w-fit px-8 py-4 text-5xl font-display animate-bounce text-gray-300 hover:text-neon-cyan bg-clip-text shadow-sm rounded-sm hover:animate-none hover:bg-clip-border transition">
+        <button id="Letsplay" class="self-center w-fit px-8 py-4 text-5xl font-display animate-bounce text-gray-300 hover:text-neon-cyan bg-clip-text 
+		shadow-sm rounded-sm hover:animate-none hover:bg-clip-border transition">
         	Let's play
 		</button>
-		<p class="text-center text-ctex font-italic text-2xl mt-15">
+		<p class="mt-12 max-w-7xl text-center text-ctex italic text-lg sm:text-xl lg:text-2xl">
 			In the vast expanse of digital space, Galactik was born , a ping pong game where the speed of light meets the bounce of a ball. Crafted by a team of passionate creators, this universe was forged with code, creativity, and a whole lot of flair. Meet
 		</p>
 	</div>   
@@ -44,10 +45,10 @@ export class Home extends Component {
   selectmode(){
 	const logged = userState.get();
 	
-	if(!logged){
-		navigate("/login");
-		return;
-	}
+	// if(!logged){
+	// 	navigate("/login");
+	// 	return;
+	// }
 	const container = document.createElement("div");
 	container.className =`fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm z-50`;
 	container.innerHTML=`<div class="backdrop-blur-xl rounded-xl shadow-xl flex flex-col gap-4 p-6">

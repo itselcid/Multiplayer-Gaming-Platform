@@ -3,19 +3,20 @@
 /*                                                        :::      ::::::::   */
 /*   Game.ts                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oessaadi <oessaadi@student.42.fr>          +#+  +:+       +#+        */
+/*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/27 01:44:47 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/08 17:05:19 by oessaadi         ###   ########.fr       */
+/*   Updated: 2026/01/12 03:01:07 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 
 import { addElement, Component } from "../core/Component";
-import { Engine,Scene,HemisphericLight,Vector3,MeshBuilder, StandardMaterial, Color3,Color4,UniversalCamera} from "@babylonjs/core";
+import { Engine,Scene,HemisphericLight,Vector3,MeshBuilder, StandardMaterial, Color3,Color4,UniversalCamera,Mesh} from "@babylonjs/core";
 import "@babylonjs/inspector";
 import * as GUI from "@babylonjs/gui";
 import { io , Socket } from 'socket.io-client'
+import { userState } from "../core/appStore";
 
 
 export class Game extends Component {
@@ -55,7 +56,7 @@ export class Game extends Component {
 		container.appendChild(timer);
 		container.appendChild(scoreRow)	
 		this.el.appendChild(container);
-		const canvas = addElement('canvas','w-1/2 h-1/2',container) as HTMLCanvasElement;
+		const canvas = addElement('canvas','w-3/4 h-full',container) as HTMLCanvasElement;
 		canvas.style.outline = "none" ;
         canvas.id = "renderCanvas";
 		canvas.style.marginTop = "10px";
@@ -64,32 +65,48 @@ export class Game extends Component {
 
 		this.engine = new Engine(canvas, true);
 		this.scene = new Scene(this.engine);
-		this.scene.clearColor = new Color4(0,0.1,0.25,0.625);
+		this.scene.clearColor = new Color4(0,0,0,0);
 		const	setCamera = new Vector3(0,0,0);
-		this.camera = new UniversalCamera("camera", new Vector3(0,0,-22), this.scene);
+		this.camera = new UniversalCamera("camera", new Vector3(0,-28,-14), this.scene);
 		this.camera.setTarget(setCamera);
 		this.camera.inputs.clear();
 		this.camera.fov = 0.785;
-        var light = new HemisphericLight("light", new Vector3(0, 0, -5), this.scene);
+        var light = new HemisphericLight("light", new Vector3(0, -15, -18), this.scene);
 		light.intensity = 0.82;
-		var path: Vector3[] = [
-			new Vector3(0,-1.3,0),
-			new Vector3(0,1.3,0),
-		];
+		// var path: Vector3[] = [
+		// 	new Vector3(0,-1.3,0),
+		// 	new Vector3(0,1.3,0),
+		// ];
 		var ball = MeshBuilder.CreateSphere("ball",{diameter:0.8});
 		ball.position = Vector3.Zero();
 		ball.material = new StandardMaterial("matball",this.scene);
-		(ball.material as StandardMaterial).diffuseColor = new Color3(0.95,0.35,1);
-		var paddleLeft = MeshBuilder.CreateTube("paddleLeft",{path: path, radius: 0.15},this.scene);
+		(ball.material as StandardMaterial).diffuseColor = new Color3(0.941,0.501,0.501);
+388	// 278ar paddleLeft = MeshBuilder.CreateTube("paddleLeft",{path: path, radius: 0.15},this.scene);
+		var paddleLeft = MeshBuilder.CreateCapsule("paddleLeft",{ height: 2.6,radius: 0.15,tessellation: 64},this.scene)
 		paddleLeft.position = new Vector3(-20,0,0);
 		paddleLeft.material = new StandardMaterial("matLeft",this.scene);
-		(paddleLeft.material as StandardMaterial).diffuseColor = new Color3(0, 0.795, 1);
-		var paddleRight = MeshBuilder.CreateTube("paddleRight",{path: path, radius: 0.15},this.scene);
+		(paddleLeft.material as StandardMaterial).diffuseColor = new Color3(1, 0.388, 0.278);
+		// var paddleRight = MeshBuilder.CreateTube("paddleRight",{path: path, radius: 0.15},this.scene);
+		var paddleRight = MeshBuilder.CreateCapsule("paddleRight",{ height: 2.6,radius: 0.15,tessellation: 64},this.scene)
 		paddleRight.position = new Vector3(20,0,0);
 		paddleRight.material = new StandardMaterial("matRight",this.scene);
-		(paddleRight.material as StandardMaterial).diffuseColor = new Color3(0, 0.795, 1);
+		(paddleRight.material as StandardMaterial).diffuseColor = new Color3(1, 0.388, 0.278);
 		
-		
+		// const table = MeshBuilder.CreatePlane("table",{width:39, height:19},this.scene);
+		// table.position = Vector3.Zero();
+		// table.material = new StandardMaterial("table",this.scene);
+		// (table.material as StandardMaterial).diffuseColor = new Color3(0, 0.149, 0.454);
+		const points = [
+			  new Vector3(-39.9 / 2, -18 / 2, 0),
+			  new Vector3(39.9 / 2, -18 / 2, 0),
+			  new Vector3(39.9 / 2, 18 / 2, 0),
+			  new Vector3(-39.9 / 2, 18/ 2, 0),
+			  new Vector3(-39.9 / 2, -18 / 2, 0),
+			];
+			
+			const rectangleOutline = MeshBuilder.CreateLines("rectangleOutline",{ points },this.scene);
+			rectangleOutline.color = new Color3(0.901, 0.901, 0.980);
+
 		const handlekeycahnge = (event : KeyboardEvent , isDown: boolean)=>{
 			const key = event.key;
 			if(this.mode === "local"){
