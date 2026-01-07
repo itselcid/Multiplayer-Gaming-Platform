@@ -1,34 +1,34 @@
-// ************************************************************************** //
-//                                                                            //
-//                                                        :::      ::::::::   //
-//   Component.ts                                       :+:      :+:    :+:   //
-//                                                    +:+ +:+         +:+     //
-//   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        //
-//                                                +#+#+#+#+#+   +#+           //
-//   Created: 2025/10/13 19:29:22 by kez-zoub          #+#    #+#             //
-//   Updated: 2025/11/05 17:57:24 by kez-zoub         ###   ########.fr       //
-//                                                                            //
-// ************************************************************************** //
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Component.ts                                       :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/10/13 19:29:22 by kez-zoub          #+#    #+#             */
+/*   Updated: 2025/12/22 20:38:30 by kez-zoub         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
 export abstract class Component {
-  el: HTMLElement;
+	el: HTMLElement;
 
-  constructor(tag = "div", classes: string = '') {
-    this.el = document.createElement(tag);
-    if (classes.length) this.el.className = classes;
-  }
+	constructor(tag = "div", classes: string = '') {
+		this.el = document.createElement(tag);
+		if (classes.length) this.el.className = classes;
+	}
 
-  // Method every component must implement
-  abstract render(): void;
+	// Method every component must implement
+	abstract render(): void;
 
-  mount(parent: HTMLElement) {
-    this.render();
-    parent.appendChild(this.el);
-  }
+	mount(parent: HTMLElement) {
+		this.render();
+		parent.appendChild(this.el);
+	}
 
-  unmount() {
-    this.el.remove();
-  }
+	unmount() {
+		this.el.remove();
+	}
 }
 
 export function addElement(elTag: string, elClasses?: string, elParent?: HTMLElement): HTMLElement {

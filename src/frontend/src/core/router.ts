@@ -1,39 +1,68 @@
-// ************************************************************************** //
-//                                                                            //
-//                                                        :::      ::::::::   //
-//   router.ts                                          :+:      :+:    :+:   //
-//                                                    +:+ +:+         +:+     //
-//   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        //
-//                                                +#+#+#+#+#+   +#+           //
-//   Created: 2025/10/13 22:19:50 by kez-zoub          #+#    #+#             //
-//   Updated: 2025/11/06 01:27:08 by kez-zoub         ###   ########.fr       //
-//                                                                            //
-// ************************************************************************** //
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   router.ts                                          :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/10/13 22:19:50 by kez-zoub          #+#    #+#             */
+/*   Updated: 2025/12/25 10:59:16 by kez-zoub         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
 import { Home } from "../components/Home";
 import { Page404} from "../components/Page404";
-import { Profile } from "../pages/Profile";
+import { MatchView } from "../pages/Match";
+import { ProfileView } from "../pages/Profile";
+import { TournamentView } from "../pages/Tournament";
+import { TournamentsView } from "../pages/Tournaments";
 
+// --- Route Definitions ---
 const routes: Record<string, any> = {
-  "/": Home,
-  "/home": Home,
-  "/profile": Profile,
+	"/": Home,
+	"/home": Home,
+	"/profile": ProfileView,
+	"/tournaments": TournamentsView,
+	"/tournaments/:id": TournamentView,
+	"/match/:key": MatchView
 };
 
-export function navigate(path: string) {
-  history.pushState({}, "", path);
-  renderRoute();
+// --- Scroll Position Store ---
+const scrollPositions = new Map<string, number>();
+let lastPath = window.location.pathname;
+
+
+// Save scroll for current path
+function saveScroll(path: string) {
+  scrollPositions.set(path, window.scrollY);
 }
 
-function matchRoute(path: string): { view: any; params: Record<string, string> } | null {
-	// normalize: remove trailing slashes (but keep root "/")
-	path = path.replace(/\/+$/, "") || "/";
+// Get saved scroll value (0 by default)
+function getScroll(path: string) {
+  return scrollPositions.get(path) ?? 0;
+}
 
+
+// --- Navigation Function (User-triggered) ---
+export function navigate(path: string) {
+  saveScroll(lastPath);          // Save scroll before leaving  
+  history.pushState({}, "", path);
+  lastPath = path;
+
+  renderRoute();
+
+  // New navigation => scroll to top
+  requestAnimationFrame(() => window.scrollTo(0, 0));
+}
+
+
+// --- Route Matching ---
+export function matchRoute(path: string): { view: any; params: Record<string, string> } | null {
+  path = path.replace(/\/+$/, "") || "/";
 
   for (const pattern in routes) {
     const paramNames: string[] = [];
 
-    // Convert '/profile/:id' into regex: /^\/profile\/([^/]+)$/
     const regexPath = pattern.replace(/:([^/]+)/g, (_, key) => {
       paramNames.push(key);
       return "([^/]+)";
@@ -51,21 +80,35 @@ function matchRoute(path: string): { view: any; params: Record<string, string> }
   return null;
 }
 
-export function renderRoute() {
-  const root = document.getElementById("bg")!;
-  root.innerHTML = "";
 
-  const match = matchRoute(location.pathname);
-  if (!match) {
-    const page = new Page404();
-    page.mount(root);
-    return;
-  }
+// --- Render Route ---
+export async function renderRoute() {
+	const root = document.getElementById("bg")!;
+	root.innerHTML = "";
+	
+	const match = matchRoute(location.pathname);
 
-  const { view: View, params } = match;
-  const page = new View(params);
-  page.mount(root);
+	if (!match) {
+		new Page404().mount(root);
+		return;
+	}
+
+	const { view: View, params } = match;
+
+	new View(params).mount(root);
 }
 
-window.addEventListener("popstate", renderRoute);
 
+// --- Browser Back/Forward Handling ---
+window.addEventListener("popstate", () => {
+  const path = window.location.pathname;
+
+  renderRoute();
+
+  // Restore scroll from history
+  requestAnimationFrame(() => {
+    window.scrollTo(0, getScroll(path));
+  });
+
+  lastPath = path;
+});

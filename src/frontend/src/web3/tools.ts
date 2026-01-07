@@ -1,21 +1,20 @@
-// ************************************************************************** //
-//                                                                            //
-//                                                        :::      ::::::::   //
-//   tools.ts                                           :+:      :+:    :+:   //
-//                                                    +:+ +:+         +:+     //
-//   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        //
-//                                                +#+#+#+#+#+   +#+           //
-//   Created: 2025/11/05 00:34:36 by kez-zoub          #+#    #+#             //
-//   Updated: 2025/11/05 00:46:04 by kez-zoub         ###   ########.fr       //
-//                                                                            //
-// ************************************************************************** //
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   tools.ts                                           :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/11/05 00:34:36 by kez-zoub          #+#    #+#             */
+/*   Updated: 2025/12/05 22:44:41 by kez-zoub         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
 export function shortenEthAddress(
   address: string | null | undefined,
   startChars = 4,
   endChars = 4
 ): string {
-	console.log(address);
   if (!address || typeof address !== 'string') return '';
 
   const addr = address.trim();
@@ -31,3 +30,11 @@ export function shortenEthAddress(
 
   return `0x${bodyStart}...${bodyEnd}`;
 }
+
+export const	lowerCaseAddress = (address: string | null) : string | null => {
+	if (address)
+		return (address.toLowerCase());
+	return (null);
+}
+
+export const nullAddress: string = '0x0000000000000000000000000000000000000000';
