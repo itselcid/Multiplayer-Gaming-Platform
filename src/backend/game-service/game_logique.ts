@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/13 17:23:50 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/07 09:31:47 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/08 11:15:33 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,8 +15,8 @@ export class PongGame {
   paddleRightY = 0
   ballx = 0
   bally = 0
-  ballVX = 0.2
-  ballVY = 0.08
+  ballVX = 0.1
+  ballVY = 0.04
   move = false;
   starTime = 0
   left=0
@@ -26,14 +26,15 @@ export class PongGame {
   stop = false;
   mode = "bot";
   delta = 0;
+  spot = 0;
 
   readonly Duration = 90000
-  readonly PADDLE_HEIGHT = 2.6;
-  readonly PLAY_AREA_WIDTH = 40 - 1;
-  readonly PLAY_AREA_HEIGHT = 18;
-  readonly MAX_p_Y = (this.PLAY_AREA_HEIGHT / 2) - (this.PADDLE_HEIGHT / 2);
-  readonly MAX_b_Y = (this.PLAY_AREA_HEIGHT / 2) - 0.25;
-  readonly PADDLE_SPEED = 0.3;
+  readonly PADDLE_HEIGHT = 2.4;
+  readonly PLAY_AREA_WIDTH = 36.5 - 1;
+  readonly PLAY_AREA_HEIGHT = 16.25;
+  readonly MAX_p_Y = (this.PLAY_AREA_HEIGHT  / 2) - (this.PADDLE_HEIGHT / 2);
+  readonly MAX_b_Y = (this.PLAY_AREA_HEIGHT / 2) - 0.35;
+  readonly PADDLE_SPEED = 0.2;
   input = {
     leftUp: false,
     leftDown: false,
@@ -107,16 +108,16 @@ export class PongGame {
     }
     else if (this.ballx < -this.PLAY_AREA_WIDTH/2 ) {
       this.right++;
-      this.ballVX = 0.2 * (Math.random() < 0.5 ? 1 : -1)
-      this.ballVY = 0.08 *(Math.random() < 0.5 ? 1 : -1)
+      this.ballVX = 0.08 * (Math.random() < 0.5 ? 1 : -1)
+      this.ballVY = 0.02 *(Math.random() < 0.5 ? 1 : -1)
       this.ballx = this.ballVX;
       this.bally = this.ballVY;
       // this.delta = 0;
     }
     else if (this.ballx > this.PLAY_AREA_WIDTH/2){
       this.left++;
-      this.ballVX = 0.2 * (Math.random() < 0.5 ? 1 : -1)
-      this.ballVY = 0.08 *(Math.random() < 0.5 ? 1 : -1)
+      this.ballVX = 0.08 * (Math.random() < 0.5 ? 1 : -1)
+      this.ballVY = 0.02 *(Math.random() < 0.5 ? 1 : -1)
       this.ballx = this.ballVX;
       this.bally = this.ballVY;
       this.delta = (Math.random() < 0.5 ? 0 : 0.7);
@@ -126,6 +127,11 @@ export class PongGame {
       this.ballx += this.ballVX
       this.bally += this.ballVY
     }
+    
+    if(this.ballVX > 0)
+        this.spot = 1
+    else
+        this.spot = 2
   }
 
   reset(){
@@ -135,6 +141,7 @@ export class PongGame {
     this.input.leftDown = false;
     this.input.rightDown = false ;
     this.input.rightUp = false;
+    this.spot = 0;
     this.ballx = 0;
     this.bally = 0;
     this.min = 1;
@@ -154,6 +161,7 @@ export class PongGame {
       right: this.right,
       min: this.min,
       sec: this.sec,
+      spot: this.spot
     };
   }
 }

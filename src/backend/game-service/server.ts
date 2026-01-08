@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   server.ts                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oessaadi <oessaadi@student.42.fr>          +#+  +:+       +#+        */
+/*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 17:15:36 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/07 19:31:16 by oessaadi         ###   ########.fr       */
+/*   Updated: 2026/01/12 03:01:57 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,7 +37,7 @@ fastify.get('/health', async () => ({ status: 'ok', service: 'game-service' }))
 setInterval(() => {
   game.update()
   io.emit('state', game.getState())
-}, 1000 / 64)
+}, 1000 / 120)
 
 io.on('connection', (socket) => {
   socket.on('bot',()=>{game.mode = "bot"});
