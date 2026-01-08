@@ -1,7 +1,14 @@
 import { defineConfig } from 'vite'
 import tailwindcss from '@tailwindcss/vite'
-import { readFileSync } from "fs";
+import fs from 'fs'
 
+// Only load SSL certs for dev server, not during build
+const httpsConfig = process.env.NODE_ENV !== 'production' && fs.existsSync('./certs/localhost-key.pem')
+  ? {
+      key: fs.readFileSync('./certs/localhost-key.pem'),
+      cert: fs.readFileSync('./certs/localhost-cert.pem')
+    }
+  : undefined;
 
 export default defineConfig({
   plugins: [
@@ -10,9 +17,6 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5000,
-    https: {
-      key: readFileSync('./certs/localhost-key.pem'),
-      cert: readFileSync('./certs/localhost-cert.pem')
-    },
+    https: httpsConfig,
   },
 })

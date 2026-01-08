@@ -42,6 +42,10 @@ setupSocket(io);
 
 fastify.register(chatRoutes);
 
-fastify.listen({ port: 4000 }, () => {
-  console.log("Backend running on http://localhost:4000");
+// Health check endpoint
+fastify.get('/health', async () => ({ status: 'ok', service: 'chat-service' }));
+
+const PORT = Number(process.env.PORT) || 4000;
+fastify.listen({ port: PORT, host: '0.0.0.0' }, () => {
+  console.log(`Chat service running on http://0.0.0.0:${PORT}`);
 });

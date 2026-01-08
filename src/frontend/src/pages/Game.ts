@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Game.ts                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
+/*   By: oessaadi <oessaadi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/27 01:44:47 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/06 08:32:13 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/08 17:05:19 by oessaadi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,7 +31,11 @@ export class Game extends Component {
 	
 	constructor(flag: string) {
 		super('div', 'px-25 py-20');
-		this.socket = io('http://localhost:3500');
+		// Connect through nginx proxy - use relative path for WebSocket
+		this.socket = io(window.location.origin, {
+			path: '/socket.io/',
+			transports: ['websocket', 'polling']
+		});
 		this.mode = flag;
 	}
 

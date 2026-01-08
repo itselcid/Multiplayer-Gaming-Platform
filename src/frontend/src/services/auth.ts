@@ -3,16 +3,17 @@
 /*                                                        :::      ::::::::   */
 /*   auth.ts                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: laoubaid <laoubaid@student.42.fr>          +#+  +:+       +#+        */
+/*   By: oessaadi <oessaadi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/07 16:25:07 by laoubaid          #+#    #+#             */
-/*   Updated: 2025/12/09 00:42:43 by laoubaid         ###   ########.fr       */
+/*   Updated: 2026/01/08 17:18:45 by oessaadi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { userState } from "../core/appStore";
 
-const API_URL = 'http://localhost:3000/api';
+// Use relative URL to go through nginx proxy
+const API_URL = '/api';
 
 // Define the User type based on your backend response
 export interface User {

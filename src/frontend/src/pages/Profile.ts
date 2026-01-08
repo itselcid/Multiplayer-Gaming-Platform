@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/05 17:41:32 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/12 02:41:52 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/12 02:54:27 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,8 @@ import { Tournament_history } from "../components/Tournament_history";
 import { addElement, Component } from "../core/Component";
 import { userState } from "../core/appStore";
 
-const API_URL = 'http://localhost:3000/api';
+// Use relative URL to go through nginx proxy
+const API_URL = '/api';
 
 interface UserProfile {
 	id: number;

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   server.ts                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
+/*   By: oessaadi <oessaadi@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 17:15:36 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/06 08:31:53 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/07 19:31:16 by oessaadi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,6 +29,9 @@ const io = new Server(server, {
 })
 
 const game = new PongGame()
+
+// Health check endpoint
+fastify.get('/health', async () => ({ status: 'ok', service: 'game-service' }))
 
 
 setInterval(() => {
@@ -63,6 +66,7 @@ io.on('connection', (socket) => {
   })
 })
 
-server.listen(3500, () => {
-  console.log('Server running on http://localhost:3500')
+const PORT = Number(process.env.PORT) || 3500
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`Game service running on http://0.0.0.0:${PORT}`)
 })

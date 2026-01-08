@@ -2,7 +2,8 @@ import { Component } from "../core/Component";
 import { io, Socket } from "socket.io-client";
 import { userState } from "../core/appStore";
 
-const API_URL = 'http://localhost:3000/api';
+// Use relative URL to go through nginx proxy
+const API_URL = '/api';
 
 interface Friend {
   id: number;

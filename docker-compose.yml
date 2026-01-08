@@ -1,36 +1,106 @@
 services:
   nginx:
-    build: ./infra/nginx
+    build:
+      context: .
+      dockerfile: infra/nginx/Dockerfile
     container_name: nginx
     ports:
-      - "80:80"
+      - "8081:80"
       - "443:443"
     depends_on:
-      - app
+      - api-gateway
+      - game-service
+      - chat-service
     networks:
       - gateway
-      - elk  
+      - app-network
+      - elk
     volumes:
       - nginx-logs:/var/log/nginx
     restart: unless-stopped
 
-  app:
-    build: ./src/backend/auth-service
-    container_name: auth-service
+  api-gateway:
+    build: ./src/backend/api-gateway
+    container_name: api-gateway
     environment:
-      - SERVICE_NAME=auth-service
+      - PORT=3000
       - LOG_LEVEL=info
+      - USER_SERVICE_URL=http://user-service:3001
+      - CHAT_SERVICE_URL=http://chat-service:4000
+      - FRONTEND_URL=https://localhost
+    depends_on:
+      - user-service
+      - chat-service
     networks:
-      - gateway      
+      - gateway
+      - app-network
+    mem_limit: 256m
+    cpus: 0.5
+    restart: unless-stopped
+
+  user-service:
+    build: ./src/backend/user-service
+    container_name: user-service
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - DATABASE_URL=file:/app/data/usermgmt.db
+      - JWT_SEC=${JWT_SECRET:-super_secret_jwt_key_change_me_32chars}
+      - COOKIE_SECRET=${COOKIE_SECRET:-super_secret_cookie_key_32chars}
+      - FRONTEND_URL=https://localhost
+      - BACKEND_URL=http://user-service:3001
+      - EMAIL_HOST=${EMAIL_HOST:-smtp.example.com}
+      - EMAIL_PORT=${EMAIL_PORT:-587}
+      - EMAIL_USER=${EMAIL_USER:-noreply@example.com}
+      - EMAIL_PASS=${EMAIL_PASS:-placeholder}
+      - EMAIL_FROM=${EMAIL_FROM:-noreply@example.com}
+      - UPLOADS_DIR=/app/public/uploads
+    volumes:
+      - user-data:/app/data
+      - user-uploads:/app/public/uploads
+    networks:
       - app-network
       - monitoring
     mem_limit: 512m
     cpus: 1.0
+    restart: unless-stopped
+
+  game-service:
+    build: ./src/backend/game-service
+    container_name: game-service
+    environment:
+      - PORT=3500
+    networks:
+      - gateway
+      - app-network
+    mem_limit: 512m
+    cpus: 1.0
+    restart: unless-stopped
+
+  chat-service:
+    build: ./src/backend/chat-service
+    container_name: chat-service
+    environment:
+      - PORT=4000
+      - DATABASE_URL=file:/app/data/chat.db
+    volumes:
+      - chat-data:/app/data
+    networks:
+      - app-network
+    mem_limit: 512m
+    cpus: 1.0
+    restart: unless-stopped
 
 volumes:
   nginx-logs:
     driver: local
     name: nginx-logs
+  user-data:
+    driver: local
+  user-uploads:
+    driver: local
+  chat-data:
+    driver: local
 
 networks:
   gateway:
