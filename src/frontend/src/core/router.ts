@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/13 22:19:50 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/12 02:48:03 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/12 03:07:52 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,7 @@ import { Register } from "../pages/register.ts";
 import { chat } from "../components/chat";
 import { Friends } from "../components/Friends";
 import { Game } from "../pages/Game";
+import { userState } from "../core/appStore";
 // --- Route Definitions ---
 const routes: Record<string, any> = {
 	"/": Home,
@@ -90,28 +91,31 @@ export function matchRoute(path: string): { view: any; params: Record<string, st
   return null;
 }
 
+export function renderRoute() {
+  const user = userState.get();
+  const root = document.getElementById("bg")!;
+  root.innerHTML = "";
 
-// --- Render Route ---
-export async function renderRoute() {
-	const root = document.getElementById("bg")!;
-	root.innerHTML = "";
-	
-	const match = matchRoute(location.pathname);
-
-	if (!match) {
-		new Page404().mount(root);
-		return;
-	}
+  const match = matchRoute(location.pathname);
+  if (!match) {
+    const page = new Page404();
+    page.mount(root);
+    return;
+  }
 
   const { view: View, params } = match;
-  if(View === Game){
+  if(View === Game && user){
     const urlParams = new URLSearchParams(window.location.search);
     var mode = urlParams.get("mode") || "bot";
-    if(mode !== "bot" && mode !== "local" && mode != "remote"){
+    if(!mode || (mode !== "bot" && mode !== "local" && mode != "remote")){
       mode = "bot"; 
     }
     const gameobj = new Game(mode);
     gameobj.mount(root);
+  }
+  else if(View === Game && !user){
+    const page = new Login();
+    page.mount(root);
   }
   else{
     const page = new View(params);

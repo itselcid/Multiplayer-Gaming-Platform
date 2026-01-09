@@ -6,13 +6,14 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/27 01:44:47 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/12 03:03:19 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/12 03:11:33 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 
 import { addElement, Component } from "../core/Component";
-import { Engine,Scene,HemisphericLight,Vector3,MeshBuilder, StandardMaterial, Color3,Color4,UniversalCamera, DirectionalLight} from "@babylonjs/core";
+import { Engine,Scene,ShadowGenerator,HemisphericLight,Vector3,MeshBuilder, StandardMaterial, 
+	Color3,Color4,UniversalCamera,DirectionalLight} from "@babylonjs/core";
 import "@babylonjs/inspector";
 import * as GUI from "@babylonjs/gui";
 import { io , Socket } from 'socket.io-client'
@@ -82,17 +83,24 @@ export class Game extends Component {
 		this.camera.inputs.clear();
 		this.camera.fov = 0.785;
         var lightd = new HemisphericLight("light", new Vector3(0, 0, -40), this.scene);
-		lightd.intensity = 0.7
+		// lightd.intensity = 0.85
 		
 		var light = new DirectionalLight("light",new Vector3(0,0,0),this.scene);
-		light.intensity = 0.3;
-
-		var ball = MeshBuilder.CreateSphere("ball",{diameter:0.8, segments: 16});
+		light.intensity = 0.65;
+		// light.direction = new Vector3(22,0,30);
+		
+		
+		var ball = MeshBuilder.CreateSphere("ball",{diameter:0.8, segments:64});
 		ball.position = Vector3.Zero();
 		ball.material = new StandardMaterial("matball",this.scene);
-		(ball.material as StandardMaterial).diffuseColor = new Color3(0.75,0.75,0.75);
-		(ball.material as StandardMaterial).specularColor = new Color3(0.85,0.85,0.85);
-
+		(ball.material as StandardMaterial).diffuseColor = new Color3(0.95,0.95,0.95);
+		// (ball.material as StandardMaterial).specularColor = new Color3(0.85,0.85,0.85);
+		// var paddleLeft = MeshBuilder.CreateCapsule("paddleLeft",{ height: 2.4,radius: 0.15,tessellation: 120},this.scene)
+		const shadowGenerator = new ShadowGenerator(1024, light);
+		shadowGenerator.useBlurExponentialShadowMap = true;
+		shadowGenerator.blurKernel = 32;
+		
+		shadowGenerator.addShadowCaster(ball);
 		var paddleLeft = MeshBuilder.CreateBox("paddLeft",{width:0.20,height:2.4,size:0.35},this.scene);
 		paddleLeft.position = new Vector3(-18,0,0);
 		paddleLeft.material = new StandardMaterial("matLeft",this.scene);
@@ -106,13 +114,13 @@ export class Game extends Component {
 		(paddleRight.material as StandardMaterial).diffuseColor = new Color3(0.85, 0.023, 0.395);
 		// (paddleRight.material as StandardMaterial).specularColor = new Color3(0.7, 0.7, 0.7);
 
-			// const ground = MeshBuilder.CreatePlane("ground",{width:36.83,height:16.3},this.scene);
-			const ground = MeshBuilder.CreateGround("ground",{width:36.83,height:16.3, subdivisions:1},this.scene);
+			const ground = MeshBuilder.CreatePlane("ground",{width:36.83,height:16.3},this.scene);
+			// const ground = MeshBuilder.CreateGround("ground",{width:36.83,height:16.3, subdivisions:1},this.scene);
 			ground.position = new Vector3(0,0,0.45);
 			ground.material = new StandardMaterial("mground",this.scene);
 			(ground.material as StandardMaterial).diffuseColor = new Color3(0, 0.133, 0.371);
 			(ground.material as StandardMaterial).backFaceCulling = false;
-			ground.rotation.x = -Math.PI / 2;
+			// ground.rotation.x = -Math.PI / 2;
 			(ground.material as StandardMaterial).specularColor = new Color3(0.15,0.15,0.15);
 			// ground.parent = someNode;
 			const line1 = MeshBuilder.CreateBox("line1",{width:36.83,height:0.2,size:0.5},this.scene);
@@ -158,6 +166,7 @@ export class Game extends Component {
 			
 			const id = setInterval(() => {
 				this.socket.emit(this.mode);
+				this.socket.emit('input', this.input)
 			}, 1000 / 60)
 		
 			this.socket.on('state', (state) => {
@@ -165,12 +174,24 @@ export class Game extends Component {
 			  paddleRight.position.y = state.paddleRightY
 			  ball.position.x = state.ballx;
 			  ball.position.y = state.bally;
-			  if(state.spot === 1)
-				light.direction = new Vector3(-19,-11,30);
-			  else if (state.spot === 2)
-				light.direction = new Vector3(19,-11,30);
-			  else
-				light.direction = Vector3.Zero();
+			  if(state.spot === 1){
+				  light.direction = new Vector3(-25,0,40);
+				  lightd.intensity = 0.2;
+				//   lightd.direction = Vector3.Zero();
+			  }
+			  else if (state.spot === 2){
+				  light.direction = new Vector3(25,0,40);
+				  lightd.intensity = 0.2;
+				//   lightd.direction = Vector3.Zero();
+
+			  }
+			  else{
+				  light.direction = Vector3.Zero();
+				  lightd.intensity = 1;
+				//   lightd.direction = new Vector3(0,0,-40);
+			  }
+			
+			  console.log(state.spot);
 			  this.scoreL.innerText = `${this.user2}- ${state.left}`
 			  this.scoreR.innerText = `${state.right} -${this.user1}`;
 			  timer.innerText = `${String(Math.max(0,state.min)).padStart(2,"0")}:${String(Math.max(0,state.sec)).padStart(2,"0")}`

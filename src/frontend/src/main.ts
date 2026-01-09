@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/12 15:53:05 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/12 02:12:00 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/12 03:12:57 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,7 +50,7 @@ subs();
 
 initAuth().then(() => {
   // Render the initial route after checking auth
-  console.error("wooooooooooooooooooooh");
+  // console.error("wooooooooooooooooooooh");
   renderRoute();
 });
 

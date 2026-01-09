@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Home.ts                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oessaadi <oessaadi@student.42.fr>          +#+  +:+       +#+        */
+/*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/13 19:43:15 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/09 16:41:48 by oessaadi         ###   ########.fr       */
+/*   Updated: 2026/01/12 03:06:14 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,11 +14,46 @@ import { Component } from "../core/Component";
 import { navigate } from "../core/router";
 import { userState } from "../core/appStore";
 
+interface Friend {
+  id: number;
+  username: string;
+  avatar: string;
+}
+
 export class Home extends Component {
+	private friends: Friend[] = [];
+	
   constructor() {
     super("div", 'pl-5 pr-5 pt-3');
   }
 
+  private async getfriends() : Promise<Friend[]>{
+	const response = await this.fetchApi();
+    const data = await response.json();
+    return data.friends;
+	
+  }
+  private async fetchApi(options: RequestInit = {}){
+	 const headers: Record<string, string> = {};
+    if (options.body) {
+      headers['Content-Type'] = 'application/json';
+    }
+	const user = userState.get();
+    const response = await fetch(`http://localhost:3000/api/friends?id=${user?.id}`, {
+      ...options,
+      headers: {
+        ...headers,
+        ...options.headers,
+      },
+      credentials: 'include',
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Request failed' }));
+      throw new Error(error.message || error.error || 'Something went wrong');
+    }
+
+    return response;
+  }
   render() {
 	this.el.innerHTML = `  
     <div class="flex flex-col items-center px-2 sm:px-4 lg:px-8">
@@ -65,8 +100,55 @@ export class Home extends Component {
 	  container.querySelector("#cancel")?.addEventListener("click",() => container.remove());
   }
 
-  handleRemote(){
-	
+  async handleRemote(){
+	this.friends = await this.getfriends();
+	const container = document.createElement("div");
+	container.className =`fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm z-50`;
+	if(!this.friends.length){
+		container.innerHTML=`<div class="backdrop-blur-xl rounded-xl shadow-xl flex flex-col gap-4 p-6">
+		<h2 class="text-3xl text-center text-ctex mb-4">No playmates around</h2>
+		<button id="make" class="btn px-6 py-3 rounded-sm text-white/75 hover:bg-neon-cyan/75  transition">👥 Start Friendships</button>
+      	<button id="cancel" class="btn px-6  py-3 rounded-sm text-white/75 hover:bg-neon-cyan/75  transition mt-2">Cancel</button>
+		</div>`;
+		
+	}
+	else{
+		container.innerHTML = `<div class="backdrop-blur-xl rounded-xl shadow-xl flex flex-col gap-4 p-6">
+		<h2 class="text-3xl text-center text-ctex mb-4">Select a playmate</h2>
+		<div id="friendsList" class="flex flex-col gap-2"></div>
+		<button id="cancel" class="btn px-6 py-3 rounded-sm text-white/75 hover:bg-neon-cyan/75 transition mt-4">Cancel</button>
+    	</div>`;
+		
+		const list = container.querySelector("#friendsList");
+
+  		this.friends.forEach(friend => {
+    		const btn = document.createElement("button");
+    		btn.className =
+    		  "btn flex items-center gap-3 px-4 py-2 rounded-sm text-white/80 hover:bg-neon-cyan/75 transition text-left";
+    		const avatar = document.createElement("img");
+    		avatar.src = friend.avatar || '👤'; 
+    		avatar.alt = friend.username;
+    		avatar.className = "w-8 h-8 rounded-full object-cover"; 
+			
+			// console.log(friend.avatar);
+   		 	btn.innerHTML = `${this.renderAvatar(friend.avatar)}<span>${friend.username}</span>`;
+    		btn.addEventListener("click", () => {});
+			list?.appendChild(btn);});
+		}
+		
+		this.el.append(container);
+		container.querySelector("#make")?.addEventListener("click",()=>navigate("/friends"));
+		container.querySelector("#cancel")?.addEventListener("click",() => container.remove());
+	}
+	renderAvatar(avatar: string | undefined, size: string = 'w-8 h-8') {
+		if (avatar && avatar.startsWith('/public')) {
+    	avatar = avatar.replace('/public', '');
+	}
+    if (avatar && (avatar.startsWith('/') || avatar.startsWith('http'))) {
+      return `<img src="${avatar}" alt="avatar" class="${size} rounded-full object-cover" />`;
+    }
+    return `<span class="text-sm">${avatar || '👤'}</span>`;
   }
 }
 
+//mimi //watch //alone
