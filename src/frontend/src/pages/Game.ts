@@ -6,13 +6,13 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/27 01:44:47 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/12 03:01:38 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/12 03:03:19 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 
 import { addElement, Component } from "../core/Component";
-import { Engine,Scene,ShadowGenerator,HemisphericLight,Vector3,MeshBuilder, StandardMaterial, Color3,Color4,UniversalCamera,Mesh, PointLight, SpotLight, DirectionalLight} from "@babylonjs/core";
+import { Engine,Scene,HemisphericLight,Vector3,MeshBuilder, StandardMaterial, Color3,Color4,UniversalCamera, DirectionalLight} from "@babylonjs/core";
 import "@babylonjs/inspector";
 import * as GUI from "@babylonjs/gui";
 import { io , Socket } from 'socket.io-client'
@@ -68,11 +68,13 @@ export class Game extends Component {
 		canvas.style.outline = "none" ;
         canvas.id = "renderCanvas";
 		canvas.style.marginTop = "10px";
-		canvas.width = 2000;
-		canvas.height = 900;
+		canvas.width = 1200;
+		canvas.height = 540;
 
-		this.engine = new Engine(canvas, true);
+		this.engine = new Engine(canvas, true, { preserveDrawingBuffer: false, stencil: false });
 		this.scene = new Scene(this.engine);
+		this.scene.skipPointerMovePicking = true;
+		this.scene.autoClear = false;
 		this.scene.clearColor = new Color4(0,0,0,0);
 		const	setCamera = new Vector3(0,0,0);
 		this.camera = new UniversalCamera("camera", new Vector3(0,0,-30), this.scene);
@@ -84,20 +86,13 @@ export class Game extends Component {
 		
 		var light = new DirectionalLight("light",new Vector3(0,0,0),this.scene);
 		light.intensity = 0.3;
-		// light.direction = new Vector3(22,0,30);
-		
-		const shadowGenerator = new ShadowGenerator(2048, light);
-		shadowGenerator.useBlurExponentialShadowMap = true;
-		shadowGenerator.blurKernel = 96;
 
-		var ball = MeshBuilder.CreateSphere("ball",{diameter:0.8});
+		var ball = MeshBuilder.CreateSphere("ball",{diameter:0.8, segments: 16});
 		ball.position = Vector3.Zero();
 		ball.material = new StandardMaterial("matball",this.scene);
 		(ball.material as StandardMaterial).diffuseColor = new Color3(0.75,0.75,0.75);
 		(ball.material as StandardMaterial).specularColor = new Color3(0.85,0.85,0.85);
-		// var paddleLeft = MeshBuilder.CreateCapsule("paddleLeft",{ height: 2.4,radius: 0.15,tessellation: 120},this.scene)
-		
-		shadowGenerator.addShadowCaster(ball);
+
 		var paddleLeft = MeshBuilder.CreateBox("paddLeft",{width:0.20,height:2.4,size:0.35},this.scene);
 		paddleLeft.position = new Vector3(-18,0,0);
 		paddleLeft.material = new StandardMaterial("matLeft",this.scene);
@@ -119,7 +114,6 @@ export class Game extends Component {
 			(ground.material as StandardMaterial).backFaceCulling = false;
 			ground.rotation.x = -Math.PI / 2;
 			(ground.material as StandardMaterial).specularColor = new Color3(0.15,0.15,0.15);
-			ground.receiveShadows = true;
 			// ground.parent = someNode;
 			const line1 = MeshBuilder.CreateBox("line1",{width:36.83,height:0.2,size:0.5},this.scene);
 			line1.position = new Vector3(0,8.1,0);
@@ -148,8 +142,14 @@ export class Game extends Component {
 			// event.preventDefault()
 			
 		};
-		window.addEventListener('keydown', (event)=>handlekeycahnge(event,true));
-		window.addEventListener('keyup', (event)=>handlekeycahnge(event,false));
+		window.addEventListener('keydown', (event)=>{
+			handlekeycahnge(event,true);
+			this.socket.emit('input', this.input);
+		});
+		window.addEventListener('keyup', (event)=>{
+			handlekeycahnge(event,false);
+			this.socket.emit('input', this.input);
+		});
 		this.socket.emit(this.mode);
 		if(this.mode === "remote"){
 
@@ -158,8 +158,7 @@ export class Game extends Component {
 			
 			const id = setInterval(() => {
 				this.socket.emit(this.mode);
-				this.socket.emit('input', this.input)
-			}, 1000 / 120)
+			}, 1000 / 60)
 		
 			this.socket.on('state', (state) => {
 			  paddleLeft.position.y = state.paddleLeftY
@@ -172,8 +171,6 @@ export class Game extends Component {
 				light.direction = new Vector3(19,-11,30);
 			  else
 				light.direction = Vector3.Zero();
-			
-			  console.log(state.spot);
 			  this.scoreL.innerText = `${this.user2}- ${state.left}`
 			  this.scoreR.innerText = `${state.right} -${this.user1}`;
 			  timer.innerText = `${String(Math.max(0,state.min)).padStart(2,"0")}:${String(Math.max(0,state.sec)).padStart(2,"0")}`

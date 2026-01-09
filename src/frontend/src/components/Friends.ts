@@ -34,7 +34,7 @@ export class Friends extends Component {
   private myUserId: number | null = null;
 
   constructor() {
-    super("div", "w-full max-w-2xl mx-auto");
+    super("div", "w-full max-w-2xl mx-auto pt-24 px-4 grid-bg min-h-screen");
     this.init();
   }
 
@@ -112,19 +112,19 @@ export class Friends extends Component {
   }
 
   private async getFriends(): Promise<Friend[]> {
-    const response = await this.fetchApi('/users/friends');
+    const response = await this.fetchApi('/friends');
     const data = await response.json();
     return data.friends;
   }
 
   private async getReceivedRequests(): Promise<Friend[]> {
-    const response = await this.fetchApi('/users/friends/requests/received');
+    const response = await this.fetchApi('/friends/requests/received');
     const data = await response.json();
     return data.friends;
   }
 
   private async getSentRequests(): Promise<Friend[]> {
-    const response = await this.fetchApi('/users/friends/requests/sent');
+    const response = await this.fetchApi('/friends/requests/sent');
     const data = await response.json();
     return data.friends;
   }
@@ -136,15 +136,15 @@ export class Friends extends Component {
   }
 
   private async sendFriendRequestApi(friendId: number): Promise<void> {
-    await this.fetchApi(`/users/friends/requests/send/${friendId}`, { method: 'PUT' });
+    await this.fetchApi(`/friends/requests/send/${friendId}`, { method: 'PUT' });
   }
 
   private async acceptRequestApi(friendId: number): Promise<void> {
-    await this.fetchApi(`/users/friends/requests/accept/${friendId}`, { method: 'PUT' });
+    await this.fetchApi(`/friends/requests/accept/${friendId}`, { method: 'PUT' });
   }
 
   private async rejectRequestApi(friendId: number): Promise<void> {
-    await this.fetchApi(`/users/friends/requests/reject/${friendId}`, { method: 'POST' });
+    await this.fetchApi(`/friends/requests/reject/${friendId}`, { method: 'POST' });
   }
 
   // ============ END API CALLS ============

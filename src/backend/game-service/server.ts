@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 17:15:36 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/12 03:01:57 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/12 03:02:51 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,7 +37,7 @@ fastify.get('/health', async () => ({ status: 'ok', service: 'game-service' }))
 setInterval(() => {
   game.update()
   io.emit('state', game.getState())
-}, 1000 / 120)
+}, 1000 / 60)
 
 io.on('connection', (socket) => {
   socket.on('bot',()=>{game.mode = "bot"});
