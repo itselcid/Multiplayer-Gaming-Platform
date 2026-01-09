@@ -8,34 +8,17 @@ services:
       - "8081:80"
       - "443:443"
     depends_on:
-      - api-gateway
+      - user-service
       - game-service
       - chat-service
     networks:
-      - gateway
       - app-network
       - elk
     volumes:
       - nginx-logs:/var/log/nginx
-    restart: unless-stopped
-
-  api-gateway:
-    build: ./src/backend/api-gateway
-    container_name: api-gateway
-    environment:
-      - PORT=3000
-      - LOG_LEVEL=info
-      - USER_SERVICE_URL=http://user-service:3001
-      - CHAT_SERVICE_URL=http://chat-service:4000
-      - FRONTEND_URL=https://localhost
-    depends_on:
-      - user-service
-      - chat-service
-    networks:
-      - gateway
-      - app-network
-    mem_limit: 256m
-    cpus: 0.5
+    mem_limit: 64m
+    mem_reservation: 32m
+    cpus: 0.25
     restart: unless-stopped
 
   user-service:
@@ -55,14 +38,16 @@ services:
       - EMAIL_PASS=${EMAIL_PASS:-placeholder}
       - EMAIL_FROM=${EMAIL_FROM:-noreply@example.com}
       - UPLOADS_DIR=/app/public/uploads
+      - NODE_OPTIONS=--max-old-space-size=200
     volumes:
       - user-data:/app/data
       - user-uploads:/app/public/uploads
     networks:
       - app-network
       - monitoring
-    mem_limit: 512m
-    cpus: 1.0
+    mem_limit: 256m
+    mem_reservation: 100m
+    cpus: 0.5
     restart: unless-stopped
 
   game-service:
@@ -70,11 +55,12 @@ services:
     container_name: game-service
     environment:
       - PORT=3500
+      - NODE_OPTIONS=--max-old-space-size=128
     networks:
-      - gateway
       - app-network
-    mem_limit: 512m
-    cpus: 1.0
+    mem_limit: 180m
+    mem_reservation: 64m
+    cpus: 0.5
     restart: unless-stopped
 
   chat-service:
@@ -83,12 +69,14 @@ services:
     environment:
       - PORT=4000
       - DATABASE_URL=file:/app/data/chat.db
+      - NODE_OPTIONS=--max-old-space-size=128
     volumes:
       - chat-data:/app/data
     networks:
       - app-network
-    mem_limit: 512m
-    cpus: 1.0
+    mem_limit: 180m
+    mem_reservation: 64m
+    cpus: 0.5
     restart: unless-stopped
 
 volumes:
@@ -103,9 +91,6 @@ volumes:
     driver: local
 
 networks:
-  gateway:
-    driver: bridge
-    name: gateway
   app-network:
     driver: bridge
     name: network
