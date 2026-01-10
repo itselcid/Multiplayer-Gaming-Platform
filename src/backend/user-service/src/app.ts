@@ -13,14 +13,14 @@ import path from 'node:path';
 
 export default async function buildServer() {
     const fastifyServer = Fastify({
-        logger: true,
+        logger: false,
     });
 
     fastifyServer.setErrorHandler(globalErrorHandler);
     await fastifyServer.register(authPlugin);
     await fastifyServer.register(swaggerPlugin);
     await fastifyServer.register(import('@fastify/rate-limit'), {
-        max: 100,
+        max: 1000,
         timeWindow: '1 minute',
         keyGenerator: (request) => {
             return request.user?.userId || request.ip;

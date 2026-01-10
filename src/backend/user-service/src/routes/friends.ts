@@ -39,7 +39,7 @@ const ManageFriendSchema = {
 export default function friendsRoutes(server: FastifyInstance) {
 
     // get all friends
-    server.get<{ Body: { friends: Friend[] } }>('/', { preHandler: [server.authenticate], schema: GetFriendsSchema }, friendController.getFriends);
+    server.get<{ Body: { friends: Friend[] } }>('', { preHandler: [server.authenticate], schema: GetFriendsSchema }, friendController.getFriends);
     // get friend requests
     server.get<{ Body: { friendRequests: Friend[] } }>('/requests/received', { preHandler: [server.authenticate], schema: GetFriendsSchema }, friendController.getFriendRequests);
     // get sent friend requests

@@ -3,14 +3,23 @@ import buildServer from './app';
 import { createTestUserIfNeeded } from './db';
 import { env } from './config/env';
 import { testEmailConnection } from './services/email.service';
+import { socketService } from './services/socket.service';
 
 async function start() {
     try {
         const server = await buildServer();
 
+        await server.ready(); // Important!
+        socketService.initialize(server.server, {
+            cors: {
+                origin: env.FRONTEND_URL,
+                credentials: true,
+                methods: ["GET", "POST"]
+            }
+        });
         await server.listen({
             port: Number(env.PORT),
-            host: '0.0.0.0'
+            host: '0.0.0.0'   // change to 0.0.0.0 for production
         });
 
         console.log(`🚀 Server ready at http://localhost:${env.PORT}`);
