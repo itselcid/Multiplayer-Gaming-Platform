@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/27 01:44:47 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/12 03:11:33 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/12 03:19:53 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,7 +65,7 @@ export class Game extends Component {
 		container.appendChild(timer);
 		container.appendChild(scoreRow)	
 		this.el.appendChild(container);
-		const canvas = addElement('canvas','w-3/4 h-full',container) as HTMLCanvasElement;
+		const canvas = addElement('canvas','w-full h-full',container) as HTMLCanvasElement;
 		canvas.style.outline = "none" ;
         canvas.id = "renderCanvas";
 		canvas.style.marginTop = "10px";
@@ -96,23 +96,30 @@ export class Game extends Component {
 		(ball.material as StandardMaterial).diffuseColor = new Color3(0.95,0.95,0.95);
 		// (ball.material as StandardMaterial).specularColor = new Color3(0.85,0.85,0.85);
 		// var paddleLeft = MeshBuilder.CreateCapsule("paddleLeft",{ height: 2.4,radius: 0.15,tessellation: 120},this.scene)
-		const shadowGenerator = new ShadowGenerator(1024, light);
-		shadowGenerator.useBlurExponentialShadowMap = true;
-		shadowGenerator.blurKernel = 32;
-		
-		shadowGenerator.addShadowCaster(ball);
-		var paddleLeft = MeshBuilder.CreateBox("paddLeft",{width:0.20,height:2.4,size:0.35},this.scene);
-		paddleLeft.position = new Vector3(-18,0,0);
+		// shadowGenerator.addShadowCaster()
+		var paddleLeft = MeshBuilder.CreateBox("paddLeft",{width:0.20,height:2.4,size:0.36},this.scene);
+		paddleLeft.position = new Vector3(-18.1,0,0);
 		paddleLeft.material = new StandardMaterial("matLeft",this.scene);
 		(paddleLeft.material as StandardMaterial).diffuseColor = new Color3(0.3, 0.485, 0.678);
 		// (paddleLeft.material as StandardMaterial).specularColor = new Color3(0.7,0.7,0.7);
 		// var paddleRight = MeshBuilder.CreateCapsule("paddleRight",{ height: 2.4,radius: 0.15,tessellation: 120},this.scene)
-		var paddleRight = MeshBuilder.CreateBox("paddRight",{width:0.20,height:2.4,size:0.35},this.scene);
-		paddleRight.position = new Vector3(18,0,0);
+		var paddleRight = MeshBuilder.CreateBox("paddRight",{width:0.20,height:2.4,size:0.36},this.scene);
+		paddleRight.position = new Vector3(18.1,0,0);
 		
 		paddleRight.material = new StandardMaterial("matRight",this.scene);
 		(paddleRight.material as StandardMaterial).diffuseColor = new Color3(0.85, 0.023, 0.395);
 		// (paddleRight.material as StandardMaterial).specularColor = new Color3(0.7, 0.7, 0.7);
+		
+		const shadowGenerator = new ShadowGenerator(1024, light);
+		shadowGenerator.addShadowCaster(ball);
+		// shadowGenerator.addShadowCaster(paddleLeft);
+		// shadowGenerator.addShadowCaster(paddleRight);
+		shadowGenerator.blurKernel = 32;
+		// light.shadowMaxZ = 50;
+		// light.shadowMinZ = 5;
+		shadowGenerator.useBlurExponentialShadowMap = true;		
+		// shadowGenerator.useContactHardeningShadow = true;
+		// shadowGenerator.setDarkness(0.5);
 
 			const ground = MeshBuilder.CreatePlane("ground",{width:36.83,height:16.3},this.scene);
 			// const ground = MeshBuilder.CreateGround("ground",{width:36.83,height:16.3, subdivisions:1},this.scene);
@@ -147,18 +154,19 @@ export class Game extends Component {
 			}
 			if (key === "ArrowUp") this.input.rightUp = isDown;
 			if (key === "ArrowDown") this.input.rightDown = isDown;
-			// event.preventDefault()
+			// if ()
+			if (key === "ArrowLeft"){if(this.camera.position._x < 14){this.camera.position.x += 1; this.camera.setTarget(Vector3.Zero());}};
+			if (key === "ArrowRight"){if(this.camera.position._x > -14){this.camera.position.x -= 1; this.camera.setTarget(Vector3.Zero());}};
+			if (key === '-'){if(this.camera.position._z > -50){this.camera.position.z -= 1; this.camera.setTarget(Vector3.Zero());}};
+			if (key === '+'){if(this.camera.position._z < -25){this.camera.position.z += 1; this.camera.setTarget(Vector3.Zero());}};
+			event.preventDefault()
 			
 		};
-		window.addEventListener('keydown', (event)=>{
-			handlekeycahnge(event,true);
-			this.socket.emit('input', this.input);
-		});
-		window.addEventListener('keyup', (event)=>{
-			handlekeycahnge(event,false);
-			this.socket.emit('input', this.input);
-		});
+		window.addEventListener('keydown', (event)=>handlekeycahnge(event,true));
+		window.addEventListener('keyup', (event)=>handlekeycahnge(event,false));
+		window.addEventListener('keydown', (event)=>handlekeycahnge(event,true));
 		this.socket.emit(this.mode);
+		   this.startCountdown(() => {this.socket.emit("resume")});
 		if(this.mode === "remote"){
 
 		}
@@ -177,21 +185,16 @@ export class Game extends Component {
 			  if(state.spot === 1){
 				  light.direction = new Vector3(-25,0,40);
 				  lightd.intensity = 0.2;
-				//   lightd.direction = Vector3.Zero();
 			  }
 			  else if (state.spot === 2){
 				  light.direction = new Vector3(25,0,40);
 				  lightd.intensity = 0.2;
-				//   lightd.direction = Vector3.Zero();
 
 			  }
 			  else{
 				  light.direction = Vector3.Zero();
 				  lightd.intensity = 1;
-				//   lightd.direction = new Vector3(0,0,-40);
 			  }
-			
-			  console.log(state.spot);
 			  this.scoreL.innerText = `${this.user2}- ${state.left}`
 			  this.scoreR.innerText = `${state.right} -${this.user1}`;
 			  timer.innerText = `${String(Math.max(0,state.min)).padStart(2,"0")}:${String(Math.max(0,state.sec)).padStart(2,"0")}`
@@ -205,11 +208,6 @@ export class Game extends Component {
 					this.cleardata(id);return;}}
 			  
 			})
-			//  if(state.min <= 0 && state.sec <= 0 && state.right != state.left){
-			// 	if(this.roundtwo(state)){
-			// 		this.cleardata(id);return;}}
-			  
-			// })
 				this.engine.runRenderLoop(() => {
 					this.scene.render();
 				});
@@ -265,6 +263,7 @@ export class Game extends Component {
 
 	
 startCountdown(onFinish: () => void) {
+	this.socket.emit("pause"); 
   const ui = GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI", true, this.scene);
 
   const text = new GUI.TextBlock();
@@ -285,7 +284,6 @@ startCountdown(onFinish: () => void) {
       onFinish();
     }
   }, 2000);
-	// this.input.stop = false;
 }
 	
 }

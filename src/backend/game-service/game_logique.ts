@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/13 17:23:50 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/12 03:05:34 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/12 03:20:22 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,7 @@ export class PongGame {
   readonly PLAY_AREA_HEIGHT = 16.25;
   readonly MAX_p_Y = (this.PLAY_AREA_HEIGHT  / 2) - (this.PADDLE_HEIGHT / 2);
   readonly MAX_b_Y = (this.PLAY_AREA_HEIGHT / 2) - 0.35;
-  readonly PADDLE_SPEED = 0.18;
+  readonly PADDLE_SPEED = 0.33;
   input = {
     leftUp: false,
     leftDown: false,
@@ -53,23 +53,9 @@ export class PongGame {
     if (this.input.rightUp) this.paddleRightY += this.PADDLE_SPEED
     if (this.input.rightDown) this.paddleRightY -= this.PADDLE_SPEED
 
+      this.paddleLeftY = Math.max(-this.MAX_p_Y, Math.min(this.MAX_p_Y, this.paddleLeftY))
+      this.paddleRightY = Math.max(-this.MAX_p_Y, Math.min(this.MAX_p_Y, this.paddleRightY))
     
-    if(this.mode == "bot"){
-      if(this.ballx <= 0){
-        // if(this.delta === 0)
-        //     this.delta = (Math.random() < 0.5 ? 0 : 1.7)
-        if(this.bally - this.delta > (this.paddleLeftY + (this.PADDLE_HEIGHT/4))  ){
-          this.paddleLeftY += this.PADDLE_SPEED
-        }
-        else if (this.bally + this.delta < (this.paddleLeftY - (this.PADDLE_HEIGHT/4)) ){
-          this.paddleLeftY -= this.PADDLE_SPEED
-        }
-      }
-    }
-
-    this.paddleLeftY = Math.max(-this.MAX_p_Y, Math.min(this.MAX_p_Y, this.paddleLeftY))
-    this.paddleRightY = Math.max(-this.MAX_p_Y, Math.min(this.MAX_p_Y, this.paddleRightY))
-
     if(this.stop){
       this.ballx = 0;
       this.bally = 0;
@@ -77,6 +63,18 @@ export class PongGame {
     }
     
     if(!this.move) return;
+    
+    if(this.mode == "bot"){
+      if(this.ballx <= 0){
+        if(this.bally - this.delta > (this.paddleLeftY + (this.PADDLE_HEIGHT/4))  ){
+          this.paddleLeftY += this.PADDLE_SPEED
+        }
+        else if (this.bally + this.delta < (this.paddleLeftY - (this.PADDLE_HEIGHT/4)) ){
+          this.paddleLeftY -= this.PADDLE_SPEED
+        }
+         this.paddleLeftY = Math.max(-this.MAX_p_Y, Math.min(this.MAX_p_Y, this.paddleLeftY));
+      }
+    }
     if(this.input.timeout){
       var remain = Math.floor(((Date.now() - this.starTime) - this.Duration) / -1000)
       this.min = Math.floor(remain / 60)
