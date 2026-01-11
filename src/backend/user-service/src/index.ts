@@ -19,7 +19,7 @@ async function start() {
         });
         await server.listen({
             port: Number(env.PORT),
-            host: '0.0.0.0'   // change to 0.0.0.0 for production
+            host: '127.0.0.1'   // change to 0.0.0.0 for production
         });
 
         console.log(`🚀 Server ready at http://localhost:${env.PORT}`);
