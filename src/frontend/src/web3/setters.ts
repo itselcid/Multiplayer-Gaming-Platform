@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/19 02:15:08 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/25 11:01:22 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/01 23:23:01 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -76,6 +76,7 @@ export const create_tournament = async (title: string, entryFee: bigint, partici
 export const join_tournament = async (_tournament: Tournament, _username: string) : Promise<void> => {
 	if (!walletClientMetamask)
 		return;
+	
 	const	accounts = await walletClientMetamask.getAddresses();
 	const	account = accounts[0];
 	if ((await getBalance(account)) < _tournament.entryFee){

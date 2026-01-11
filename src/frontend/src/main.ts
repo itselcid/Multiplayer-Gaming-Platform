@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/12 15:53:05 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/25 11:01:07 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/01 22:10:56 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,7 @@ import { type Tournament } from './web3/getters.ts';
 
 //  TODO: get user address from database for auth
 export const user_address = '0x26a2bf197820c79150dde3db793c23bf71a973cf';
-export let logged: boolean = false;
+export let logged: boolean = true;
 export	let cachedTournaments: Tournament[] = [];
 
 const	container1 = addElement("div", "min-h-screen w-full bg-space-dark text-white");

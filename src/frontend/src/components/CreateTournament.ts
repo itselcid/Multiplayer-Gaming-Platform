@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/18 18:01:17 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/23 00:56:22 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/08 16:37:36 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@ import { getAllowance } from "../web3/getters";
 import { walletClientMetamask } from "../web3/contracts/contracts";
 import { Metamask_error } from "./Metamask_error";
 import { getRevertReason } from "../tools/errors";
+import { isUsernameTaken } from "../tools/fetching";
 
 class	PendingButton extends Component {
 	constructor() {
@@ -210,8 +211,34 @@ export class CreateTournament extends Component {
 			create_button.textContent = 'Create';
 		}
 		create_button.onclick = async () => {
-			create_button.disabled = true;
+			const	root = document.getElementById('app');
+			if (!root)
+				return ;
+			if (!logged) {
+				try {
+					const	usernameIsTaken = await isUsernameTaken(username_input.value);
+					if (usernameIsTaken) {
+						console.error('usrname taken');
+						const	metamask_error = new Metamask_error(
+							"Transaction failed",
+							"The transaction failed for the following reason: Username already taken",
+							false
+						);
+						metamask_error.mount(root);
+						return ;
+					}
+				} catch (err) {
+					const	metamask_error = new Metamask_error(
+						"Transaction failed",
+						"The transaction failed for the following reason: " + getRevertReason(err),
+						false
+					);
+					metamask_error.mount(root);
+					return ;
+				}
+			}
 			const	pend_button = new PendingButton();
+			create_button.disabled = true;
 			try {
 				allowance = await getAllowance(account);	
 				const	entryFeeValue:bigint = parseEther(entryFee_input.value);

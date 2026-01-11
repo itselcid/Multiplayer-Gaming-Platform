@@ -1,6 +1,8 @@
 import { Match, publicClient, signingAccount, Tournament, TournamentFactoryAbi, TournamentFactoryAddress, walletClient } from "../contract/contracts";
 
 let processing = false;
+let	pendingTournaments: Tournament[] = [];
+let timer: NodeJS.Timeout | null = null;
 
 const	get_shuffled_array = (len: number) : bigint[] => {
 	const shuffled = Array.from({ length: len }, (_, i) => BigInt(i));
@@ -34,9 +36,11 @@ const	waitForTxSafe = async (hash: `0x${string}`, retries = 20, delayMs = 3000) 
 	return (null);
 }
 
-const	transact = async(_functionName: string, _args: unknown[]) : Promise<boolean> => {
-	if (processing)
-		return (false) ;
+const	transact = async(_functionName: string, _args: unknown[]) : Promise<void> => {
+	if (processing) {
+		setTimeout(async() => {await transact(_functionName, _args)}, 1000);
+		return ;
+	}
 	processing = true;
 	const	{ request } = await publicClient.simulateContract({
 			address: TournamentFactoryAddress,
@@ -51,7 +55,7 @@ const	transact = async(_functionName: string, _args: unknown[]) : Promise<boolea
 	} catch(err) {
 		console.error("❌ Failed to broadcast tx:", err);
 		processing = false;
-		return (false) ;
+		return ;
 	}
 	console.log("📨 Sent tx:", tx);
 	console.log("⏳ Waiting for confirmation...");
@@ -62,7 +66,6 @@ const	transact = async(_functionName: string, _args: unknown[]) : Promise<boolea
 	else
 		console.error("❌ ransaction Failed");
 	processing = false;
-	return (true);
 }
 
 const	getTournamentLength = async (): Promise<bigint> => {
@@ -96,38 +99,80 @@ export const	getMatch = async (_id:bigint, _round:bigint, _matchId:bigint) => {
 	return (match);
 }
 
-async function checkAndStart() {
-	// console.log('called');
-	if (processing)
-		return ;
+async function updateTournaments() {
 	try {
-		// console.log('shuffled array:', get_shuffled_array(8));
-		const length = await getTournamentLength();
-		// TODO: (improvement) skip old tournaments that way you only scan the ones that might need to be changed
-		//        for example set a start id that represents the most recent tournament deadline and start the loop from
-		//        there instead of 0n
-		for (let i:bigint = 0n; i < length; i++) {
-			const	tournament: Tournament = await getTournament(i);
-			const currentTime = Math.floor(new Date().getTime() / 1000);
-			if (tournament.startTime < BigInt(currentTime) && tournament.status === 0) {
-				console.log('condition matched')
-				if (tournament.participants === tournament.maxParticipants) {
-					console.log('deadline and max players reached. creating matches and starting the tournament...');
-					const	order = get_shuffled_array(Number(tournament.maxParticipants));
-					await transact('startTournament', [tournament.id, order]);
-					console.log('tournament started')
-				}
-				else
-					await transact('setTournamentStatus', [3, i]);
-				// break;
-			}
+		const	tournament: Tournament = pendingTournaments[pendingTournaments.length -1];
+		if (tournament.participants === tournament.maxParticipants) {
+			console.log('deadline and max players reached. creating matches and starting the tournament...');
+			const	order = get_shuffled_array(Number(tournament.maxParticipants));
+			await transact('startTournament', [tournament.id, order]);
+			console.log('tournament started')
 		}
-		
+		else
+			await transact('setTournamentStatus', [3, tournament.id]);
+		deletePendingTournament();
 	} catch (e) {
 		console.error("Automation error:", e);
 	}
-	// setTimeout(checkAndStart, 5000);
 }
+
+const	addPendingTournament = (tournament: Tournament) => {
+	pendingTournaments.push(tournament);
+	pendingTournaments.sort((a, b) => Number(b.startTime - a.startTime));
+	let	delay:number = Number(pendingTournaments[pendingTournaments.length -1].startTime * 1000n) - new Date().getTime();
+	if (delay < 0)
+		delay = 0;
+	if (timer) {
+		clearTimeout(timer);
+	}
+	timer = setTimeout(updateTournaments, delay);
+}
+
+const	deletePendingTournament = () => {
+	pendingTournaments.pop();
+	if (pendingTournaments.length) {
+		let	delay:number = Number(pendingTournaments[pendingTournaments.length -1].startTime * 1000n) - new Date().getTime();
+		if (delay < 0)
+			delay = 0;
+		if (timer) {
+		clearTimeout(timer);
+		}
+		timer = setTimeout(updateTournaments, delay);
+	}
+}
+
+// async function checkAndStart() {
+// 	// console.log('called');
+// 	if (processing)
+// 		return ;
+// 	try {
+// 		// console.log('shuffled array:', get_shuffled_array(8));
+// 		const length = await getTournamentLength();
+// 		// TODO: (improvement) skip old tournaments that way you only scan the ones that might need to be changed
+// 		//        for example set a start id that represents the most recent tournament deadline and start the loop from
+// 		//        there instead of 0n
+// 		for (let i:bigint = 0n; i < length; i++) {
+// 			const	tournament: Tournament = await getTournament(i);
+// 			const currentTime = Math.floor(new Date().getTime() / 1000);
+// 			if (tournament.startTime < BigInt(currentTime) && tournament.status === 0) {
+// 				console.log('condition matched')
+// 				if (tournament.participants === tournament.maxParticipants) {
+// 					console.log('deadline and max players reached. creating matches and starting the tournament...');
+// 					const	order = get_shuffled_array(Number(tournament.maxParticipants));
+// 					await transact('startTournament', [tournament.id, order]);
+// 					console.log('tournament started')
+// 				}
+// 				else
+// 					await transact('setTournamentStatus', [3, i]);
+// 				// break;
+// 			}
+// 		}
+		
+// 	} catch (e) {
+// 		console.error("Automation error:", e);
+// 	}
+// 	// setTimeout(checkAndStart, 5000);
+// }
 
 const	checkFinishedRounds = async (tournament: Tournament): Promise<boolean> => {
 	let finished: boolean = true;
@@ -164,20 +209,36 @@ const watchFinishedMatches = () => {
 						// create next round or set tournament as finished in case current round is 1
 						if (tournament.currentRound === 1n) {
 							console.log('tournament finished, changing its status');
-							let success = false;
-							while (!success) {
-								success = await transact('setTournamentStatus', [2, tournament.id]);
-							}
+							await transact('setTournamentStatus', [2, tournament.id]);
 						} else {
 							// create new round with the winners from the first round
 							// the winners are saved in (tournament id, current round(new round), index (0 to max players))
 							const	order = get_shuffled_array(Number(tournament.currentRound)); // current round because its not changed yet so current round is also the remaining players in the tournament
-							let success = false;
-							while (!success) {
-								success = await transact('createNextRound', [tournament.id, order]);
-							}
+							await transact('createNextRound', [tournament.id, order]);
 						}
 					}
+				})
+			}
+		}
+	)
+}
+
+const watchTournamentCreated = () => {
+	publicClient.watchContractEvent(
+		{
+			address: TournamentFactoryAddress,
+			abi: TournamentFactoryAbi,
+			eventName: 'TournamentCreated',
+			onLogs: (logs) => {
+				logs.forEach(async (log) => {
+					// fix type problem
+					const typedLog = log as typeof log & {
+						args: {
+						_id: bigint;
+						}
+					};
+					const	tournament = await getTournament(typedLog.args._id);
+					addPendingTournament(tournament);
 				})
 			}
 		}
@@ -193,34 +254,24 @@ const watchFinishedMatches = () => {
 // 	}
 // }
 
+const initPendingTournaments = async () => {
+	try {
+		const length = await getTournamentLength();
+		for (let i:bigint = 0n; i < length; i++) {
+			const	tournament: Tournament = await getTournament(i);
+			if (tournament.status === 0)
+				addPendingTournament(tournament);
+		}
+		
+	} catch (e) {
+		console.error("Automation error:", e);
+	}
+}
+
 // export const	automationBot = async () => {
 export const	automationBot = () => {
 	console.log("🟢 Automation bot started");
-	// await createTournamentHorde();
-	// console.log('tournaments created')
-	// await transact('createTournament', ['expired0', 10000000000n, 2n, BigInt(Math.floor(new Date().getTime() / 1000)) + 300n, 'user0']);
+	initPendingTournaments();
+	watchTournamentCreated();
 	watchFinishedMatches();
-	// publicClient.watchBlocks({
-	// 	onBlock: async () => {
-	// 		await checkAndStart();
-	// 	}
-	// })
-	const now = new Date();
-
-	const msUntilNextMinutePlus1 =
-	(60 - now.getSeconds()) * 1000 +
-	1000 - // +1 second
-	now.getMilliseconds();
-
-	setTimeout(() => {
-	// first run at mm:01
-	checkAndStart().catch(console.error);
-
-	// subsequent runs every minute at mm:01
-	setInterval(() => {
-		checkAndStart().catch(console.error);
-	}, 60_000);
-
-	}, msUntilNextMinutePlus1);
-
 }

@@ -7,12 +7,19 @@ server.get("/", async () => ({
 	status: "Fastify running with TypeScript"
 }));
 
+server.get("/addUsername", async () => ({
+	status: "Fastify running with TypeScript"
+}));
+
+server.get("/deleteUsername", async () => ({
+	status: "Fastify running with TypeScript"
+}));
+
 const start = async () => {
 	try {
-		await server.listen({ port: 3000 });
-		console.log("Backend running on http://localhost:3000");
+		await server.listen({ port: 3003 });
+		console.log("Backend running on http://localhost:3003");
 		automationBot();
-		console.log('started');
 	} catch (err) {
 		console.error(err);
 		process.exit(1);
