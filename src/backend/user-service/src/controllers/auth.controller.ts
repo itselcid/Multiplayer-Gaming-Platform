@@ -141,7 +141,7 @@ export const authController = {
         if (user) {
             const resetToken = await createPasswordResetToken(user.id);
 
-            await sendPasswordResetEmail(user.email, resetToken.token);
+            // await sendPasswordResetEmail(user.email, resetToken.token);      // ! uncomment in production
 
             return reply.send({
                 message: "Password reset email sent successfully",
@@ -155,12 +155,12 @@ export const authController = {
     },
 
     resetPassword: async (request: any, reply: any) => {
-        const { token, password } = request.body;
+        const { token, newpassword } = request.body;
 
-        if (!token || !password)
-            throw createHttpError(400, 'token and password are required');
+        if (!token || !newpassword)
+            throw createHttpError(400, 'token and newpassword are required');
 
-        if (password.length < 4)   //! change to 8 in production
+        if (newpassword.length < 4)   //! change to 8 in production
             throw createHttpError(400, 'password must be at least 4 characters long');
 
         //find and validate token
@@ -169,7 +169,7 @@ export const authController = {
         if (!resetToken)
             throw createHttpError(400, 'Invalid or expired token');
 
-        await updateUser(resetToken.userId, { password });
+        await updateUser(resetToken.userId, { password: { newpassword } });
         await deletePasswordResetToken(token);
 
         return reply.send({

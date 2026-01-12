@@ -46,10 +46,10 @@ const ForgotPasswordSchema = {
 const ResetPasswordSchema = {
     body: {
         type: 'object',
-        required: ['token', 'password'],
+        required: ['token', 'newpassword'],
         properties: {
             token: { type: 'string' },
-            password: { type: 'string' }
+            newpassword: { type: 'string' }
         }
     }
 } as const;

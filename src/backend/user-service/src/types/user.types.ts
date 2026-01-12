@@ -42,9 +42,16 @@ export interface CreateUserOutput {
     username: string;
 }
 
+export interface PasswordUpdateInput {
+    oldpassword?: string;
+    newpassword: string;
+    repeatednewpasswd?: string;
+}
+
 export interface UpdateUserInput {
     email?: string;
-    password?: string;
+    username?: string;
+    password?: PasswordUpdateInput;
     avatar?: string;
 }
 

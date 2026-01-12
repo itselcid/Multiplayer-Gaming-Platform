@@ -5,6 +5,7 @@ import bcrypt from "bcrypt";
 import { UserData, CreateUserInput, UpdateUserInput, PasswordResetToken, UserSearchData } from "./types";
 import type { GithubProfile, UserAuthData } from "./types/auth.types.js";
 import crypto from 'crypto';
+import createHttpError from "http-errors";
 
 export async function createUser(input: CreateUserInput): Promise<UserSearchData> {
     const { username, email, password } = input;
@@ -124,9 +125,11 @@ export async function searchUsers(search: string): Promise<UserSearchData[]> {
 }
 
 // For authentication (WITH password)
-export async function getUserForAuth(username: string): Promise<UserAuthData> {
+export async function getUserForAuth(username: string, id?: number): Promise<UserAuthData> {
+
+    const whereClause = id ? { id } : { username };
     const user = await prisma.user.findUnique({
-        where: { username },
+        where: whereClause,
         select: {
             id: true,
             username: true,
@@ -149,14 +152,42 @@ export async function getUserForAuth(username: string): Promise<UserAuthData> {
 }
 
 export async function updateUser(id: number, updates: UpdateUserInput): Promise<UserData | null> {
-    const data: any = {}; // this makes every property optional
+    const data: any = {};
 
     if (updates.email !== undefined) {
+        const user = await getUserByUsername(updates.email);
+        if (user)
+            throw createHttpError(409, 'Email already exists');
         data.email = updates.email;
     }
 
+    if (updates.username !== undefined) {
+        const user = await getUserByUsername(updates.username);
+        if (user)
+            throw createHttpError(409, 'Username already exists');
+        data.username = updates.username;
+    }
+
     if (updates.password !== undefined) {
-        const hash = await bcrypt.hash(updates.password, 10);
+        const { oldpassword, newpassword, repeatednewpasswd } = updates.password;
+        console.log("oldpassword: ", oldpassword || "undefined");
+        console.log("newpassword: ", newpassword || "undefined");
+        console.log("repeatednewpasswd: ", repeatednewpasswd || "undefined");
+        const user = await getUserForAuth('auth', id);
+
+        if (!user)
+            throw createHttpError(404, 'User not found');
+
+        if (oldpassword && repeatednewpasswd) {
+            const isPasswordValid = await bcrypt.compare(oldpassword, user.password);
+            if (!isPasswordValid)
+                throw createHttpError(401, 'Invalid password');
+
+            if (newpassword !== repeatednewpasswd)
+                throw createHttpError(400, 'Passwords do not match');
+        }
+
+        const hash = await bcrypt.hash(newpassword, 10);
         data.password = hash;
     }
 

@@ -21,12 +21,12 @@ export const userController = {
     },
 
     updateLoggedInUser: async (request: any, reply: any) => {
-        const { email } = request.body;
+        const { email, username, password } = request.body;
 
-        if (!email)
-            throw createHttpError(400, 'Provide email to update');
+        if (!email && !username && !password)
+            throw createHttpError(400, 'Provide fields to update');
 
-        const user = await updateUser(request.user!.userId, { email });
+        const user = await updateUser(request.user!.userId, { email, username, password });
 
         return reply.send({
             message: 'Profile updated successfully',

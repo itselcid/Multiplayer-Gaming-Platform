@@ -4,6 +4,7 @@ import { createTestUserIfNeeded } from './db';
 import { env } from './config/env';
 import { testEmailConnection } from './services/email.service';
 import { socketService } from './services/socket.service';
+// import { rabbitMQService } from './services/rabbitmq.service';
 
 async function start() {
     try {
@@ -19,9 +20,10 @@ async function start() {
         });
         await server.listen({
             port: Number(env.PORT),
-            host: '127.0.0.1'   // change to 0.0.0.0 for production
+            host: '0.0.0.0'
         });
 
+        // await rabbitMQService.initialize();
         console.log(`🚀 Server ready at http://localhost:${env.PORT}`);
     } catch (err) {
         console.error(err);

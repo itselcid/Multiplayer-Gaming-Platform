@@ -6,6 +6,7 @@ import authRoutes from './routes/auth';
 import twoFactorRoutes from './routes/2fa';
 import { env } from './config/env';
 import friendsRoutes from './routes/friends';
+// import matchesRoutes from './routes/matches';
 import swaggerPlugin from './plugins/swagger';
 import authPlugin from './plugins/auth';
 import { globalErrorHandler } from './middleware/error';
@@ -13,7 +14,7 @@ import path from 'node:path';
 
 export default async function buildServer() {
     const fastifyServer = Fastify({
-        logger: false,
+        logger: true,
     });
 
     fastifyServer.setErrorHandler(globalErrorHandler);
@@ -44,6 +45,7 @@ export default async function buildServer() {
     fastifyServer.register(authRoutes, { prefix: '/api/auth' });
     fastifyServer.register(twoFactorRoutes, { prefix: '/api/2fa' });
     fastifyServer.register(friendsRoutes, { prefix: '/api/friends' });
+    // fastifyServer.register(matchesRoutes, { prefix: '/api/matches' });
 
 
     // health check
