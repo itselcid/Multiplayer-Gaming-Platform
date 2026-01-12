@@ -3,17 +3,17 @@
 /*                                                        :::      ::::::::   */
 /*   Game.ts                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/27 01:44:47 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/12 03:19:53 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/12 04:20:03 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 
 import { addElement, Component } from "../core/Component";
-import { Engine,Scene,ShadowGenerator,HemisphericLight,Vector3,MeshBuilder, StandardMaterial, 
-	Color3,Color4,UniversalCamera,DirectionalLight} from "@babylonjs/core";
+import { Engine,Scene,ShadowGenerator,Vector3,MeshBuilder, StandardMaterial, 
+	Color3,Color4,UniversalCamera,SpotLight} from "@babylonjs/core";
 import "@babylonjs/inspector";
 import * as GUI from "@babylonjs/gui";
 import { io , Socket } from 'socket.io-client'
@@ -30,8 +30,9 @@ export class Game extends Component {
 	private camera!: UniversalCamera;
 	private user1?: string;
 	private user2!:string;
+	private vision!:number;
 	private input = { leftUp: false, leftDown: false,rightUp: false , rightDown:false, 
-		left:0, right:0 ,min:1, sec:30 , timeout: true, spot:0};
+		left:0, right:0 ,min:1, sec:30 , timeout: true};
 	
 	constructor(flag: string) {
 		super('div', 'px-25 py-20');
@@ -49,7 +50,6 @@ export class Game extends Component {
 	}
 
 	render() {
-				
 		const container = document.createElement("div");
 		container.classList.add("flex","flex-col" ,"items-center");
 		const	timer = document.createElement("div");
@@ -69,8 +69,8 @@ export class Game extends Component {
 		canvas.style.outline = "none" ;
         canvas.id = "renderCanvas";
 		canvas.style.marginTop = "10px";
-		canvas.width = 1200;
-		canvas.height = 540;
+		canvas.width = 2000;
+		canvas.height = 900;
 
 		this.engine = new Engine(canvas, true, { preserveDrawingBuffer: false, stencil: false });
 		this.scene = new Scene(this.engine);
@@ -82,70 +82,69 @@ export class Game extends Component {
 		this.camera.setTarget(setCamera);
 		this.camera.inputs.clear();
 		this.camera.fov = 0.785;
-        var lightd = new HemisphericLight("light", new Vector3(0, 0, -40), this.scene);
-		// lightd.intensity = 0.85
 		
-		var light = new DirectionalLight("light",new Vector3(0,0,0),this.scene);
-		light.intensity = 0.65;
-		// light.direction = new Vector3(22,0,30);
-		
+		var light = new SpotLight("light",new Vector3(0,25,-40),new Vector3(1,-1,1),Math.PI/2,1,this.scene);
+		light.setDirectionToTarget(Vector3.Zero());
+		light.intensity = 1.4;
 		
 		var ball = MeshBuilder.CreateSphere("ball",{diameter:0.8, segments:64});
-		ball.position = Vector3.Zero();
+		ball.position = new Vector3(0,0,0.04);
 		ball.material = new StandardMaterial("matball",this.scene);
-		(ball.material as StandardMaterial).diffuseColor = new Color3(0.95,0.95,0.95);
-		// (ball.material as StandardMaterial).specularColor = new Color3(0.85,0.85,0.85);
-		// var paddleLeft = MeshBuilder.CreateCapsule("paddleLeft",{ height: 2.4,radius: 0.15,tessellation: 120},this.scene)
-		// shadowGenerator.addShadowCaster()
-		var paddleLeft = MeshBuilder.CreateBox("paddLeft",{width:0.20,height:2.4,size:0.36},this.scene);
-		paddleLeft.position = new Vector3(-18.1,0,0);
+		(ball.material as StandardMaterial).diffuseColor = new Color3(0.75,0.75,0.75);
+		(ball.material as StandardMaterial).specularColor = new Color3(0.5,0.5,0.5);
+		
+		
+		var paddleLeft = MeshBuilder.CreateBox("paddLeft",{width:0.20,height:2.4,size:0.4},this.scene);
+		paddleLeft.position = new Vector3(-18.1,0,0.2);
 		paddleLeft.material = new StandardMaterial("matLeft",this.scene);
 		(paddleLeft.material as StandardMaterial).diffuseColor = new Color3(0.3, 0.485, 0.678);
-		// (paddleLeft.material as StandardMaterial).specularColor = new Color3(0.7,0.7,0.7);
-		// var paddleRight = MeshBuilder.CreateCapsule("paddleRight",{ height: 2.4,radius: 0.15,tessellation: 120},this.scene)
-		var paddleRight = MeshBuilder.CreateBox("paddRight",{width:0.20,height:2.4,size:0.36},this.scene);
-		paddleRight.position = new Vector3(18.1,0,0);
 		
+		
+		
+		
+		var paddleRight = MeshBuilder.CreateBox("paddRight",{width:0.20,height:2.4,size:0.4},this.scene);
+		paddleRight.position = new Vector3(18.1,0,0.2);
 		paddleRight.material = new StandardMaterial("matRight",this.scene);
 		(paddleRight.material as StandardMaterial).diffuseColor = new Color3(0.85, 0.023, 0.395);
-		// (paddleRight.material as StandardMaterial).specularColor = new Color3(0.7, 0.7, 0.7);
 		
 		const shadowGenerator = new ShadowGenerator(1024, light);
 		shadowGenerator.addShadowCaster(ball);
-		// shadowGenerator.addShadowCaster(paddleLeft);
-		// shadowGenerator.addShadowCaster(paddleRight);
-		shadowGenerator.blurKernel = 32;
-		// light.shadowMaxZ = 50;
-		// light.shadowMinZ = 5;
+		shadowGenerator.addShadowCaster(paddleLeft);
+		shadowGenerator.addShadowCaster(paddleRight);
+		shadowGenerator.blurKernel = 64;
 		shadowGenerator.useBlurExponentialShadowMap = true;		
-		// shadowGenerator.useContactHardeningShadow = true;
-		// shadowGenerator.setDarkness(0.5);
+		shadowGenerator.setDarkness(0.35);
 
-			const ground = MeshBuilder.CreatePlane("ground",{width:36.83,height:16.3},this.scene);
-			// const ground = MeshBuilder.CreateGround("ground",{width:36.83,height:16.3, subdivisions:1},this.scene);
-			ground.position = new Vector3(0,0,0.45);
-			ground.material = new StandardMaterial("mground",this.scene);
-			(ground.material as StandardMaterial).diffuseColor = new Color3(0, 0.133, 0.371);
-			(ground.material as StandardMaterial).backFaceCulling = false;
-			// ground.rotation.x = -Math.PI / 2;
-			(ground.material as StandardMaterial).specularColor = new Color3(0.15,0.15,0.15);
-			// ground.parent = someNode;
-			const line1 = MeshBuilder.CreateBox("line1",{width:36.83,height:0.2,size:0.5},this.scene);
-			line1.position = new Vector3(0,8.1,0);
-			line1.material = new StandardMaterial("mtest",this.scene);
-			(line1.material as StandardMaterial).diffuseColor = new Color3(0, 0.133, 0.371);
-			const line2 = MeshBuilder.CreateBox("line2",{width:36.83,height:0.2,size:0.5},this.scene);
-			line2.position = new Vector3(0,-8.1,0);
-			line2.material = new StandardMaterial("mtest",this.scene);
-			(line2.material as StandardMaterial).diffuseColor = new Color3(0, 0.133, 0.371);
-			const line3  = MeshBuilder.CreateBox("line3",{width:0.2,height:16,size:0.5},this.scene);
-			line3.position = new Vector3(18.32,0,0);
-			line3.material = new StandardMaterial("mtest",this.scene);
-			(line3.material as StandardMaterial).diffuseColor = new Color3(0, 0.133, 0.371);
-			const line4  = MeshBuilder.CreateBox("line4",{width:0.2,height:16,size:0.5},this.scene);
-			line4.position = new Vector3(-18.32,0,0);
-			line4.material = new StandardMaterial("mtest",this.scene);
-			(line4.material as StandardMaterial).diffuseColor = new Color3(0, 0.133, 0.371);
+		const ground = MeshBuilder.CreatePlane("ground",{width:36.83,height:16.3},this.scene);
+		ground.position = new Vector3(0,0,0.4);
+		ground.material = new StandardMaterial("mground",this.scene);
+		(ground.material as StandardMaterial).diffuseColor = new Color3(0, 0.133, 0.371);
+		(ground.material as StandardMaterial).backFaceCulling = false;
+		(ground.material as StandardMaterial).specularColor = new Color3(0.3,0.3,0.3);
+		ground.receiveShadows = true;
+		
+		const line1 = MeshBuilder.CreateBox("line1",{width:36.83,height:0.2,size:0.4},this.scene);
+		line1.position = new Vector3(0,8.1,0.2);
+		line1.material = new StandardMaterial("mtest",this.scene);
+		(line1.material as StandardMaterial).diffuseColor = new Color3(0, 0.133, 0.371);
+		(line1.material as StandardMaterial).specularColor = new Color3(0.5,0.5,0.5);
+		const line2 = MeshBuilder.CreateBox("line2",{width:36.83,height:0.2,size:0.4},this.scene);
+		line2.position = new Vector3(0,-8.1,0.2);
+		line2.material = new StandardMaterial("mtest",this.scene);
+		(line2.material as StandardMaterial).diffuseColor = new Color3(0, 0.133, 0.371);
+		(line2.material as StandardMaterial).specularColor = new Color3(0.5,0.5,0.5);
+		const line3  = MeshBuilder.CreateBox("line3",{width:0.2,height:16,size:0.4},this.scene);
+		line3.position = new Vector3(18.32,0,0.2);
+		line3.material = new StandardMaterial("mtest",this.scene);
+		(line3.material as StandardMaterial).diffuseColor = new Color3(0, 0.133, 0.371);
+		(line3.material as StandardMaterial).specularColor = new Color3(0.5,0.5,0.5);
+		const line4  = MeshBuilder.CreateBox("line4",{width:0.2,height:16,size:0.4},this.scene);
+		line4.position = new Vector3(-18.32,0,0.2);
+		line4.material = new StandardMaterial("mtest",this.scene);
+		(line4.material as StandardMaterial).diffuseColor = new Color3(0, 0.133, 0.371);
+		(line4.material as StandardMaterial).specularColor = new Color3(0.5,0.5,0.5);
+
+
 		const handlekeycahnge = (event : KeyboardEvent , isDown: boolean)=>{
 			const key = event.key;
 			if(this.mode === "local"){
@@ -154,17 +153,40 @@ export class Game extends Component {
 			}
 			if (key === "ArrowUp") this.input.rightUp = isDown;
 			if (key === "ArrowDown") this.input.rightDown = isDown;
-			// if ()
-			if (key === "ArrowLeft"){if(this.camera.position._x < 14){this.camera.position.x += 1; this.camera.setTarget(Vector3.Zero());}};
-			if (key === "ArrowRight"){if(this.camera.position._x > -14){this.camera.position.x -= 1; this.camera.setTarget(Vector3.Zero());}};
-			if (key === '-'){if(this.camera.position._z > -50){this.camera.position.z -= 1; this.camera.setTarget(Vector3.Zero());}};
-			if (key === '+'){if(this.camera.position._z < -25){this.camera.position.z += 1; this.camera.setTarget(Vector3.Zero());}};
 			event.preventDefault()
-			
+		};
+		const handlevision = (event : KeyboardEvent)=>{
+			const key = event.key;
+			if (key === "v" || key === "V"){
+				this.vision++;
+				if (this.vision % 3 == 0){
+					this.camera.position = new Vector3(0,0,-30);
+					light.position = new Vector3(0,0,-40);
+				}
+				else if (this.vision % 3 == 1){
+					this.camera.position = new Vector3(0,-10,-25);
+					light.position = new Vector3(0,10,-40);
+				}
+				else if (this.vision % 3 == 2){
+					this.camera.position = new Vector3(0,-25,-15);
+					light.position = new Vector3(0,25,-40);
+					
+				}
+				this.camera.setTarget(Vector3.Zero());
+				light.setDirectionToTarget(Vector3.Zero());
+			};
+			event.preventDefault()
+			// if (key === "ArrowLeft"){if(this.camera.position._x < 14){this.camera.position.x += 1; this.camera.setTarget(Vector3.Zero());}};
+			// if (key === "ArrowRight"){if(this.camera.position._x > -14){this.camera.position.x -= 1; this.camera.setTarget(Vector3.Zero());}};
+			// if (key === '-'){if(this.camera.position._z > -50){this.camera.position.z -= 1; this.camera.setTarget(Vector3.Zero());}};
+			// if (key === '+'){if(this.camera.position._z < -25){this.camera.position.z += 1; this.camera.setTarget(Vector3.Zero());}};
 		};
 		window.addEventListener('keydown', (event)=>handlekeycahnge(event,true));
+		window.addEventListener('keydown', (event)=>handlevision(event));
 		window.addEventListener('keyup', (event)=>handlekeycahnge(event,false));
-		window.addEventListener('keydown', (event)=>handlekeycahnge(event,true));
+
+		
+		
 		this.socket.emit(this.mode);
 		   this.startCountdown(() => {this.socket.emit("resume")});
 		if(this.mode === "remote"){
@@ -172,8 +194,8 @@ export class Game extends Component {
 		}
 		else{
 			
-			const id = setInterval(() => {
-				this.socket.emit(this.mode);
+			const id = window.setInterval(() => {
+				// this.socket.emit(this.mode);
 				this.socket.emit('input', this.input)
 			}, 1000 / 60)
 		
@@ -182,19 +204,6 @@ export class Game extends Component {
 			  paddleRight.position.y = state.paddleRightY
 			  ball.position.x = state.ballx;
 			  ball.position.y = state.bally;
-			  if(state.spot === 1){
-				  light.direction = new Vector3(-25,0,40);
-				  lightd.intensity = 0.2;
-			  }
-			  else if (state.spot === 2){
-				  light.direction = new Vector3(25,0,40);
-				  lightd.intensity = 0.2;
-
-			  }
-			  else{
-				  light.direction = Vector3.Zero();
-				  lightd.intensity = 1;
-			  }
 			  this.scoreL.innerText = `${this.user2}- ${state.left}`
 			  this.scoreR.innerText = `${state.right} -${this.user1}`;
 			  timer.innerText = `${String(Math.max(0,state.min)).padStart(2,"0")}:${String(Math.max(0,state.sec)).padStart(2,"0")}`
@@ -215,7 +224,7 @@ export class Game extends Component {
 	}
 
 	cleardata(id : number){
-		clearInterval(id);
+		window.clearInterval(id);
 		this.socket.off('state');
 		  this.socket.disconnect();
 		  this.engine.stopRenderLoop();
@@ -227,35 +236,6 @@ export class Game extends Component {
 	}
 
 	roundtwo(state:any){
-		// const temp = this.scoreL.innerText;
-		// this.scoreL.innerText = this.scoreR.innerText;
-		// this.scoreR.innerText = temp;
-
-// if (this.camera.position._z == -22) {
-// 	this.socket.emit("pause"); 
-//         const targetZ = 22;
-// 		// const targetY = 0;
-//         const step = 0.1;
-// 		// this.camera.position.y = 10;
-//         const intervalId = setInterval(() => {
-//             if (this.camera.position._z < targetZ) {
-//                 this.camera.position.z += step; 
-// 				this.camera.setTarget(Vector3.Zero());
-//             }
-// 			//    if (this.camera.position._y > targetY) {
-//             //     this.camera.position.y -= step; 
-// 			// 	this.camera.setTarget(Vector3.Zero());
-//             // }
-// 			 else{
-//                 clearInterval(intervalId);
-//                 // this.camera.setTarget(Vector3.Zero());
-//                 this.startCountdown(() => {
-//                     this.socket.emit("resume");
-//                 });
-//             }
-//         }, 100); 
-//     }
-		
 		if(state.right != state.left)
 			return true;
 		return false;
@@ -274,12 +254,12 @@ startCountdown(onFinish: () => void) {
   let count = 3;
   text.text = count.toString();
 
-  const interval = setInterval(() => {
+  const interval = window.setInterval(()  => {
     count--;
     text.text = count.toString();
 
     if (count === 0) {
-      clearInterval(interval);
+      window.clearInterval(interval);
       ui.dispose();
       onFinish();
     }
@@ -287,3 +267,6 @@ startCountdown(onFinish: () => void) {
 }
 	
 }
+
+
+//docker network create gateway

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   server.ts                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 17:15:36 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/12 03:05:57 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/12 04:20:48 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,17 @@ import http from 'http'
 import { Server } from 'socket.io'
 import { PongGame} from './game_logique'
 
+interface Room{
+  id:number;
+  player1:string;
+  avatar1:string;
+  pid1:number;
+  player2:string;
+  avatar2:string;
+  pid2:number;
+}
 
+var rooms:Map<number,Room> = new Map();
 
 
 const fastify = Fastify()
