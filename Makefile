@@ -1,13 +1,7 @@
-.PHONY: all up down restart logs build clean ps \
-        elk-up elk-down elk-logs elk-restart \
-        monitoring-up monitoring-down monitoring-logs \
-        app-up app-down app-logs app-restart \
-        all-up all-down all-restart
 
-# Default target
-all: all-up
+all: app-up
 
-# ============ Application Services ============
+
 app-up:
 	docker compose up -d --build
 
@@ -19,7 +13,19 @@ app-logs:
 
 app-restart: app-down app-up
 
-# ============ ELK Stack ============
+
+dev-up:
+	docker compose -f docker-compose.dev.yml up -d
+
+dev-down:
+	docker compose -f docker-compose.dev.yml down
+
+dev-logs:
+	docker compose -f docker-compose.dev.yml logs -f
+
+dev-restart: dev-down dev-up
+
+
 elk-up:
 	docker compose -f infra/elk-stack/docker-compose.yml up -d
 
@@ -31,7 +37,7 @@ elk-logs:
 
 elk-restart: elk-down elk-up
 
-# ============ Monitoring (Prometheus + Grafana) ============
+
 monitoring-up:
 	docker compose -f infra/monitoring/docker-compose.yml up -d
 
@@ -41,7 +47,7 @@ monitoring-down:
 monitoring-logs:
 	docker compose -f infra/monitoring/docker-compose.yml logs -f
 
-# ============ All Services ============
+
 all-up: app-up elk-up monitoring-up
 	@echo "All services started"
 
@@ -53,7 +59,7 @@ all-down:
 
 all-restart: all-down all-up
 
-# ============ Utility Commands ============
+
 build:
 	docker compose build --no-cache
 
@@ -67,9 +73,6 @@ clean:
 	docker system prune -f
 	@echo "Cleaned up containers and volumes"
 
-# ============ Individual Service Logs ============
-logs-gateway:
-	docker logs -f api-gateway
 
 logs-user:
 	docker logs -f user-service
