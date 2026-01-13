@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/27 01:44:47 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/12 04:20:03 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/13 07:54:42 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,20 @@ import * as GUI from "@babylonjs/gui";
 import { io , Socket } from 'socket.io-client'
 import { userState } from "../core/appStore";
 
+
+interface Friend {
+  id: number;
+  username: string;
+  avatar: string;
+}
+
+interface Room{
+  id?:string;
+  player1?:string;
+  pid1?:number;
+  player2?:string;
+  pid2?:number;
+}
 
 export class Game extends Component {
 	private socket: Socket;
@@ -36,7 +50,6 @@ export class Game extends Component {
 	
 	constructor(flag: string) {
 		super('div', 'px-25 py-20');
-		// Connect through nginx proxy - use relative path for WebSocket
 		this.socket = io(window.location.origin, {
 			path: '/socket.io/',
 			transports: ['websocket', 'polling']
@@ -45,10 +58,16 @@ export class Game extends Component {
 		const u = userState.get();
 		this.user1 = u?.username ;
 		this.user2 = "bot";
+		this.vision = 0;
 		if(flag === "local")
 				this.user2 = "Guest";
 	}
 
+	createroom(friend:Friend){
+		const room : Room = { player1:userState.get()?.username, pid1:userState.get()?.id, 
+			player2:friend.username,pid2:friend.id};
+		this.socket.emit("setroom",room);
+	}
 	render() {
 		const container = document.createElement("div");
 		container.classList.add("flex","flex-col" ,"items-center");
@@ -70,15 +89,15 @@ export class Game extends Component {
         canvas.id = "renderCanvas";
 		canvas.style.marginTop = "10px";
 		canvas.width = 2000;
-		canvas.height = 900;
+		canvas.height = 800;
 
-		this.engine = new Engine(canvas, true, { preserveDrawingBuffer: false, stencil: false });
+		this.engine = new Engine(canvas, true, {stencil: true,adaptToDeviceRatio: false});
+		
 		this.scene = new Scene(this.engine);
-		this.scene.skipPointerMovePicking = true;
-		this.scene.autoClear = false;
 		this.scene.clearColor = new Color4(0,0,0,0);
+		
 		const	setCamera = new Vector3(0,0,0);
-		this.camera = new UniversalCamera("camera", new Vector3(0,0,-30), this.scene);
+		this.camera = new UniversalCamera("camera", new Vector3(0,-25,-15), this.scene);
 		this.camera.setTarget(setCamera);
 		this.camera.inputs.clear();
 		this.camera.fov = 0.785;
@@ -111,7 +130,7 @@ export class Game extends Component {
 		shadowGenerator.addShadowCaster(ball);
 		shadowGenerator.addShadowCaster(paddleLeft);
 		shadowGenerator.addShadowCaster(paddleRight);
-		shadowGenerator.blurKernel = 64;
+		shadowGenerator.blurKernel = 16;
 		shadowGenerator.useBlurExponentialShadowMap = true;		
 		shadowGenerator.setDarkness(0.35);
 
@@ -153,7 +172,6 @@ export class Game extends Component {
 			}
 			if (key === "ArrowUp") this.input.rightUp = isDown;
 			if (key === "ArrowDown") this.input.rightDown = isDown;
-			event.preventDefault()
 		};
 		const handlevision = (event : KeyboardEvent)=>{
 			const key = event.key;
@@ -176,13 +194,8 @@ export class Game extends Component {
 				light.setDirectionToTarget(Vector3.Zero());
 			};
 			event.preventDefault()
-			// if (key === "ArrowLeft"){if(this.camera.position._x < 14){this.camera.position.x += 1; this.camera.setTarget(Vector3.Zero());}};
-			// if (key === "ArrowRight"){if(this.camera.position._x > -14){this.camera.position.x -= 1; this.camera.setTarget(Vector3.Zero());}};
-			// if (key === '-'){if(this.camera.position._z > -50){this.camera.position.z -= 1; this.camera.setTarget(Vector3.Zero());}};
-			// if (key === '+'){if(this.camera.position._z < -25){this.camera.position.z += 1; this.camera.setTarget(Vector3.Zero());}};
 		};
-		window.addEventListener('keydown', (event)=>handlekeycahnge(event,true));
-		window.addEventListener('keydown', (event)=>handlevision(event));
+		window.addEventListener('keydown', (event)=>{handlekeycahnge(event,true),handlevision(event)});
 		window.addEventListener('keyup', (event)=>handlekeycahnge(event,false));
 
 		
@@ -197,7 +210,7 @@ export class Game extends Component {
 			const id = window.setInterval(() => {
 				// this.socket.emit(this.mode);
 				this.socket.emit('input', this.input)
-			}, 1000 / 60)
+			}, 1000 / 30)
 		
 			this.socket.on('state', (state) => {
 			  paddleLeft.position.y = state.paddleLeftY
@@ -225,6 +238,7 @@ export class Game extends Component {
 
 	cleardata(id : number){
 		window.clearInterval(id);
+		this.socket.emit("gameOver");
 		this.socket.off('state');
 		  this.socket.disconnect();
 		  this.engine.stopRenderLoop();

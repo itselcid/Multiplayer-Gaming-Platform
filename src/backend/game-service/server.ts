@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 17:15:36 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/12 04:20:48 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/13 07:58:45 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,17 +16,20 @@ import { Server } from 'socket.io'
 import { PongGame} from './game_logique'
 
 interface Room{
-  id:number;
+  id:string;
   player1:string;
-  avatar1:string;
   pid1:number;
   player2:string;
-  avatar2:string;
   pid2:number;
 }
 
-var rooms:Map<number,Room> = new Map();
+var rooms:Map<string,Room> = new Map();
 
+function generateroom(): string{
+  const chars: string[] = ["a", "b", "c", "d", "e", "f","g","h","i","j"];
+
+  return "";
+}
 
 const fastify = Fastify()
 const server = http.createServer(fastify.server)
@@ -47,9 +50,11 @@ fastify.get('/health', async () => ({ status: 'ok', service: 'game-service' }))
 setInterval(() => {
   game.update()
   io.emit('state', game.getState())
-}, 1000 / 60)
+}, 1000 / 30)
 
 io.on('connection', (socket) => {
+  console.log(`client connected ${socket.id}`);
+  socket.on('setroom',(room)=>{});
   socket.on('bot',()=>{game.mode = "bot"});
   socket.on('local',()=>{game.mode = "local"});
   console.log('Client connected')
@@ -58,21 +63,24 @@ io.on('connection', (socket) => {
     if(!game.move)
       game.starTime = Date.now();
     game.move = true;
-  })
+  });
 
   
   socket.on('pause',()=>{
     game.stop = true;
-  })
+  });
   
 
     socket.on('resume',()=>{
     game.stop = false;
-  })
+  });
+  
+  socket.on('gameOver',()=>{
+    game.reset();
+  });
   
   socket.on('disconnect', () => {
-    console.log('Client disconnected')
-    game.reset()
+    console.log(`Client disconnected ${socket.id}`)
   })
 })
 

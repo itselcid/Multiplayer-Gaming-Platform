@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/13 17:23:50 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/12 04:24:20 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/13 05:39:25 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,8 +15,8 @@ export class PongGame {
   paddleRightY = 0
   ballx = 0
   bally = 0
-  ballVX = 0.16
-  ballVY = 0.04
+  ballVX = 0.36
+  ballVY = 0.16
   move = false;
   starTime = 0
   left=0
@@ -26,7 +26,6 @@ export class PongGame {
   stop = false;
   mode = "bot";
   delta = 0;
-  spot = 0;
 
   readonly Duration = 90000
   readonly PADDLE_HEIGHT = 2.4;
@@ -34,7 +33,7 @@ export class PongGame {
   readonly PLAY_AREA_HEIGHT = 16;
   readonly MAX_p_Y = (this.PLAY_AREA_HEIGHT  / 2) - (this.PADDLE_HEIGHT / 2);
   readonly MAX_b_Y = (this.PLAY_AREA_HEIGHT / 2) - 0.35;
-  readonly PADDLE_SPEED = 0.33;
+  readonly PADDLE_SPEED = 0.66;
   input = {
     leftUp: false,
     leftDown: false,
@@ -93,7 +92,8 @@ export class PongGame {
         this.ballVX *= -1;
         this.ballx +=  this.ballVX
         this.bally += this.ballVY
-      }
+        this.delta = (Math.random()  < 0.5 ? 0 : 1);
+    }
       else if (this.bally >= this.paddleRightY - this.PADDLE_HEIGHT/2 && 
       this.bally <= this.paddleRightY + this.PADDLE_HEIGHT/2 &&
       this.ballx  >= this.PLAY_AREA_WIDTH/2){
@@ -104,19 +104,18 @@ export class PongGame {
     }
     else if (this.ballx < -this.PLAY_AREA_WIDTH/2 ) {
       this.right++;
-      this.ballVX = 0.1 * (Math.random() < 0.5 ? 1 : -1)
-      this.ballVY = 0.04 *(Math.random() < 0.5 ? 1 : -1)
+      this.ballVX = 0.36 * (Math.random() < 0.5 ? 1 : -1)
+      this.ballVY = 0.16 *(Math.random() < 0.5 ? 1 : -1)
       this.ballx = this.ballVX;
       this.bally = this.ballVY;
       this.delta = (Math.random()  < 0.5 ? 0 : 1);
     }
     else if (this.ballx > this.PLAY_AREA_WIDTH/2){
       this.left++;
-      this.ballVX = 0.1 * (Math.random() < 0.5 ? 1 : -1)
-      this.ballVY = 0.04 *(Math.random() < 0.5 ? 1 : -1)
+      this.ballVX = 0.36 * (Math.random() < 0.5 ? 1 : -1)
+      this.ballVY = 0.16 *(Math.random() < 0.5 ? 1 : -1)
       this.ballx = this.ballVX;
       this.bally = this.ballVY;
-      this.delta = (Math.random() < 0.5 ? 0 : 0.7);
       this.delta = (Math.random()  < 0.5 ? 0 : 1);
     }
     else{
