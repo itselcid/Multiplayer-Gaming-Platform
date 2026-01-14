@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/13 19:43:15 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/13 07:31:08 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/14 07:33:26 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -131,7 +131,10 @@ export class Home extends Component {
     		avatar.alt = friend.username;
     		avatar.className = "w-8 h-8 rounded-full object-cover"; 
    		 	btn.innerHTML = `${this.renderAvatar(friend.avatar)}<span>${friend.username}</span>`;
-    		btn.addEventListener("click", () => {const room = new Game("remote"); room.createroom(friend);});
+    		btn.addEventListener("click", async () => {
+				const room = new Game("remote","");
+				const url = await room.createroom(friend);
+				navigate(url)});
 			list?.appendChild(btn);});
 		}
 		

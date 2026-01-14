@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 17:15:36 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/13 07:58:45 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/14 07:56:21 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,9 +26,19 @@ interface Room{
 var rooms:Map<string,Room> = new Map();
 
 function generateroom(): string{
-  const chars: string[] = ["a", "b", "c", "d", "e", "f","g","h","i","j"];
-
-  return "";
+  // const chars: string = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  // let id :string = "";
+  // const l = (Math.random() < 0.5 ? 5 : 8);
+  
+  // for(let j = 0; j < l; j++){
+  //    const i = Math.floor(Math.random() * chars.length);
+  //   id += chars[i];
+  // }
+  const crypto = require("crypto");
+const byteLength = Math.floor(Math.random() * (6 - 4 + 1)) + 4;
+  const id = crypto.randomBytes(Math.ceil(byteLength/2)).toString("hex");
+  // console.log(id);
+  return id;
 }
 
 const fastify = Fastify()
@@ -41,30 +51,45 @@ const io = new Server(server, {
   }
 })
 
-const game = new PongGame()
 
 // Health check endpoint
 fastify.get('/health', async () => ({ status: 'ok', service: 'game-service' }))
 
 
-setInterval(() => {
-  game.update()
-  io.emit('state', game.getState())
-}, 1000 / 30)
 
 io.on('connection', (socket) => {
   console.log(`client connected ${socket.id}`);
-  socket.on('setroom',(room)=>{});
-  socket.on('bot',()=>{game.mode = "bot"});
-  socket.on('local',()=>{game.mode = "local"});
-  console.log('Client connected')
+  const game = new PongGame()
+  
+  setInterval(() => {
+    game.update()
+    socket.emit('state', game.getState())
+  }, 1000 / 30);
+  
+  socket.on('setroom',(room)=>{
+    console.log("fchkeeel");
+    console.log(room);
+    room.id = generateroom();
+    rooms.set(room.id, room);
+    console.log(rooms);
+    console.log(room.id);
+    socket.emit('id',room.id);
+  });
+
   socket.on('input', (input) => {
     Object.assign(game.input, input)
-    if(!game.move)
-      game.starTime = Date.now();
+    // if(!game.move)
+    //   game.starTime = Date.now();
     game.move = true;
   });
 
+
+    socket.on('mode',(mode)=>{game.mode = mode});
+    
+  socket.on('verifyroom',(id)=>{const exist:boolean = rooms.has(id);
+    // console.log(exist);
+    socket.emit('verified',exist);
+  });
   
   socket.on('pause',()=>{
     game.stop = true;

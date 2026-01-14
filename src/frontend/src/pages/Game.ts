@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/27 01:44:47 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/13 07:54:42 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/14 07:35:21 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,16 +45,18 @@ export class Game extends Component {
 	private user1?: string;
 	private user2!:string;
 	private vision!:number;
+	private	id?:string;
 	private input = { leftUp: false, leftDown: false,rightUp: false , rightDown:false, 
 		left:0, right:0 ,min:1, sec:30 , timeout: true};
 	
-	constructor(flag: string) {
+	constructor(flag: string, id: string) {
 		super('div', 'px-25 py-20');
 		this.socket = io(window.location.origin, {
 			path: '/socket.io/',
 			transports: ['websocket', 'polling']
 		});
 		this.mode = flag;
+		this.id = id;
 		const u = userState.get();
 		this.user1 = u?.username ;
 		this.user2 = "bot";
@@ -62,12 +64,40 @@ export class Game extends Component {
 		if(flag === "local")
 				this.user2 = "Guest";
 	}
+	
+	async verify():Promise<boolean>{
+		this.socket.emit('verifyroom',this.id);
+		const l:boolean = await new Promise((resolve)=>{this.socket.once('verified',
+			(exist:boolean)=>resolve(exist))}); 
+		// this.socket.on('verifieed',(b:boolean)=>{l = b;
+			// console.log(`here in verify ${l}`);
+			// if(b === false){
+			// console.log("not verified");
+			this.socket.off('verified');
+			this.socket.disconnect();
+		// }
+	// });
+		return l;
+	}
 
-	createroom(friend:Friend){
+	async createroom(friend:Friend):Promise<string>{
 		const room : Room = { player1:userState.get()?.username, pid1:userState.get()?.id, 
 			player2:friend.username,pid2:friend.id};
-		this.socket.emit("setroom",room);
+			this.socket.emit("setroom",room);
+			this.id = await new Promise((resolve) => {
+    		this.socket.once("id", (id) => resolve(id));});
+			// this.socket.once("id",(id)=>{
+			// 	this.id = id;
+			// 	console.log(`inside once ${id}   what about this.id==${this.id}`);
+			this.socket.off('id');	
+			this.socket.disconnect();
+			// });
+			// console.log(this.id);
+			// console.log("why");
+		return `/game?mode=remote&id=${this.id}`;
 	}
+
+	
 	render() {
 		const container = document.createElement("div");
 		container.classList.add("flex","flex-col" ,"items-center");
@@ -200,18 +230,17 @@ export class Game extends Component {
 
 		
 		
-		this.socket.emit(this.mode);
-		   this.startCountdown(() => {this.socket.emit("resume")});
+		this.socket.emit('mode',this.mode);
 		if(this.mode === "remote"){
-
+			// this.socket.on('getroom')
+			console.log(this.id);
 		}
-		else{
+		else {
 			
+			this.startCountdown(() => {this.socket.emit("resume")});
 			const id = window.setInterval(() => {
-				// this.socket.emit(this.mode);
 				this.socket.emit('input', this.input)
 			}, 1000 / 30)
-		
 			this.socket.on('state', (state) => {
 			  paddleLeft.position.y = state.paddleLeftY
 			  paddleRight.position.y = state.paddleRightY
@@ -233,6 +262,7 @@ export class Game extends Component {
 				this.engine.runRenderLoop(() => {
 					this.scene.render();
 				});
+			
 		}
 	}
 

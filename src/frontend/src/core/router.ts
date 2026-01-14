@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   router.ts                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/13 22:19:50 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/12 03:07:52 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/14 07:29:54 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -91,7 +91,7 @@ export function matchRoute(path: string): { view: any; params: Record<string, st
   return null;
 }
 
-export function renderRoute() {
+export async function renderRoute() {
   const user = userState.get();
   const root = document.getElementById("bg")!;
   root.innerHTML = "";
@@ -106,11 +106,17 @@ export function renderRoute() {
   const { view: View, params } = match;
   if(View === Game && user){
     const urlParams = new URLSearchParams(window.location.search);
-    var mode = urlParams.get("mode") || "bot";
+    let mode = urlParams.get("mode") || "bot";
+    const id = urlParams.get("id") || "";
     if(!mode || (mode !== "bot" && mode !== "local" && mode != "remote")){
       mode = "bot"; 
     }
-    const gameobj = new Game(mode);
+    const gameobj = new Game(mode,id);
+    if(mode == "remote" && (!id || !(await gameobj.verify()))){
+      const page = new Page404();
+      page.mount(root);
+      return;
+    }
     gameobj.mount(root);
   }
   else if(View === Game && !user){

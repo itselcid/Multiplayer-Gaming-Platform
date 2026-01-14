@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/13 17:23:50 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/13 05:39:25 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/14 07:56:36 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,7 +44,9 @@ export class PongGame {
 
 
   update() {
-    if(!this.move) return;
+    if(!this.move) {
+      return;
+    }
     if(this.mode == "local"){
       if (this.input.leftUp) this.paddleLeftY += this.PADDLE_SPEED
       if (this.input.leftDown) this.paddleLeftY -= this.PADDLE_SPEED
@@ -57,6 +59,7 @@ export class PongGame {
       this.paddleRightY = Math.max(-this.MAX_p_Y, Math.min(this.MAX_p_Y, this.paddleRightY))
     
     if(this.stop){
+      this.starTime = Date.now();
       this.ballx = 0;
       this.bally = 0;
       return;
