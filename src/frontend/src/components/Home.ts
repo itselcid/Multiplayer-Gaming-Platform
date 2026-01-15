@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/13 19:43:15 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/14 07:33:26 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/15 10:09:23 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -96,7 +96,7 @@ export class Home extends Component {
 	  </div>`
 	  this.el.append(container);
 	  container.querySelector("#local")?.addEventListener("click",()=> navigate("/game?mode=local"));
-	  container.querySelector("#remote")?.addEventListener("click",()=> {console.log(`event is token`);this.handleRemote()});
+	  container.querySelector("#remote")?.addEventListener("click",()=> {this.handleRemote()});
 	  container.querySelector("#bot")?.addEventListener("click",()=> navigate("/game?mode=bot"));
 	  container.querySelector("#cancel")?.addEventListener("click",() => container.remove());
   }

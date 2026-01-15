@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 17:15:36 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/14 07:56:21 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/15 10:02:12 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,30 +25,14 @@ interface Room{
 
 var rooms:Map<string,Room> = new Map();
 
-function generateroom(): string{
-  // const chars: string = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  // let id :string = "";
-  // const l = (Math.random() < 0.5 ? 5 : 8);
-  
-  // for(let j = 0; j < l; j++){
-  //    const i = Math.floor(Math.random() * chars.length);
-  //   id += chars[i];
-  // }
-  const crypto = require("crypto");
-const byteLength = Math.floor(Math.random() * (6 - 4 + 1)) + 4;
-  const id = crypto.randomBytes(Math.ceil(byteLength/2)).toString("hex");
-  // console.log(id);
-  return id;
-}
 
 const fastify = Fastify()
 const server = http.createServer(fastify.server)
-
 const io = new Server(server, {
-  cors: {
-    origin: '*',
-    methods: ['GET', 'POST']
-  }
+cors: {
+  origin: '*',
+  methods: ['GET', 'POST']
+}
 })
 
 
@@ -57,56 +41,87 @@ fastify.get('/health', async () => ({ status: 'ok', service: 'game-service' }))
 
 
 
+function generateroom(): string{
+  const crypto = require("crypto");
+  const byteLength = Math.floor(Math.random() * (8 - 4 + 1)) + 4;
+  const id = crypto.randomBytes(Math.ceil(byteLength/2)).toString("hex");
+  return id;
+}  
+  
+const games:Map<string,PongGame> = new Map;
+const logames:Map<string,PongGame> = new Map;
+
+
+setInterval(() => {
+  for (const [roomId, game] of games) {
+    game.update();
+    io.to(roomId).emit('state', game.getState());
+  }
+  for (const [roomId, logame] of logames) {
+    logame.update();
+    io.to(roomId).emit('state', logame.getState());
+  }
+}, 1000 / 30);
+
+
 io.on('connection', (socket) => {
   console.log(`client connected ${socket.id}`);
-  const game = new PongGame()
   
-  setInterval(() => {
-    game.update()
-    socket.emit('state', game.getState())
-  }, 1000 / 30);
+ socket.once('joinroom',(id)=>{
+    socket.join(id);
+    socket.data.roomId = id;
+  });
   
-  socket.on('setroom',(room)=>{
-    console.log("fchkeeel");
-    console.log(room);
+  socket.on('setroom',(room,fct)=>{
     room.id = generateroom();
     rooms.set(room.id, room);
-    console.log(rooms);
-    console.log(room.id);
-    socket.emit('id',room.id);
+    games.set(room.id,new PongGame);
+    fct(room.id);
   });
 
+  socket.on('logame', () => {const id = generateroom();
+    logames.set(id,new PongGame);
+    socket.data.roomId = id;
+    socket.join(id);
+  });
+  
   socket.on('input', (input) => {
-    Object.assign(game.input, input)
-    // if(!game.move)
-    //   game.starTime = Date.now();
-    game.move = true;
-  });
-
-
-    socket.on('mode',(mode)=>{game.mode = mode});
-    
-  socket.on('verifyroom',(id)=>{const exist:boolean = rooms.has(id);
-    // console.log(exist);
-    socket.emit('verified',exist);
-  });
-  
-  socket.on('pause',()=>{
-    game.stop = true;
+    const id = socket.data.roomId;
+    if (!id) return;
+    const game = games.get(id);
+    const logame = logames.get(id);
+    if (game){
+      Object.assign(game.input, input);
+      game.move = true;
+    }
+    else if (logame){
+      Object.assign(logame.input, input);
+      logame.move = true;
+    }
   });
   
-
-    socket.on('resume',()=>{
-    game.stop = false;
-  });
+  socket.on('getroom', (id, fct) => {fct(rooms.get(id));});
+  
+  socket.on('verifyroom',(id,fct)=>{fct(rooms.has(id));});
   
   socket.on('gameOver',()=>{
-    game.reset();
+     const id = socket.data.roomId;
+     const game = games.get(id);
+     const logame = logames.get(id);
+     socket.leave(id);
+     if(game && game.input.mode === "remote"){
+       rooms.delete(id);
+       games.delete(id);
+     }
+     else if (logame ){
+       logames.delete(id);
+      }
   });
   
   socket.on('disconnect', () => {
+   
     console.log(`Client disconnected ${socket.id}`)
-  })
+  });
 })
 
 const PORT = Number(process.env.PORT) || 3500

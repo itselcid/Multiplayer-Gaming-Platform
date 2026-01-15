@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/27 01:44:47 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/14 07:35:21 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/15 10:15:31 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,17 +36,18 @@ interface Room{
 
 export class Game extends Component {
 	private socket: Socket;
-	private mode: string;
 	private scoreL!: HTMLDivElement;
 	private scoreR!: HTMLDivElement;
 	private	scene!: Scene ;
 	private engine!: Engine ;
 	private camera!: UniversalCamera;
 	private user1?: string;
-	private user2!:string;
+	private user2?:string;
 	private vision!:number;
+	private role!:string;
 	private	id?:string;
-	private input = { leftUp: false, leftDown: false,rightUp: false , rightDown:false, 
+	private	room!:Room;
+	private input = { leftUp: false, mode: "bot",leftDown: false,rightUp: false , rightDown:false, 
 		left:0, right:0 ,min:1, sec:30 , timeout: true};
 	
 	constructor(flag: string, id: string) {
@@ -55,8 +56,9 @@ export class Game extends Component {
 			path: '/socket.io/',
 			transports: ['websocket', 'polling']
 		});
-		this.mode = flag;
+		this.role = "playerR";
 		this.id = id;
+		this.input.mode = flag;
 		const u = userState.get();
 		this.user1 = u?.username ;
 		this.user2 = "bot";
@@ -64,41 +66,57 @@ export class Game extends Component {
 		if(flag === "local")
 				this.user2 = "Guest";
 	}
+	async remotehandler(){
+		if (!this.socket.connected) {
+			console.log('Socket is disconnected');
+		}
+		this.room = await new Promise<Room>((resolve) => {
+			this.socket.emit('getroom', this.id, resolve);
+		});
+		this.user2 = this.room.player2;
+		if(this.user1 === this.room.player2){
+				this.role = "playerL";
+				console.log(`weiiird ${this.room.player1}   2== ${this.room.player2} role==${this.role}`)
+				this.user1 = this.room.player1;
+				this.user2 = this.room.player2; 
+			}
+			else if(this.user1 !== this.room.player1 && this.user1 !== this.room.player2){
+				console.log(this.user1);
+				this.role = "viewer";
+			}
+			console.log('before  join');
+			this.socket.emit('joinroom',this.id);
+			console.log(`in remote handler ${this.role}`);
+		
+	}
 	
 	async verify():Promise<boolean>{
-		this.socket.emit('verifyroom',this.id);
-		const l:boolean = await new Promise((resolve)=>{this.socket.once('verified',
-			(exist:boolean)=>resolve(exist))}); 
-		// this.socket.on('verifieed',(b:boolean)=>{l = b;
-			// console.log(`here in verify ${l}`);
-			// if(b === false){
-			// console.log("not verified");
-			this.socket.off('verified');
+		const l:boolean = await  new Promise((resolve)=>{
+			this.socket.emit('verifyroom',this.id, resolve);
+		});
+		this.socket.off('verified');
+		if(!l)
 			this.socket.disconnect();
-		// }
-	// });
 		return l;
 	}
-
+	
 	async createroom(friend:Friend):Promise<string>{
 		const room : Room = { player1:userState.get()?.username, pid1:userState.get()?.id, 
 			player2:friend.username,pid2:friend.id};
-			this.socket.emit("setroom",room);
-			this.id = await new Promise((resolve) => {
-    		this.socket.once("id", (id) => resolve(id));});
-			// this.socket.once("id",(id)=>{
-			// 	this.id = id;
-			// 	console.log(`inside once ${id}   what about this.id==${this.id}`);
+			
+			this.id = await new Promise((resolve)=>{
+				this.socket.emit("setroom",room,resolve);
+			});
 			this.socket.off('id');	
 			this.socket.disconnect();
-			// });
-			// console.log(this.id);
-			// console.log("why");
 		return `/game?mode=remote&id=${this.id}`;
 	}
-
 	
-	render() {
+	async render() {
+		if(this.input.mode === "remote")
+			await this.remotehandler();
+		else
+			this.socket.emit("logame");
 		const container = document.createElement("div");
 		container.classList.add("flex","flex-col" ,"items-center");
 		const	timer = document.createElement("div");
@@ -195,14 +213,22 @@ export class Game extends Component {
 
 
 		const handlekeycahnge = (event : KeyboardEvent , isDown: boolean)=>{
-			const key = event.key;
-			if(this.mode === "local"){
-				if (key == "W" || key == "w") this.input.leftUp = isDown;
-				if (key === "s" || key === "S") this.input.leftDown = isDown;
-			}
-			if (key === "ArrowUp") this.input.rightUp = isDown;
-			if (key === "ArrowDown") this.input.rightDown = isDown;
-		};
+				const key = event.key;
+				if(this.role !== "viewer"){
+					if(this.input.mode === "local"){
+						if (key == "W" || key == "w") this.input.leftUp = isDown;
+						if (key === "s" || key === "S") this.input.leftDown = isDown;
+					}
+					if(this.role === "playerR"){
+						if (key === "ArrowUp") this.input.rightUp = isDown;
+						if (key === "ArrowDown") this.input.rightDown = isDown;
+					}
+					else if (this.role === "playerL"){
+						if (key === "ArrowUp") this.input.leftUp = isDown;
+						if (key === "ArrowDown") this.input.leftDown = isDown;
+					}
+				}
+    	};
 		const handlevision = (event : KeyboardEvent)=>{
 			const key = event.key;
 			if (key === "v" || key === "V"){
@@ -227,43 +253,34 @@ export class Game extends Component {
 		};
 		window.addEventListener('keydown', (event)=>{handlekeycahnge(event,true),handlevision(event)});
 		window.addEventListener('keyup', (event)=>handlekeycahnge(event,false));
-
+			
+		// this.startCountdown(() => {this.socket.emit("resume")});
+		const id = window.setInterval(() => {
+			this.socket.emit('input', this.input)
+		}, 1000 / 30)
+		this.socket.on('state', (state) => {
+		  paddleLeft.position.y = state.paddleLeftY
+		  paddleRight.position.y = state.paddleRightY
+		  ball.position.x = state.ballx;
+		  ball.position.y = state.bally;
+		  this.scoreL.innerText = `${this.user2}- ${state.left}`
+		  this.scoreR.innerText = `${state.right} -${this.user1}`;
+		  timer.innerText = `${String(Math.max(0,state.min)).padStart(2,"0")}:${String(Math.max(0,state.sec)).padStart(2,"0")}`
+		  if(state.min == 0 && state.sec == 10)
+			timer.classList.add("text-red-600");
+		  if(state.min == 0 && state.sec == 0)
+			this.input.timeout = false;
+		  if(state.min <= 0 && state.sec <= 0 && state.right != state.left){this.cleardata(id);return;}
+		  if(state.min <= 0 && state.sec <= 0 && this.input.right == this.input.left){
+			if(this.roundtwo(state)){
+				this.cleardata(id);return;}}
+		  
+		})
+			this.engine.runRenderLoop(() => {
+				this.scene.render();
+			});
 		
 		
-		this.socket.emit('mode',this.mode);
-		if(this.mode === "remote"){
-			// this.socket.on('getroom')
-			console.log(this.id);
-		}
-		else {
-			
-			this.startCountdown(() => {this.socket.emit("resume")});
-			const id = window.setInterval(() => {
-				this.socket.emit('input', this.input)
-			}, 1000 / 30)
-			this.socket.on('state', (state) => {
-			  paddleLeft.position.y = state.paddleLeftY
-			  paddleRight.position.y = state.paddleRightY
-			  ball.position.x = state.ballx;
-			  ball.position.y = state.bally;
-			  this.scoreL.innerText = `${this.user2}- ${state.left}`
-			  this.scoreR.innerText = `${state.right} -${this.user1}`;
-			  timer.innerText = `${String(Math.max(0,state.min)).padStart(2,"0")}:${String(Math.max(0,state.sec)).padStart(2,"0")}`
-			  if(state.min == 0 && state.sec == 10)
-				timer.classList.add("text-red-600");
-			  if(state.min == 0 && state.sec == 0)
-				this.input.timeout = false;
-			  if(state.min <= 0 && state.sec <= 0 && state.right != state.left){this.cleardata(id);return;}
-			  if(state.min <= 0 && state.sec <= 0 && this.input.right == this.input.left){
-				if(this.roundtwo(state)){
-					this.cleardata(id);return;}}
-			  
-			})
-				this.engine.runRenderLoop(() => {
-					this.scene.render();
-				});
-			
-		}
 	}
 
 	cleardata(id : number){

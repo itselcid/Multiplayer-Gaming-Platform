@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/13 17:23:50 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/14 07:56:36 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/15 10:02:48 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,13 +18,12 @@ export class PongGame {
   ballVX = 0.36
   ballVY = 0.16
   move = false;
-  starTime = 0
-  left=0
-  right=0
-  min=1
-  sec=30
+  starTime = Date.now();
+  left=0;
+  right=0;
+  min=1;
+  sec=30;
   stop = false;
-  mode = "bot";
   delta = 0;
 
   readonly Duration = 90000
@@ -40,14 +39,14 @@ export class PongGame {
     rightUp: false,
     rightDown: false,
     timeout: true,
+    mode: "bot",
   }
 
 
   update() {
-    if(!this.move) {
-      return;
-    }
-    if(this.mode == "local"){
+    if(!this.move) return;
+    
+    if(this.input.mode != "bot"){
       if (this.input.leftUp) this.paddleLeftY += this.PADDLE_SPEED
       if (this.input.leftDown) this.paddleLeftY -= this.PADDLE_SPEED
     }
@@ -66,7 +65,7 @@ export class PongGame {
     }
     
     
-    if(this.mode == "bot"){
+    if(this.input.mode == "bot"){
       if(this.ballx <= 0){
         if(this.bally - this.delta > (this.paddleLeftY + (this.PADDLE_HEIGHT/4))  ){
           this.paddleLeftY += this.PADDLE_SPEED
@@ -77,6 +76,8 @@ export class PongGame {
          this.paddleLeftY = Math.max(-this.MAX_p_Y, Math.min(this.MAX_p_Y, this.paddleLeftY));
       }
     }
+
+    
     if(this.input.timeout){
       var remain = Math.floor(((Date.now() - this.starTime) - this.Duration) / -1000)
       this.min = Math.floor(remain / 60)
