@@ -64,19 +64,20 @@ services:
       - app-network
     restart: unless-stopped
 
-  frontend:
-    image: node:20-alpine
-    container_name: frontend
-    working_dir: /app
-    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
-    ports:
-      - "5173:5173"
-    volumes:
-      - ./src/frontend:/app
-      - frontend-modules:/app/node_modules
-    networks:
-      - app-network
-    restart: unless-stopped
+#  Uncomment the following section to enable the frontend service in development mode
+  # frontend:
+  #   image: node:20-alpine
+  #   container_name: frontend
+  #   working_dir: /app
+  #   command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+  #   ports:
+  #     - "5173:5173"
+  #   volumes:
+  #     - ./src/frontend:/app
+  #     - frontend-modules:/app/node_modules
+  #   networks:
+  #     - app-network
+  #   restart: unless-stopped
 
 volumes:
   nginx-logs:
