@@ -32,6 +32,26 @@ model User {
     refreshTokens          RefreshToken[]
     sentFriendRequests     Friendship[]    @relation("FriendshipRequester")
     receivedFriendRequests Friendship[]    @relation("FriendshipAddressee")
+
+    matchesAsPlayer1 Match[] @relation("MatchPlayer1")
+    matchesAsPlayer2 Match[] @relation("MatchPlayer2")
+}
+
+// match table
+model Match {
+    id Int @id @default(autoincrement())
+
+    // Player 1
+    player1Id Int? // Changed to optional
+    player1   User? @relation("MatchPlayer1", fields: [player1Id], references: [id], onDelete: SetNull)
+
+    // Player 2
+    player2Id Int?
+    player2   User? @relation("MatchPlayer2", fields: [player2Id], references: [id], onDelete: SetNull)
+
+    score1    Int
+    score2    Int
+    startedAt DateTime @default(now())
 }
 
 // friends table 

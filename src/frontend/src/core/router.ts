@@ -11,31 +11,31 @@
 /* ************************************************************************** */
 
 import { Home } from "../components/Home";
-import { Page404} from "../components/Page404";
+import { Page404 } from "../components/Page404";
 import { MatchView } from "../pages/Match";
 import { ProfileView } from "../pages/Profile";
 import { TournamentView } from "../pages/Tournament";
 import { TournamentsView } from "../pages/Tournaments";
-import { Login } from "../pages/login.ts";
-import { Register } from "../pages/register.ts";
+import { Login } from "../components/Login";
+import { Register } from "../components/Register";
 import { chat } from "../components/chat";
 import { Friends } from "../components/Friends";
 import { Game } from "../pages/Game";
 import { userState } from "../core/appStore";
 // --- Route Definitions ---
 const routes: Record<string, any> = {
-	"/": Home,
-	"/home": Home,
-	"/profile": ProfileView,
-	"/profile/:id": ProfileView,
-	"/tournaments": TournamentsView,
-	"/tournaments/:id": TournamentView,
-	"/match/:key": MatchView,
-	"/login": Login,
-	"/register": Register,
-  	"/chat": chat,
-  	"/friends": Friends,
-  	"/game" : Game,
+  "/": Home,
+  "/home": Home,
+  "/profile": ProfileView,
+  "/profile/:id": ProfileView,
+  "/tournaments": TournamentsView,
+  "/tournaments/:id": TournamentView,
+  "/match/:key": MatchView,
+  "/login": Login,
+  "/register": Register,
+  "/chat": chat,
+  "/friends": Friends,
+  "/game": Game,
 };
 
 // --- Scroll Position Store ---
@@ -94,32 +94,66 @@ export function matchRoute(path: string): { view: any; params: Record<string, st
 export function renderRoute() {
   const user = userState.get();
   const root = document.getElementById("bg")!;
-  root.innerHTML = "";
 
   const match = matchRoute(location.pathname);
   if (!match) {
+    root.innerHTML = "";
     const page = new Page404();
     page.mount(root);
     return;
   }
 
   const { view: View, params } = match;
-  if(View === Game && user){
-    const urlParams = new URLSearchParams(window.location.search);
-    var mode = urlParams.get("mode") || "bot";
-    if(!mode || (mode !== "bot" && mode !== "local" && mode != "remote")){
-      mode = "bot"; 
+
+  // Check if the target view is an overlay (Login or Register)
+  const isOverlay = (View === Login || View === Register);
+
+  // Remove any existing overlay if we are navigating
+  const existingOverlay = document.getElementById('auth-overlay');
+  if (existingOverlay) {
+    existingOverlay.remove();
+  }
+
+  if (isOverlay) {
+    // If we are opening an overlay, ensure there is a background page.
+    // If the root is empty (e.g. direct load of /login), render Home as background.
+    if (root.children.length === 0) {
+      const home = new Home();
+      home.mount(root);
     }
-    const gameobj = new Game(mode);
-    gameobj.mount(root);
-  }
-  else if(View === Game && !user){
-    const page = new Login();
-    page.mount(root);
-  }
-  else{
+
+    // Mount the overlay
     const page = new View(params);
     page.mount(root);
+
+  } else {
+    // Normal navigation: Clear everything and mount the new page
+    root.innerHTML = "";
+
+    if (View === Game && user) {
+      const urlParams = new URLSearchParams(window.location.search);
+      var mode = urlParams.get("mode") || "bot";
+      if (!mode || (mode !== "bot" && mode !== "local" && mode != "remote")) {
+        mode = "bot";
+      }
+      const gameobj = new Game(mode);
+      gameobj.mount(root);
+    }
+    else if (View === Game && !user) {
+      // This case might be tricky if we want Login to overlay "Game".
+      // But usually if !user, we probably shouldn't be on Game.
+      // For now, redirecting to Login (which ends up being an overlay over Home due to logic above if root cleared).
+      // Let's just mount Login normally as overlay. 
+      // Note: If we just clear root, and mount Login, the overlay logic above kicks in?
+      // No, we are inside 'else' (isOverlay is false because View is Game).
+      // So we redirect logic:
+      navigate("/login");
+      return;
+    }
+    else {
+      const page = new View(params);
+      page.mount(root);
+    }
   }
 }
 
