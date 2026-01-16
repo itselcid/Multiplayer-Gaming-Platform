@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 17:15:36 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/15 10:02:12 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/16 11:41:41 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,6 +24,8 @@ interface Room{
 }
 
 var rooms:Map<string,Room> = new Map();
+const games:Map<string,PongGame> = new Map;
+const logames:Map<string,PongGame> = new Map;
 
 
 const fastify = Fastify()
@@ -34,10 +36,10 @@ cors: {
   methods: ['GET', 'POST']
 }
 })
-
-
 // Health check endpoint
 fastify.get('/health', async () => ({ status: 'ok', service: 'game-service' }))
+
+
 
 
 
@@ -48,8 +50,6 @@ function generateroom(): string{
   return id;
 }  
   
-const games:Map<string,PongGame> = new Map;
-const logames:Map<string,PongGame> = new Map;
 
 
 setInterval(() => {
@@ -61,21 +61,38 @@ setInterval(() => {
     logame.update();
     io.to(roomId).emit('state', logame.getState());
   }
-}, 1000 / 30);
+}, 1000 / 60);
 
 
 io.on('connection', (socket) => {
   console.log(`client connected ${socket.id}`);
   
- socket.once('joinroom',(id)=>{
+  socket.once('joinroom',(id, pid)=>{
     socket.join(id);
     socket.data.roomId = id;
+
+    const room = rooms.get(id);
+    if (room){
+      if(room.pid1 == pid){
+        room.join1 += 1;
+      } 
+      if(room.pid2 == pid){
+        room.join2 += 1;
+      }
+      if(room.join1 && room.join2){
+        const game = games.get(id);
+        if (game){ game.start = true;}
+      }
+    }
   });
   
   socket.on('setroom',(room,fct)=>{
     room.id = generateroom();
+    room.join1 = 0;
+    room.join2 = 0;
     rooms.set(room.id, room);
-    games.set(room.id,new PongGame);
+    const game = new PongGame;
+    games.set(room.id,game);
     fct(room.id);
   });
 
@@ -89,15 +106,21 @@ io.on('connection', (socket) => {
     const id = socket.data.roomId;
     if (!id) return;
     const game = games.get(id);
+    const room = rooms.get(id);
     const logame = logames.get(id);
     if (game){
       Object.assign(game.input, input);
-      game.move = true;
+      if(room && room.join1 && room.join2 && !game.move){
+        io.to(id).emit('resume');
+        game.move = true;
+        game.starTime = Date.now();
+      }
     }
     else if (logame){
       Object.assign(logame.input, input);
       logame.move = true;
-    }
+  }
+
   });
   
   socket.on('getroom', (id, fct) => {fct(rooms.get(id));});

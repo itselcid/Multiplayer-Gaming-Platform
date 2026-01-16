@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/13 17:23:50 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/15 10:02:48 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/16 11:39:32 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,8 +15,8 @@ export class PongGame {
   paddleRightY = 0
   ballx = 0
   bally = 0
-  ballVX = 0.36
-  ballVY = 0.16
+  ballVX = 0.18
+  ballVY = 0.08
   move = false;
   starTime = Date.now();
   left=0;
@@ -25,6 +25,7 @@ export class PongGame {
   sec=30;
   stop = false;
   delta = 0;
+  start = false;
 
   readonly Duration = 90000
   readonly PADDLE_HEIGHT = 2.4;
@@ -57,13 +58,7 @@ export class PongGame {
       this.paddleLeftY = Math.max(-this.MAX_p_Y, Math.min(this.MAX_p_Y, this.paddleLeftY))
       this.paddleRightY = Math.max(-this.MAX_p_Y, Math.min(this.MAX_p_Y, this.paddleRightY))
     
-    if(this.stop){
-      this.starTime = Date.now();
-      this.ballx = 0;
-      this.bally = 0;
-      return;
-    }
-    
+
     
     if(this.input.mode == "bot"){
       if(this.ballx <= 0){
@@ -108,16 +103,16 @@ export class PongGame {
     }
     else if (this.ballx < -this.PLAY_AREA_WIDTH/2 ) {
       this.right++;
-      this.ballVX = 0.36 * (Math.random() < 0.5 ? 1 : -1)
-      this.ballVY = 0.16 *(Math.random() < 0.5 ? 1 : -1)
+      this.ballVX = 0.18 * (Math.random() < 0.5 ? 1 : -1)
+      this.ballVY = 0.08 *(Math.random() < 0.5 ? 1 : -1)
       this.ballx = this.ballVX;
       this.bally = this.ballVY;
       this.delta = (Math.random()  < 0.5 ? 0 : 1);
     }
     else if (this.ballx > this.PLAY_AREA_WIDTH/2){
       this.left++;
-      this.ballVX = 0.36 * (Math.random() < 0.5 ? 1 : -1)
-      this.ballVY = 0.16 *(Math.random() < 0.5 ? 1 : -1)
+      this.ballVX = 0.18 * (Math.random() < 0.5 ? 1 : -1)
+      this.ballVY = 0.08 *(Math.random() < 0.5 ? 1 : -1)
       this.ballx = this.ballVX;
       this.bally = this.ballVY;
       this.delta = (Math.random()  < 0.5 ? 0 : 1);
@@ -142,7 +137,6 @@ export class PongGame {
     this.left = 0;
     this.right = 0;
     this.move = false;
-    this.stop = false;
   }
   getState() {
     return {
@@ -154,6 +148,7 @@ export class PongGame {
       right: this.right,
       min: this.min,
       sec: this.sec,
+      start: this.start,
     };
   }
 }

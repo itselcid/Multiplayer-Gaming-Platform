@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/27 01:44:47 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/15 10:15:31 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/16 11:58:07 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,10 @@ interface Room{
   pid2?:number;
 }
 
+
 export class Game extends Component {
+	// private waitingUI?: GUI.AdvancedDynamicTexture;
+	// private waitingInterval?: number;
 	private socket: Socket;
 	private scoreL!: HTMLDivElement;
 	private scoreR!: HTMLDivElement;
@@ -44,21 +47,23 @@ export class Game extends Component {
 	private user1?: string;
 	private user2?:string;
 	private vision!:number;
-	private role!:string;
 	private	id?:string;
+	private role!:string;
 	private	room!:Room;
+	private start!: boolean;
 	private input = { leftUp: false, mode: "bot",leftDown: false,rightUp: false , rightDown:false, 
 		left:0, right:0 ,min:1, sec:30 , timeout: true};
 	
 	constructor(flag: string, id: string) {
 		super('div', 'px-25 py-20');
+		this.start = false;
 		this.socket = io(window.location.origin, {
 			path: '/socket.io/',
 			transports: ['websocket', 'polling']
 		});
 		this.role = "playerR";
-		this.id = id;
 		this.input.mode = flag;
+		this.id = id;
 		const u = userState.get();
 		this.user1 = u?.username ;
 		this.user2 = "bot";
@@ -66,37 +71,32 @@ export class Game extends Component {
 		if(flag === "local")
 				this.user2 = "Guest";
 	}
+	
 	async remotehandler(){
-		if (!this.socket.connected) {
-			console.log('Socket is disconnected');
-		}
-		this.room = await new Promise<Room>((resolve) => {
-			this.socket.emit('getroom', this.id, resolve);
-		});
-		this.user2 = this.room.player2;
-		if(this.user1 === this.room.player2){
+			this.room = await new Promise<Room>((resolve) => {
+				this.socket.emit('getroom', this.id, resolve);
+			});
+			this.user2 = this.room.player2;
+			if(this.user1 === this.room.player2){
 				this.role = "playerL";
-				console.log(`weiiird ${this.room.player1}   2== ${this.room.player2} role==${this.role}`)
-				this.user1 = this.room.player1;
-				this.user2 = this.room.player2; 
+			this.user1 = this.room.player1;
+			this.user2 = this.room.player2; 
 			}
 			else if(this.user1 !== this.room.player1 && this.user1 !== this.room.player2){
-				console.log(this.user1);
 				this.role = "viewer";
 			}
-			console.log('before  join');
-			this.socket.emit('joinroom',this.id);
-			console.log(`in remote handler ${this.role}`);
+			this.socket.emit('joinroom',this.id,userState.get()?.id);
 		
 	}
 	
 	async verify():Promise<boolean>{
+	
 		const l:boolean = await  new Promise((resolve)=>{
 			this.socket.emit('verifyroom',this.id, resolve);
 		});
-		this.socket.off('verified');
-		if(!l)
-			this.socket.disconnect();
+			this.socket.off('verified');
+			if(!l)
+				this.socket.disconnect();
 		return l;
 	}
 	
@@ -136,8 +136,8 @@ export class Game extends Component {
 		canvas.style.outline = "none" ;
         canvas.id = "renderCanvas";
 		canvas.style.marginTop = "10px";
-		canvas.width = 2000;
-		canvas.height = 800;
+		canvas.width *= 8;
+		canvas.height *= 5;
 
 		this.engine = new Engine(canvas, true, {stencil: true,adaptToDeviceRatio: false});
 		
@@ -180,7 +180,7 @@ export class Game extends Component {
 		shadowGenerator.addShadowCaster(paddleRight);
 		shadowGenerator.blurKernel = 16;
 		shadowGenerator.useBlurExponentialShadowMap = true;		
-		shadowGenerator.setDarkness(0.35);
+		shadowGenerator.setDarkness(0.45);
 
 		const ground = MeshBuilder.CreatePlane("ground",{width:36.83,height:16.3},this.scene);
 		ground.position = new Vector3(0,0,0.4);
@@ -213,22 +213,22 @@ export class Game extends Component {
 
 
 		const handlekeycahnge = (event : KeyboardEvent , isDown: boolean)=>{
-				const key = event.key;
-				if(this.role !== "viewer"){
-					if(this.input.mode === "local"){
-						if (key == "W" || key == "w") this.input.leftUp = isDown;
-						if (key === "s" || key === "S") this.input.leftDown = isDown;
-					}
-					if(this.role === "playerR"){
-						if (key === "ArrowUp") this.input.rightUp = isDown;
-						if (key === "ArrowDown") this.input.rightDown = isDown;
-					}
-					else if (this.role === "playerL"){
-						if (key === "ArrowUp") this.input.leftUp = isDown;
-						if (key === "ArrowDown") this.input.leftDown = isDown;
-					}
+			const key = event.key;
+			if(this.role !== "viewer"){
+				if(this.input.mode === "local"){
+					if (key == "W" || key == "w") this.input.leftUp = isDown;
+					if (key === "s" || key === "S") this.input.leftDown = isDown;
 				}
-    	};
+				if(this.role === "playerR"){
+					if (key === "ArrowUp") this.input.rightUp = isDown;
+					if (key === "ArrowDown") this.input.rightDown = isDown;
+				}
+				else if (this.role === "playerL"){
+					if (key === "ArrowUp") this.input.leftUp = isDown;
+					if (key === "ArrowDown") this.input.leftDown = isDown;
+				}
+			}
+    };
 		const handlevision = (event : KeyboardEvent)=>{
 			const key = event.key;
 			if (key === "v" || key === "V"){
@@ -253,12 +253,15 @@ export class Game extends Component {
 		};
 		window.addEventListener('keydown', (event)=>{handlekeycahnge(event,true),handlevision(event)});
 		window.addEventListener('keyup', (event)=>handlekeycahnge(event,false));
-			
-		// this.startCountdown(() => {this.socket.emit("resume")});
+		if(this.input.mode === "remote" && !this.start){
+			this.startWaiting();
+		}
 		const id = window.setInterval(() => {
 			this.socket.emit('input', this.input)
-		}, 1000 / 30)
+		}, 1000 / 60)
+
 		this.socket.on('state', (state) => {
+			this.start = state.start;
 		  paddleLeft.position.y = state.paddleLeftY
 		  paddleRight.position.y = state.paddleRightY
 		  ball.position.x = state.ballx;
@@ -267,7 +270,7 @@ export class Game extends Component {
 		  this.scoreR.innerText = `${state.right} -${this.user1}`;
 		  timer.innerText = `${String(Math.max(0,state.min)).padStart(2,"0")}:${String(Math.max(0,state.sec)).padStart(2,"0")}`
 		  if(state.min == 0 && state.sec == 10)
-			timer.classList.add("text-red-600");
+			timer.classList.add("text-red-400");
 		  if(state.min == 0 && state.sec == 0)
 			this.input.timeout = false;
 		  if(state.min <= 0 && state.sec <= 0 && state.right != state.left){this.cleardata(id);return;}
@@ -275,12 +278,10 @@ export class Game extends Component {
 			if(this.roundtwo(state)){
 				this.cleardata(id);return;}}
 		  
-		})
-			this.engine.runRenderLoop(() => {
-				this.scene.render();
-			});
-		
-		
+		});
+		this.engine.runRenderLoop(() => {
+			this.scene.render();
+		});
 	}
 
 	cleardata(id : number){
@@ -303,30 +304,32 @@ export class Game extends Component {
 	}
 
 	
-startCountdown(onFinish: () => void) {
-	this.socket.emit("pause"); 
-  const ui = GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI", true, this.scene);
-
-  const text = new GUI.TextBlock();
-  text.color = "white";
-  text.fontSize = 120;
-  ui.addControl(text);
-
-  let count = 3;
-  text.text = count.toString();
-
-  const interval = window.setInterval(()  => {
-    count--;
-    text.text = count.toString();
-
-    if (count === 0) {
-      window.clearInterval(interval);
-      ui.dispose();
-      onFinish();
-    }
-  }, 2000);
-}
+	startWaiting() {
+	  const ui= GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI", true, this.scene);
 	
+	  const text = new GUI.TextBlock();
+	  text.color = "white";
+	  text.fontFamily = "orbitron, sans-serif";
+	  text.fontSize = 100;
+	   text.textWrapping = false;
+	  text.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+	  text.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+	  text.paddingLeft = "80px";
+	  ui.addControl(text);
+	
+	  let i = 0;
+	  let count = ["Waiting.", "Waiting..", "Waiting..."];
+	  text.text = count[i % 3];
+	
+	  const id = window.setInterval(()  => {
+	    i++;
+	    text.text = count[i % 3];
+	}, 1000);
+	this.socket.on('resume', () => {
+		window.clearInterval(id);
+		ui.dispose();
+	});
+	}
 }
 
 
