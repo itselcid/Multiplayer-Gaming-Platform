@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 21:57:12 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/22 11:31:58 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/12 03:58:34 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -163,6 +163,9 @@ export class TournamentsView extends Component {
 	trigger.id = "load-trigger";
 
 	if (observer === null) {
+		lazy_load(trigger);
+	} else {
+		observer.disconnect();
 		lazy_load(trigger);
 	}
 	

@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/08 17:57:08 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/05 01:53:58 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/15 03:11:29 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,7 @@ export class Metamask_error extends Component {
 	render(): void {
 		const	container = addElement('div', 'max-w-lg w-full relative z-10', this.el);
 		container.style = 'animation: fadeIn 0.5s ease-out;';
+		this.el.id = 'metamask-error';
 
 		const	container2 = addElement('div', 'relative', container);
 

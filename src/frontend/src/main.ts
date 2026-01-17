@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/12 15:53:05 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/12 03:12:57 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/16 23:41:02 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,6 @@ import { userState } from './core/appStore';
 import { type Tournament } from './web3/getters.ts';
 
 //  TODO: get user address from database for auth
-export const user_address = '0x26a2bf197820c79150dde3db793c23bf71a973cf';
 export let logged: boolean = true;
 export	let cachedTournaments: Tournament[] = [];
 
@@ -57,10 +56,3 @@ initAuth().then(() => {
 // const	canva = document.getElementById('starfield') as HTMLCanvasElement;
 // if (canva)
 // 	startShootingStars(canva);
-// const balance : bigint = await getBalance('0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266');
-// const balance : bigint = await getBalance('0x70997970c51812dc3a010c7d01b50e0d17dc79c8');
-// console.log('account balance', formatEther(balance));
-
-// const allowance = await getAllowance('0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266');
-// const balance : bigint = await getBalance('0x70997970c51812dc3a010c7d01b50e0d17dc79c8');
-// console.log('account allowance', allowance);
