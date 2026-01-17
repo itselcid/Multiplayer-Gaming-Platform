@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/27 01:44:47 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/16 11:58:07 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/17 15:43:08 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,6 +54,11 @@ export class Game extends Component {
 	private input = { leftUp: false, mode: "bot",leftDown: false,rightUp: false , rightDown:false, 
 		left:0, right:0 ,min:1, sec:30 , timeout: true};
 	
+		
+		// constructor(){
+			
+		// }
+		
 	constructor(flag: string, id: string) {
 		super('div', 'px-25 py-20');
 		this.start = false;
@@ -213,52 +218,53 @@ export class Game extends Component {
 
 
 		const handlekeycahnge = (event : KeyboardEvent , isDown: boolean)=>{
-			const key = event.key;
-			if(this.role !== "viewer"){
-				if(this.input.mode === "local"){
-					if (key == "W" || key == "w") this.input.leftUp = isDown;
-					if (key === "s" || key === "S") this.input.leftDown = isDown;
-				}
-				if(this.role === "playerR"){
-					if (key === "ArrowUp") this.input.rightUp = isDown;
-					if (key === "ArrowDown") this.input.rightDown = isDown;
-				}
-				else if (this.role === "playerL"){
-					if (key === "ArrowUp") this.input.leftUp = isDown;
-					if (key === "ArrowDown") this.input.leftDown = isDown;
-				}
+			if(this.role === "viewer") return;
+			const key = event.key.toLowerCase();
+			if(this.input.mode === "local"){
+				if (key == "w") this.input.leftUp = isDown;
+				if (key === "s") this.input.leftDown = isDown;
+			}
+			if(key === "ArrowUp"){
+				if(this.role === "playerR")this.input.rightUp = isDown;
+				if(this.role === "playerL")this.input.leftUp = isDown;
+			}
+
+			if(key === "ArrowDown"){
+				if(this.role === "playerR")this.input.rightDown = isDown;
+				if(this.role === "playerL")this.input.leftDown = isDown;
 			}
     };
 		const handlevision = (event : KeyboardEvent)=>{
-			const key = event.key;
-			if (key === "v" || key === "V"){
-				this.vision++;
-				if (this.vision % 3 == 0){
-					this.camera.position = new Vector3(0,0,-30);
-					light.position = new Vector3(0,0,-40);
-				}
-				else if (this.vision % 3 == 1){
-					this.camera.position = new Vector3(0,-10,-25);
-					light.position = new Vector3(0,10,-40);
-				}
-				else if (this.vision % 3 == 2){
-					this.camera.position = new Vector3(0,-25,-15);
-					light.position = new Vector3(0,25,-40);
-					
-				}
-				this.camera.setTarget(Vector3.Zero());
-				light.setDirectionToTarget(Vector3.Zero());
-			};
+			if (event.repeat) return;
+			const key = event.key.toLowerCase();
+			if( key !== "v") return;
+			this.vision = (this.vision + 1 ) %3;
+			if (this.vision  == 0){
+				this.camera.position = new Vector3(0,0,-30);
+				light.position = new Vector3(0,0,-40);
+			}
+			else if (this.vision == 1){
+				this.camera.position = new Vector3(0,-10,-25);
+				light.position = new Vector3(0,10,-40);
+			}
+			else if (this.vision == 2){
+				this.camera.position = new Vector3(0,-25,-15);
+				light.position = new Vector3(0,25,-40);
+				
+			}
+			this.camera.setTarget(Vector3.Zero());
+			light.setDirectionToTarget(Vector3.Zero());
 			event.preventDefault()
 		};
-		window.addEventListener('keydown', (event)=>{handlekeycahnge(event,true),handlevision(event)});
+		
+		window.addEventListener('keydown', (event)=>{handlekeycahnge(event,true);handlevision(event);});
 		window.addEventListener('keyup', (event)=>handlekeycahnge(event,false));
 		if(this.input.mode === "remote" && !this.start){
 			this.startWaiting();
 		}
 		const id = window.setInterval(() => {
 			this.socket.emit('input', this.input)
-		}, 1000 / 60)
+		}, 1000 / 30)
 
 		this.socket.on('state', (state) => {
 			this.start = state.start;

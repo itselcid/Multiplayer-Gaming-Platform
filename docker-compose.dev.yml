@@ -64,6 +64,20 @@ services:
       - app-network
     restart: unless-stopped
 
+  blockchain-service:
+    image: node:20-alpine
+    container_name: blockchain-service
+    working_dir: /app
+    command: sh -c "npm install && npm run dev"
+    env_file:
+      - ./src/backend/blockchain-service/.env
+    volumes:
+      - ./src/backend/blockchain-service:/app
+      - blockchain-service-modules:/app/node_modules
+    networks:
+      - app-network
+    restart: unless-stopped
+
   # frontend:
   #   image: node:20-alpine
   #   container_name: frontend
@@ -86,6 +100,7 @@ volumes:
   user-service-modules:
   game-service-modules:
   chat-service-modules:
+  blockchain-service-modules:
   frontend-modules:
 
 networks:

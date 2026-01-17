@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/13 19:43:15 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/15 10:09:23 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/17 13:32:01 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -119,7 +119,6 @@ export class Home extends Component {
 		<div id="friendsList" class="flex flex-col gap-2"></div>
 		<button id="cancel" class="btn px-6 py-3 rounded-sm text-white/75 hover:bg-neon-cyan/75 transition mt-4">Cancel</button>
     	</div>`;
-		
 		const list = container1.querySelector("#friendsList");
 
   		this.friends.forEach(friend => {

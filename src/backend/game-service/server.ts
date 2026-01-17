@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 17:15:36 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/16 11:41:41 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/17 15:39:13 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,14 +18,17 @@ import { PongGame} from './game_logique'
 interface Room{
   id:string;
   player1:string;
+  wallet1:string;
   pid1:number;
   player2:string;
+  wallet2:string;
   pid2:number;
 }
 
-var rooms:Map<string,Room> = new Map();
+const rooms:Map<string,Room> = new Map();
 const games:Map<string,PongGame> = new Map;
 const logames:Map<string,PongGame> = new Map;
+const tour:Map<string,Room> = new Map();
 
 
 const fastify = Fastify()
@@ -52,6 +55,7 @@ function generateroom(): string{
   
 
 
+
 setInterval(() => {
   for (const [roomId, game] of games) {
     game.update();
@@ -61,7 +65,7 @@ setInterval(() => {
     logame.update();
     io.to(roomId).emit('state', logame.getState());
   }
-}, 1000 / 60);
+}, 1000 / 30);
 
 
 io.on('connection', (socket) => {
@@ -70,7 +74,6 @@ io.on('connection', (socket) => {
   socket.once('joinroom',(id, pid)=>{
     socket.join(id);
     socket.data.roomId = id;
-
     const room = rooms.get(id);
     if (room){
       if(room.pid1 == pid){
