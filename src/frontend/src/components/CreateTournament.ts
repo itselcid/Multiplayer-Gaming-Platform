@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/18 18:01:17 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/17 00:49:50 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/17 20:32:14 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -238,15 +238,19 @@ export class CreateTournament extends Component {
 			create_button.textContent = 'Create';
 		}
 		create_button.onclick = async () => {
+			create_button.disabled = true;
 			const	root = document.getElementById('app');
-			if (!root)
+			if (!root) {
+				create_button.disabled = false;
 				return ;
+			}
 			if (!userState.get()) {
-				if (await username_availabality_checker(username_input.value))
+				if (await username_availabality_checker(username_input.value)){
+					create_button.disabled = false;
 					return;
+				}
 			}
 			const	pend_button = new PendingButton();
-			create_button.disabled = true;
 			try {
 				allowance = await getAllowance(account);	
 				const	entryFeeValue:bigint = parseEther(entryFee_input.value);

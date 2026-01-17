@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/04 12:18:56 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/15 03:12:04 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/17 22:09:07 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,12 +23,19 @@ export class Web3Auth {
 		setInterval(async () => {
 			const	eth = window.ethereum;
 
-			if (typeof(eth) === 'undefined' || !await web3auth.isLoggedIn())
+			if (typeof(eth) === 'undefined')
 				return ;
+
+			if (!await web3auth.isLoggedIn() && login_state.get() !== 'not connected') {
+				login_state.set('not connected');
+				currentWeb3Account.set('');
+				return ;
+			}
 
 			const	accounts = await eth.request({
 				method: 'eth_accounts'
 			}) as string[];
+			
 			const	chainId = await eth.request({
 				method: 'eth_chainId'
 			}) as string;
@@ -93,15 +100,8 @@ export class Web3Auth {
 			const accounts = await window.ethereum.request({
 				method: 'eth_requestAccounts'
 			}) as string[];
-
-
 			const address = accounts[0];
-			localStorage.setItem(this._storageKey, address);
-
 			login_state.set('connected');
-
-			//this.setupAccountListener();
-			// console.log('Logged in with account ', address);
 			pend.unmount();
 			const	succ = new Success_wallet_connection();
 			succ.mount(root);
@@ -119,19 +119,20 @@ export class Web3Auth {
 	};
 
 	logout(): void {
-		localStorage.removeItem(this._storageKey);
+		// localStorage.removeItem(this._storageKey);
 		login_state.set('not connected');
 		console.log('Logged out');
 	};
 
 	async isLoggedIn(): Promise<boolean> {
-		const storedAddress = localStorage.getItem(this._storageKey);
+		// const storedAddress = localStorage.getItem(this._storageKey);
 
-		if (!storedAddress)
-			return (false);
+		// if (!storedAddress)
+		// 	return (false);
 
+		// metamask not installed
 		if (typeof window.ethereum === 'undefined') {
-			console.error('wallet is not installed');
+			// console.error('wallet is not installed');
 			return (false);
 		}
 
@@ -139,9 +140,11 @@ export class Web3Auth {
 			const accounts = await window.ethereum.request<string[]>({
 				method: 'eth_accounts'
 			})
-			if (!accounts)
+			// console.log("not connected accc: ", accounts);
+			if (!accounts || !accounts.length)
 				return (false);
-			return (accounts.includes(storedAddress));
+			return (true);
+			// return (accounts.includes(storedAddress));
 		} catch (err) {
 			console.error('Error checkig login status: ', err);
 			return (false);
@@ -168,50 +171,5 @@ export class Web3Auth {
 			return ('');
 		}
 	};
-
-// async getMetaMaskProvider(): Promise<any | null> {
-//   const eth = (window as any).ethereum;
-//   if (!eth) return null;
-
-//   // Multiple providers available?
-//   if (eth.providers?.length) {
-//     const metamask = eth.providers.find((p: any) => p.isMetaMask);
-//     if (metamask) return metamask;
-//   }
-
-//   // If single provider but it's a proxy, try to unwrap it
-//   if (eth.isMetaMask && eth._state?.accounts) {
-//     console.warn("⚠️ Likely a proxied MetaMask — events may not work");
-//     return eth;
-//   }
-
-//   return eth;
-// }
-
-// async events() {
-//   const metamask = await this.getMetaMaskProvider();
-//   if (!metamask) {
-//     console.error("MetaMask not detected");
-//     return;
-//   }
-
-//   console.log("Using provider:", metamask);
-
-//   metamask.on("accountsChanged", (accounts: string[]) => {
-//     console.log("🔥 Account changed:", accounts);
-//   });
-
-//   metamask.on("chainChanged", (chainId: string) => {
-//     console.log("🔥 Chain changed:", chainId);
-//   });
-
-//   metamask.on("disconnect", (err: any) => {
-//     console.log("🔥 Disconnected:", err);
-//   });
-
-//   await metamask.request({ method: "eth_requestAccounts" });
-// }
-
-	
 
 }
