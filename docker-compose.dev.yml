@@ -8,7 +8,7 @@ services:
     container_name: nginx
     ports:
       - "8081:80"
-      - "443:443"
+      - "1443:443"
     depends_on:
       - user-service
       - game-service
@@ -64,7 +64,6 @@ services:
       - app-network
     restart: unless-stopped
 
-#  Uncomment the following section to enable the frontend service in development mode
   # frontend:
   #   image: node:20-alpine
   #   container_name: frontend
