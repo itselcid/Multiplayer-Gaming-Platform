@@ -73,3 +73,11 @@ export interface Friend {
 }
 
 
+export interface MatchResult {
+    player1Id: number;
+    player2Id?: number; // Optional, might be null if guest
+    score1: number;
+    score2: number;
+    startedAt: string; // ISO string
+}
+

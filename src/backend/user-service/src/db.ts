@@ -2,7 +2,7 @@
 import { prisma } from "./config/db";
 import { TwoFactorCode, UserTwoFactor } from "@prisma/client";
 import bcrypt from "bcrypt";
-import { UserData, CreateUserInput, UpdateUserInput, PasswordResetToken, UserSearchData } from "./types";
+import { UserData, CreateUserInput, UpdateUserInput, PasswordResetToken, UserSearchData, MatchResult } from "./types";
 import type { GithubProfile, UserAuthData } from "./types/auth.types.js";
 import crypto from 'crypto';
 import createHttpError from "http-errors";
@@ -621,6 +621,40 @@ export async function getSentFriendRequests(requesterId: number) {
     });
 
     return friendRequestsSent;
+}
+
+export async function saveMatch(matchData: MatchResult) {
+    try {
+        // Verifying player 1 exists
+        const player1 = await prisma.user.findUnique({ where: { id: matchData.player1Id } });
+        if (!player1) {
+            console.warn(`User ${matchData.player1Id} not found, skipping match save.`);
+            return;
+        }
+
+        // Verifying player 2 if provided (it can be a player vs guest situation)
+        let player2Id: number | null = null;
+        if (matchData.player2Id) {
+            const player2 = await prisma.user.findUnique({ where: { id: matchData.player2Id } });
+            if (player2) {
+                player2Id = player2.id;
+            }
+        }
+
+        await prisma.match.create({
+            data: {
+                player1Id: matchData.player1Id,
+                player2Id: player2Id,
+                score1: matchData.score1,
+                score2: matchData.score2,
+                startedAt: new Date(matchData.startedAt)
+            }
+        });
+        console.log(`Match saved to DB`, matchData); //! logs
+    } catch (error) {
+        console.error('Error saving match to DB:', error);
+        throw error;
+    }
 }
 
 
