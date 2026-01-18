@@ -6,13 +6,14 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/13 19:43:15 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/12 04:25:59 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/18 15:09:00 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { Component } from "../core/Component";
 import { navigate } from "../core/router";
 import { userState } from "../core/appStore";
+import { Game } from "../pages/Game";
 
 interface Friend {
   id: number;
@@ -39,7 +40,7 @@ export class Home extends Component {
       headers['Content-Type'] = 'application/json';
     }
 	const user = userState.get();
-    const response = await fetch(`http://localhost:3000/api/friends?id=${user?.id}`, {
+    const response = await fetch(`api/friends?id=${user?.id}`, {
       ...options,
       headers: {
         ...headers,
@@ -130,9 +131,11 @@ export class Home extends Component {
     		avatar.alt = friend.username;
     		avatar.className = "w-8 h-8 rounded-full object-cover"; 
 			
-			// console.log(friend.avatar);
    		 	btn.innerHTML = `${this.renderAvatar(friend.avatar)}<span>${friend.username}</span>`;
-    		btn.addEventListener("click", () => {});
+    		btn.addEventListener("click", async () => {
+				const room = new Game("remote","");
+				const url = await room.createroom(friend);
+				navigate(url)});
 			list?.appendChild(btn);});
 		}
 		

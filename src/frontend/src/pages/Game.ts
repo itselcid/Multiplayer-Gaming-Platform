@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/27 01:44:47 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/18 03:20:41 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/18 15:49:54 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@ import "@babylonjs/inspector";
 import * as GUI from "@babylonjs/gui";
 import { io , Socket } from 'socket.io-client'
 import { userState } from "../core/appStore";
+import { navigate } from "../core/router";
 
 
 interface Friend {
@@ -161,7 +162,7 @@ export class Game extends Component {
 		(ball.material as StandardMaterial).specularColor = new Color3(0.5,0.5,0.5);
 		
 		
-		var paddleLeft = MeshBuilder.CreateBox("paddLeft",{width:0.20,height:2.4,size:0.4},this.scene);
+		var paddleLeft = MeshBuilder.CreateBox("paddLeft",{width:0.20,height:2.3,size:0.4},this.scene);
 		paddleLeft.position = new Vector3(-18.1,0,0.2);
 		paddleLeft.material = new StandardMaterial("matLeft",this.scene);
 		(paddleLeft.material as StandardMaterial).diffuseColor = new Color3(0.3, 0.485, 0.678);
@@ -169,7 +170,7 @@ export class Game extends Component {
 		
 		
 		
-		var paddleRight = MeshBuilder.CreateBox("paddRight",{width:0.20,height:2.4,size:0.4},this.scene);
+		var paddleRight = MeshBuilder.CreateBox("paddRight",{width:0.20,height:2.3,size:0.4},this.scene);
 		paddleRight.position = new Vector3(18.1,0,0.2);
 		paddleRight.material = new StandardMaterial("matRight",this.scene);
 		(paddleRight.material as StandardMaterial).diffuseColor = new Color3(0.85, 0.023, 0.395);
@@ -213,9 +214,9 @@ export class Game extends Component {
 
 
 const handlekeycahnge = (event : KeyboardEvent , isDown: boolean)=>{
+			event.preventDefault();
 			if(this.role === "viewer") return;
 			const key = event.key.toLowerCase();
-			console.log(`role==${this.role}  key == ${key}`);
 			if(this.input.mode === "local"){
 				if (key == "w") this.input.leftUp = isDown;
 				if (key === "s") this.input.leftDown = isDown;
@@ -229,7 +230,6 @@ const handlekeycahnge = (event : KeyboardEvent , isDown: boolean)=>{
 				if(this.role === "playerR")this.input.rightDown = isDown;
 				if(this.role === "playerL")this.input.leftDown = isDown;
 			}
-			event.preventDefault();
     };
 		const handlevision = (event : KeyboardEvent)=>{
 			if (event.repeat) return;
@@ -289,17 +289,45 @@ const handlekeycahnge = (event : KeyboardEvent , isDown: boolean)=>{
 		});
 	}
 
+	gameOver(){
+		const container = document.createElement("div");
+		container.className = "fixed inset-0 flex items-center justify-center bg-space-blue/40 backdrop-blur-sm z-50 p-4";	
+		container.innerHTML = `
+		<div class="bg-white/5 backdrop-blur-xl rounded-2xl flex flex-col gap-6 p-8 border border-white/20 max-w-lg w-full">
+		    <h1 class="text-5xl font-bold text-center text-ctex">Game Over</h1>
+		    <div class="flex flex-row justify-around items-center gap-8 py-4">
+		        <div class="flex flex-col items-center">
+		            <h2 class="text-xl opacity-80 text-ctex uppercase tracking-wider">${this.user2}</h2>
+		            <span class="text-4xl font-mono font-bold text-ctex">${this.nscoL}</span>
+		        </div>
+			
+		        <div class="text-3xl font-light text-white/30">VS</div>
+			
+		        <div class="flex flex-col items-center">
+		            <h2 class="text-xl opacity-80 text-ctex uppercase tracking-wider">${this.user1}</h2>
+		            <span class="text-4xl font-mono font-bold text-ctex">${this.nscoR}</span>
+		        </div>
+		    </div>
+			
+		    <button id="home" class="w-full bg-neon-cyan/20 border border-neon-cyan/50 py-3 rounded-lg text-white font-semibold hover:bg-neon-cyan/40 transition-all duration-300">
+		        Return Home
+		    </button>
+		</div>`;
+			
+		this.el.append(container);
+			
+		container.querySelector("#home")?.addEventListener("click", () => { navigate("/home")});
+	}
+	
 	cleardata(id : number){
 		window.clearInterval(id);
 		this.socket.emit("gameOver");
 		this.socket.off('state');
-		  this.socket.disconnect();
-		  this.engine.stopRenderLoop();
-		  this.scene.dispose();
-		  this.engine.dispose();
-		  this.el.classList.remove("container");
-		  this.el.classList.add("text-4xl","text-center");
-		  this.el.textContent = "GAME OVER";
+		this.socket.disconnect();
+		this.engine.stopRenderLoop();
+		this.scene.dispose();
+		this.engine.dispose();
+		this.gameOver();
 	}
 
 	roundtwo(state:any){
@@ -311,15 +339,15 @@ const handlekeycahnge = (event : KeyboardEvent , isDown: boolean)=>{
 	
 	startWaiting() {
 	  const ui= GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI", true, this.scene);
-	
 	  const text = new GUI.TextBlock();
 	  text.color = "white";
 	  text.fontFamily = "orbitron, sans-serif";
 	  text.fontSize = 100;
-	   text.textWrapping = false;
-	  text.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+	  text.width = "500px";
+	  text.horizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
 	  text.textHorizontalAlignment = GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
-	  text.paddingLeft = "80px";
+	  text.verticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_CENTER;
+	  text.textVerticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_CENTER;
 	  ui.addControl(text);
 	
 	  let i = 0;
@@ -329,7 +357,7 @@ const handlekeycahnge = (event : KeyboardEvent , isDown: boolean)=>{
 	  const id = window.setInterval(()  => {
 	    i++;
 	    text.text = count[i % 3];
-	}, 1000);
+	}, 500);
 	this.socket.on('resume', () => {
 		window.clearInterval(id);
 		ui.dispose();
