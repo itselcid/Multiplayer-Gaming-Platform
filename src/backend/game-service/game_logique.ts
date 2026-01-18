@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/13 17:23:50 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/16 11:39:32 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/18 03:25:09 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,7 +33,7 @@ export class PongGame {
   readonly PLAY_AREA_HEIGHT = 16;
   readonly MAX_p_Y = (this.PLAY_AREA_HEIGHT  / 2) - (this.PADDLE_HEIGHT / 2);
   readonly MAX_b_Y = (this.PLAY_AREA_HEIGHT / 2) - 0.35;
-  readonly PADDLE_SPEED = 0.66;
+  readonly PADDLE_SPEED = 0.24;
   input = {
     leftUp: false,
     leftDown: false,
@@ -137,6 +137,7 @@ export class PongGame {
     this.left = 0;
     this.right = 0;
     this.move = false;
+    this.start = false;
   }
   getState() {
     return {
@@ -149,6 +150,7 @@ export class PongGame {
       min: this.min,
       sec: this.sec,
       start: this.start,
+      move: this.move,
     };
   }
 }

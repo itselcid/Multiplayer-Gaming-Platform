@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/27 01:44:47 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/17 15:43:08 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/18 03:20:41 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,8 +36,6 @@ interface Room{
 
 
 export class Game extends Component {
-	// private waitingUI?: GUI.AdvancedDynamicTexture;
-	// private waitingInterval?: number;
 	private socket: Socket;
 	private scoreL!: HTMLDivElement;
 	private scoreR!: HTMLDivElement;
@@ -50,18 +48,15 @@ export class Game extends Component {
 	private	id?:string;
 	private role!:string;
 	private	room!:Room;
-	private start!: boolean;
+	private nscoL!:number;
+	private	nscoR!:number;
 	private input = { leftUp: false, mode: "bot",leftDown: false,rightUp: false , rightDown:false, 
 		left:0, right:0 ,min:1, sec:30 , timeout: true};
-	
-		
-		// constructor(){
-			
-		// }
-		
+
 	constructor(flag: string, id: string) {
 		super('div', 'px-25 py-20');
-		this.start = false;
+		this.nscoL = 0;
+		this.nscoR = 0;
 		this.socket = io(window.location.origin, {
 			path: '/socket.io/',
 			transports: ['websocket', 'polling']
@@ -141,7 +136,7 @@ export class Game extends Component {
 		canvas.style.outline = "none" ;
         canvas.id = "renderCanvas";
 		canvas.style.marginTop = "10px";
-		canvas.width *= 8;
+		canvas.width *= 6;
 		canvas.height *= 5;
 
 		this.engine = new Engine(canvas, true, {stencil: true,adaptToDeviceRatio: false});
@@ -217,27 +212,30 @@ export class Game extends Component {
 		(line4.material as StandardMaterial).specularColor = new Color3(0.5,0.5,0.5);
 
 
-		const handlekeycahnge = (event : KeyboardEvent , isDown: boolean)=>{
+const handlekeycahnge = (event : KeyboardEvent , isDown: boolean)=>{
 			if(this.role === "viewer") return;
 			const key = event.key.toLowerCase();
+			console.log(`role==${this.role}  key == ${key}`);
 			if(this.input.mode === "local"){
 				if (key == "w") this.input.leftUp = isDown;
 				if (key === "s") this.input.leftDown = isDown;
 			}
-			if(key === "ArrowUp"){
-				if(this.role === "playerR")this.input.rightUp = isDown;
+			if(key === "arrowup"){
+				if(this.role === "playerR"){this.input.rightUp = isDown;};
 				if(this.role === "playerL")this.input.leftUp = isDown;
 			}
 
-			if(key === "ArrowDown"){
+			if(key === "arrowdown"){
 				if(this.role === "playerR")this.input.rightDown = isDown;
 				if(this.role === "playerL")this.input.leftDown = isDown;
 			}
+			event.preventDefault();
     };
 		const handlevision = (event : KeyboardEvent)=>{
 			if (event.repeat) return;
 			const key = event.key.toLowerCase();
 			if( key !== "v") return;
+			
 			this.vision = (this.vision + 1 ) %3;
 			if (this.vision  == 0){
 				this.camera.position = new Vector3(0,0,-30);
@@ -254,36 +252,37 @@ export class Game extends Component {
 			}
 			this.camera.setTarget(Vector3.Zero());
 			light.setDirectionToTarget(Vector3.Zero());
-			event.preventDefault()
 		};
 		
 		window.addEventListener('keydown', (event)=>{handlekeycahnge(event,true);handlevision(event);});
 		window.addEventListener('keyup', (event)=>handlekeycahnge(event,false));
-		if(this.input.mode === "remote" && !this.start){
-			this.startWaiting();
-		}
+
+		this.socket.once('state',(state)=>{
+			if(this.input.mode === "remote" && !state.start){
+				this.startWaiting();
+			}
+		});
 		const id = window.setInterval(() => {
 			this.socket.emit('input', this.input)
-		}, 1000 / 30)
+		}, 1000 / 64)
 
 		this.socket.on('state', (state) => {
-			this.start = state.start;
-		  paddleLeft.position.y = state.paddleLeftY
-		  paddleRight.position.y = state.paddleRightY
-		  ball.position.x = state.ballx;
-		  ball.position.y = state.bally;
-		  this.scoreL.innerText = `${this.user2}- ${state.left}`
-		  this.scoreR.innerText = `${state.right} -${this.user1}`;
-		  timer.innerText = `${String(Math.max(0,state.min)).padStart(2,"0")}:${String(Math.max(0,state.sec)).padStart(2,"0")}`
-		  if(state.min == 0 && state.sec == 10)
-			timer.classList.add("text-red-400");
-		  if(state.min == 0 && state.sec == 0)
-			this.input.timeout = false;
-		  if(state.min <= 0 && state.sec <= 0 && state.right != state.left){this.cleardata(id);return;}
-		  if(state.min <= 0 && state.sec <= 0 && this.input.right == this.input.left){
-			if(this.roundtwo(state)){
-				this.cleardata(id);return;}}
-		  
+			this.nscoL = state.left;
+			this.nscoR = state.right;
+			paddleLeft.position.y = state.paddleLeftY
+			paddleRight.position.y = state.paddleRightY
+			ball.position.x = state.ballx;
+			ball.position.y = state.bally;
+			this.scoreL.innerText = `${this.user2}- ${state.left}`
+			this.scoreR.innerText = `${state.right} -${this.user1}`;
+			timer.innerText = `${String(Math.max(0,state.min)).padStart(2,"0")}:${String(Math.max(0,state.sec)).padStart(2,"0")}`;
+			if(state.min == 0 && state.sec == 10)timer.classList.add("text-red-400");
+			if(state.min == 0 && state.sec == 0)this.input.timeout = false;
+			if(state.min <= 0 && state.sec <= 0 && state.right != state.left){this.cleardata(id);return;}
+			if(state.min <= 0 && state.sec <= 0 && this.input.right == this.input.left){
+				if(this.roundtwo(state)){
+				this.cleardata(id);return;}
+			}
 		});
 		this.engine.runRenderLoop(() => {
 			this.scene.render();

@@ -6,14 +6,13 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/13 19:43:15 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/17 13:32:01 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/12 04:25:59 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { Component } from "../core/Component";
 import { navigate } from "../core/router";
 import { userState } from "../core/appStore";
-import { Game } from "../pages/Game";
 
 interface Friend {
   id: number;
@@ -40,7 +39,7 @@ export class Home extends Component {
       headers['Content-Type'] = 'application/json';
     }
 	const user = userState.get();
-    const response = await fetch(`/api/friends?id=${user?.id}`, {
+    const response = await fetch(`http://localhost:3000/api/friends?id=${user?.id}`, {
       ...options,
       headers: {
         ...headers,
@@ -96,17 +95,17 @@ export class Home extends Component {
 	  </div>`
 	  this.el.append(container);
 	  container.querySelector("#local")?.addEventListener("click",()=> navigate("/game?mode=local"));
-	  container.querySelector("#remote")?.addEventListener("click",()=> {this.handleRemote()});
+	  container.querySelector("#remote")?.addEventListener("click",()=> this.handleRemote());
 	  container.querySelector("#bot")?.addEventListener("click",()=> navigate("/game?mode=bot"));
 	  container.querySelector("#cancel")?.addEventListener("click",() => container.remove());
   }
 
   async handleRemote(){
 	this.friends = await this.getfriends();
-	const container1 = document.createElement("div");
-	container1.className =`fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm z-50`;
+	const container = document.createElement("div");
+	container.className =`fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm z-50`;
 	if(!this.friends.length){
-		container1.innerHTML=`<div class="backdrop-blur-xl rounded-xl shadow-xl flex flex-col gap-4 p-6">
+		container.innerHTML=`<div class="backdrop-blur-xl rounded-xl shadow-xl flex flex-col gap-4 p-6">
 		<h2 class="text-3xl text-center text-ctex mb-4">No playmates around</h2>
 		<button id="make" class="btn px-6 py-3 rounded-sm text-white/75 hover:bg-neon-cyan/75  transition">👥 Start Friendships</button>
       	<button id="cancel" class="btn px-6  py-3 rounded-sm text-white/75 hover:bg-neon-cyan/75  transition mt-2">Cancel</button>
@@ -114,12 +113,13 @@ export class Home extends Component {
 		
 	}
 	else{
-		container1.innerHTML = `<div class="backdrop-blur-xl rounded-xl shadow-xl flex flex-col gap-4 p-6">
+		container.innerHTML = `<div class="backdrop-blur-xl rounded-xl shadow-xl flex flex-col gap-4 p-6">
 		<h2 class="text-3xl text-center text-ctex mb-4">Select a playmate</h2>
 		<div id="friendsList" class="flex flex-col gap-2"></div>
 		<button id="cancel" class="btn px-6 py-3 rounded-sm text-white/75 hover:bg-neon-cyan/75 transition mt-4">Cancel</button>
     	</div>`;
-		const list = container1.querySelector("#friendsList");
+		
+		const list = container.querySelector("#friendsList");
 
   		this.friends.forEach(friend => {
     		const btn = document.createElement("button");
@@ -129,17 +129,16 @@ export class Home extends Component {
     		avatar.src = friend.avatar || '👤'; 
     		avatar.alt = friend.username;
     		avatar.className = "w-8 h-8 rounded-full object-cover"; 
+			
+			// console.log(friend.avatar);
    		 	btn.innerHTML = `${this.renderAvatar(friend.avatar)}<span>${friend.username}</span>`;
-    		btn.addEventListener("click", async () => {
-				const room = new Game("remote","");
-				const url = await room.createroom(friend);
-				navigate(url)});
+    		btn.addEventListener("click", () => {});
 			list?.appendChild(btn);});
 		}
 		
-		this.el.append(container1);
-		container1.querySelector("#make")?.addEventListener("click",()=>navigate("/friends"));
-		container1.querySelector("#cancel")?.addEventListener("click",() => container1.remove());
+		this.el.append(container);
+		container.querySelector("#make")?.addEventListener("click",()=>navigate("/friends"));
+		container.querySelector("#cancel")?.addEventListener("click",() => container.remove());
 	}
 	renderAvatar(avatar: string | undefined, size: string = 'w-8 h-8') {
 		if (avatar && avatar.startsWith('/public')) {
@@ -151,3 +150,5 @@ export class Home extends Component {
     return `<span class="text-sm">${avatar || '👤'}</span>`;
   }
 }
+
+//mimi //watch //alone

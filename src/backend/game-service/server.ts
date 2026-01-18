@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 17:15:36 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/17 15:39:13 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/18 03:22:29 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,8 @@ interface Room{
   player2:string;
   wallet2:string;
   pid2:number;
+  join1:number;
+  join2:number;
 }
 
 const rooms:Map<string,Room> = new Map();
@@ -65,7 +67,7 @@ setInterval(() => {
     logame.update();
     io.to(roomId).emit('state', logame.getState());
   }
-}, 1000 / 30);
+}, 1000 / 64);
 
 
 io.on('connection', (socket) => {
@@ -74,6 +76,8 @@ io.on('connection', (socket) => {
   socket.once('joinroom',(id, pid)=>{
     socket.join(id);
     socket.data.roomId = id;
+    const game = games.get(id);
+
     const room = rooms.get(id);
     if (room){
       if(room.pid1 == pid){
@@ -82,9 +86,8 @@ io.on('connection', (socket) => {
       if(room.pid2 == pid){
         room.join2 += 1;
       }
-      if(room.join1 && room.join2){
-        const game = games.get(id);
-        if (game){ game.start = true;}
+      if(room.join1 && room.join2 && game){
+          game.start = true;
       }
     }
   });

@@ -4,16 +4,22 @@ let processing = false;
 let	pendingTournaments: Tournament[] = [];
 let timer: NodeJS.Timeout | null = null;
 
+const	print_tournament_queue = () => {
+	console.log('----- current queue -----');
+	for (let i: number = 0; i < pendingTournaments.length; i++) {
+		console.log(`i: ${i} => ${pendingTournaments[i]}`);
+	}
+}
+
 const	get_shuffled_array = (len: number) : bigint[] => {
 	const shuffled = Array.from({ length: len }, (_, i) => BigInt(i));
-	// const shuffled = [...numbers]; // Create a copy to avoid mutating the original
   
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; // Swap elements
-  }
-  
-  return (shuffled);
+	for (let i = shuffled.length - 1; i > 0; i--) {
+		const j = Math.floor(Math.random() * (i + 1));
+		[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; // Swap elements
+	}
+	
+	return (shuffled);
 }
 
 const	waitForTxSafe = async (hash: `0x${string}`, retries = 20, delayMs = 3000) => {
@@ -101,15 +107,20 @@ export const	getMatch = async (_id:bigint, _round:bigint, _matchId:bigint) => {
 
 async function updateTournaments() {
 	try {
-		const	tournament: Tournament = pendingTournaments[pendingTournaments.length -1];
+		const	id: bigint = pendingTournaments[pendingTournaments.length -1].id;
+		const	tournament: Tournament = await getTournament(id);
+		// console.log(tournament.id);
 		if (tournament.participants === tournament.maxParticipants) {
 			console.log('deadline and max players reached. creating matches and starting the tournament...');
 			const	order = get_shuffled_array(Number(tournament.maxParticipants));
 			await transact('startTournament', [tournament.id, order]);
 			console.log('tournament started')
 		}
-		else
+		else {
+			console.log('tournament not fulfilled');
 			await transact('setTournamentStatus', [3, tournament.id]);
+			console.log('tournament expired');
+		}
 		deletePendingTournament();
 	} catch (e) {
 		console.error("Automation error:", e);
@@ -140,39 +151,6 @@ const	deletePendingTournament = () => {
 		timer = setTimeout(updateTournaments, delay);
 	}
 }
-
-// async function checkAndStart() {
-// 	// console.log('called');
-// 	if (processing)
-// 		return ;
-// 	try {
-// 		// console.log('shuffled array:', get_shuffled_array(8));
-// 		const length = await getTournamentLength();
-// 		// TODO: (improvement) skip old tournaments that way you only scan the ones that might need to be changed
-// 		//        for example set a start id that represents the most recent tournament deadline and start the loop from
-// 		//        there instead of 0n
-// 		for (let i:bigint = 0n; i < length; i++) {
-// 			const	tournament: Tournament = await getTournament(i);
-// 			const currentTime = Math.floor(new Date().getTime() / 1000);
-// 			if (tournament.startTime < BigInt(currentTime) && tournament.status === 0) {
-// 				console.log('condition matched')
-// 				if (tournament.participants === tournament.maxParticipants) {
-// 					console.log('deadline and max players reached. creating matches and starting the tournament...');
-// 					const	order = get_shuffled_array(Number(tournament.maxParticipants));
-// 					await transact('startTournament', [tournament.id, order]);
-// 					console.log('tournament started')
-// 				}
-// 				else
-// 					await transact('setTournamentStatus', [3, i]);
-// 				// break;
-// 			}
-// 		}
-		
-// 	} catch (e) {
-// 		console.error("Automation error:", e);
-// 	}
-// 	// setTimeout(checkAndStart, 5000);
-// }
 
 const	checkFinishedRounds = async (tournament: Tournament): Promise<boolean> => {
 	let finished: boolean = true;
@@ -245,22 +223,39 @@ const watchTournamentCreated = () => {
 	)
 }
 
-// const	createTournamentHorde = async () => {
-// 	for (let index = 0; index < 30; index++) {
-// 		await transact('createTournament', ['expired'+index, 1n, 2n, BigInt(Math.floor(new Date().getTime() / 1000)) + 300n, 'user'+index]);
-// 		await transact('createTournament', ['pending'+index, 1n, 2n, BigInt(Math.floor(new Date().getTime() / 1000)) + 2592000n, 'user'+index]);
-// 		await transact('createTournament', ['ongoing'+index, 1n, 2n, BigInt(Math.floor(new Date().getTime() / 1000)) + 3000n, 'user'+index]);
-// 		await transact('createTournament', ['finished'+index, 1n, 2n, BigInt(Math.floor(new Date().getTime() / 1000)) + 3000n, 'user'+index]);
-// 	}
-// }
+const watchMatchCreated = () => {
+	publicClient.watchContractEvent(
+		{
+			address: TournamentFactoryAddress,
+			abi: TournamentFactoryAbi,
+			eventName: 'MatchCreated',
+			onLogs: (logs) => {
+				logs.forEach(async (log) => {
+					// fix type problem
+					const typedLog = log as typeof log & {
+						args: {
+							_id: bigint;
+							_round: bigint;
+							_matchId: bigint;
+						}
+					};
+					
+					console.log(typedLog.args);
+				})
+			}
+		}
+	)
+}
 
 const initPendingTournaments = async () => {
 	try {
 		const length = await getTournamentLength();
 		for (let i:bigint = 0n; i < length; i++) {
 			const	tournament: Tournament = await getTournament(i);
-			if (tournament.status === 0)
+			if (tournament.status === 0) {
 				addPendingTournament(tournament);
+				// console.log(`tournament: ${tournament.id} is added to pending`);
+			}
 		}
 		
 	} catch (e) {
@@ -269,9 +264,12 @@ const initPendingTournaments = async () => {
 }
 
 // export const	automationBot = async () => {
-export const	automationBot = () => {
+export const	automationBot = async () => {
 	console.log("🟢 Automation bot started");
-	initPendingTournaments();
+	await initPendingTournaments();
 	watchTournamentCreated();
 	watchFinishedMatches();
+	watchMatchCreated();
+
+	// print_tournament_queue();
 }
