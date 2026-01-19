@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/27 01:44:47 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/19 06:55:59 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/19 18:39:31 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -270,13 +270,13 @@ const handlekeycahnge = (event : KeyboardEvent , isDown: boolean)=>{
 		this.scoreL.innerText = `${this.user2}- ${this.state.left}`
 		this.scoreR.innerText = `${this.state.right} -${this.user1}`;
 		timer.innerText = `${String(Math.max(0,this.state.min)).padStart(2,"0")}:${String(Math.max(0,this.state.sec)).padStart(2,"0")}`;
-		if(this.state.min == 0 && this.state.sec == 10)
+		if(this.state.min == 0 && this.state.sec <= 10 && !timer.classList.contains("text-red-400"))
 			timer.classList.add("text-red-400");
 		if(this.state.min == 0 && this.state.sec == 0)
 			this.input.timeout = false;
-		if(this.state.min == 0 && this.state.sec == 0 && this.state.right != this.state.left){this.cleardata(id);return;}
+		if(this.state.min == 0 && this.state.sec <= 0 && this.state.right != this.state.left){this.cleardata(id);return;}
 		if(this.roundtwo()){
-			if(this.state.min == 0 && this.state.sec == 0 && this.state.right == this.state.left){
+			if(this.state.min == 0 && this.state.sec <= 0 && this.state.right == this.state.left){
 			this.cleardata(id);return;}
 		}
 	}, 1000/30);
@@ -295,14 +295,14 @@ const handlekeycahnge = (event : KeyboardEvent , isDown: boolean)=>{
 		    <div class="flex flex-row justify-around items-center gap-8 py-4">
 		        <div class="flex flex-col items-center">
 		            <h2 class="text-xl opacity-80 text-ctex uppercase tracking-wider">${this.user2}</h2>
-		            <span class="text-4xl font-mono font-bold text-ctex">${this.nscoL}</span>
+		            <span class="text-4xl font-mono font-bold text-ctex">${this.state.left}</span>
 		        </div>
 			
 		        <div class="text-3xl font-light text-white/30">VS</div>
 			
 		        <div class="flex flex-col items-center">
 		            <h2 class="text-xl opacity-80 text-ctex uppercase tracking-wider">${this.user1}</h2>
-		            <span class="text-4xl font-mono font-bold text-ctex">${this.nscoR}</span>
+		            <span class="text-4xl font-mono font-bold text-ctex">${this.state.right}</span>
 		        </div>
 		    </div>
 			
