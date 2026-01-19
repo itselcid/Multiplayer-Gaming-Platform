@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/27 01:44:47 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/18 15:49:54 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/19 06:55:59 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,6 +40,8 @@ export class Game extends Component {
 	private socket: Socket;
 	private scoreL!: HTMLDivElement;
 	private scoreR!: HTMLDivElement;
+	private nscoL!:number;
+	private	nscoR!:number;
 	private	scene!: Scene ;
 	private engine!: Engine ;
 	private camera!: UniversalCamera;
@@ -49,11 +51,10 @@ export class Game extends Component {
 	private	id?:string;
 	private role!:string;
 	private	room!:Room;
-	private nscoL!:number;
-	private	nscoR!:number;
-	private input = { leftUp: false, mode: "bot",leftDown: false,rightUp: false , rightDown:false, 
-		left:0, right:0 ,min:1, sec:30 , timeout: true};
-
+	private input = { leftUp: false, mode: "bot",leftDown: false,rightUp: false , rightDown:false, timeout: true};
+	private state = {paddleLeftY: 0, paddleRightY:0, ballx:0, bally:0, left:0, right:0, min:1, sec:30,
+		move:false , start:false};
+	
 	constructor(flag: string, id: string) {
 		super('div', 'px-25 py-20');
 		this.nscoL = 0;
@@ -257,33 +258,29 @@ const handlekeycahnge = (event : KeyboardEvent , isDown: boolean)=>{
 		window.addEventListener('keydown', (event)=>{handlekeycahnge(event,true);handlevision(event);});
 		window.addEventListener('keyup', (event)=>handlekeycahnge(event,false));
 
-		this.socket.once('state',(state)=>{
-			if(this.input.mode === "remote" && !state.start){
-				this.startWaiting();
-			}
-		});
-		const id = window.setInterval(() => {
-			this.socket.emit('input', this.input)
-		}, 1000 / 64)
+		const id = window.setInterval(async () => {
+			this.state = await new Promise((resolve)=>{this.socket.emit('input', this.input, resolve)})
+		if(this.input.mode === "remote" && !this.state.start){
+			this.startWaiting();
+		}
+		paddleLeft.position.y = this.state.paddleLeftY
+		paddleRight.position.y = this.state.paddleRightY
+		ball.position.x = this.state.ballx;
+		ball.position.y = this.state.bally;
+		this.scoreL.innerText = `${this.user2}- ${this.state.left}`
+		this.scoreR.innerText = `${this.state.right} -${this.user1}`;
+		timer.innerText = `${String(Math.max(0,this.state.min)).padStart(2,"0")}:${String(Math.max(0,this.state.sec)).padStart(2,"0")}`;
+		if(this.state.min == 0 && this.state.sec == 10)
+			timer.classList.add("text-red-400");
+		if(this.state.min == 0 && this.state.sec == 0)
+			this.input.timeout = false;
+		if(this.state.min == 0 && this.state.sec == 0 && this.state.right != this.state.left){this.cleardata(id);return;}
+		if(this.roundtwo()){
+			if(this.state.min == 0 && this.state.sec == 0 && this.state.right == this.state.left){
+			this.cleardata(id);return;}
+		}
+	}, 1000/30);
 
-		this.socket.on('state', (state) => {
-			this.nscoL = state.left;
-			this.nscoR = state.right;
-			paddleLeft.position.y = state.paddleLeftY
-			paddleRight.position.y = state.paddleRightY
-			ball.position.x = state.ballx;
-			ball.position.y = state.bally;
-			this.scoreL.innerText = `${this.user2}- ${state.left}`
-			this.scoreR.innerText = `${state.right} -${this.user1}`;
-			timer.innerText = `${String(Math.max(0,state.min)).padStart(2,"0")}:${String(Math.max(0,state.sec)).padStart(2,"0")}`;
-			if(state.min == 0 && state.sec == 10)timer.classList.add("text-red-400");
-			if(state.min == 0 && state.sec == 0)this.input.timeout = false;
-			if(state.min <= 0 && state.sec <= 0 && state.right != state.left){this.cleardata(id);return;}
-			if(state.min <= 0 && state.sec <= 0 && this.input.right == this.input.left){
-				if(this.roundtwo(state)){
-				this.cleardata(id);return;}
-			}
-		});
 		this.engine.runRenderLoop(() => {
 			this.scene.render();
 		});
@@ -321,17 +318,16 @@ const handlekeycahnge = (event : KeyboardEvent , isDown: boolean)=>{
 	
 	cleardata(id : number){
 		window.clearInterval(id);
+		this.gameOver();
 		this.socket.emit("gameOver");
-		this.socket.off('state');
 		this.socket.disconnect();
 		this.engine.stopRenderLoop();
 		this.scene.dispose();
 		this.engine.dispose();
-		this.gameOver();
 	}
 
-	roundtwo(state:any){
-		if(state.right != state.left)
+	roundtwo(){
+		if(this.state.right != this.state.left)
 			return true;
 		return false;
 	}

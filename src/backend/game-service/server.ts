@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 17:15:36 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/18 03:22:29 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/19 06:56:58 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,16 +58,16 @@ function generateroom(): string{
 
 
 
-setInterval(() => {
-  for (const [roomId, game] of games) {
-    game.update();
-    io.to(roomId).emit('state', game.getState());
-  }
-  for (const [roomId, logame] of logames) {
-    logame.update();
-    io.to(roomId).emit('state', logame.getState());
-  }
-}, 1000 / 64);
+// setInterval(() => {
+//   for (const [roomId, game] of games) {
+//     game.update();
+//     io.to(roomId).emit('state', game.getState());
+//   }
+//   for (const [roomId, logame] of logames) {
+//     logame.update();
+//     io.to(roomId).emit('state', logame.getState());
+//   }
+// }, 1000 / 64);
 
 
 io.on('connection', (socket) => {
@@ -86,9 +86,9 @@ io.on('connection', (socket) => {
       if(room.pid2 == pid){
         room.join2 += 1;
       }
-      if(room.join1 && room.join2 && game){
-          game.start = true;
-      }
+      // if(room.join1 && room.join2 && game){
+      //     game.start = true;
+      // }
     }
   });
   
@@ -108,7 +108,7 @@ io.on('connection', (socket) => {
     socket.join(id);
   });
   
-  socket.on('input', (input) => {
+  socket.on('input', (input, fct) => {
     const id = socket.data.roomId;
     if (!id) return;
     const game = games.get(id);
@@ -119,12 +119,21 @@ io.on('connection', (socket) => {
       if(room && room.join1 && room.join2 && !game.move){
         io.to(id).emit('resume');
         game.move = true;
+        game.start = true;
         game.starTime = Date.now();
       }
+      game.update();
+      fct(game.getState());
+      
     }
     else if (logame){
       Object.assign(logame.input, input);
-      logame.move = true;
+      if(!logame.move){
+        logame.move = true;
+        logame.starTime = Date.now();
+      }
+      logame.update();
+      fct(logame.getState());
   }
 
   });

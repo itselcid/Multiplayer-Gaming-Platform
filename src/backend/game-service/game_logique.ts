@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/13 17:23:50 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/18 15:41:36 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/19 06:58:19 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,8 +15,8 @@ export class PongGame {
   paddleRightY = 0
   ballx = 0
   bally = 0
-  ballVX = 0.18
-  ballVY = 0.08
+  ballVX = 0.36
+  ballVY = 0.16
   move = false;
   starTime = Date.now();
   left=0;
@@ -33,7 +33,7 @@ export class PongGame {
   readonly PLAY_AREA_HEIGHT = 16;
   readonly MAX_p_Y = (this.PLAY_AREA_HEIGHT  / 2) - (this.PADDLE_HEIGHT / 2);
   readonly MAX_b_Y = (this.PLAY_AREA_HEIGHT / 2) - 0.35;
-  readonly PADDLE_SPEED = 0.27;
+  readonly PADDLE_SPEED = 0.66;
   input = {
     leftUp: false,
     leftDown: false,
@@ -103,16 +103,16 @@ export class PongGame {
     }
     else if (this.ballx < -this.PLAY_AREA_WIDTH/2 ) {
       this.right++;
-      this.ballVX = 0.18 * (Math.random() < 0.5 ? 1 : -1)
-      this.ballVY = 0.08 *(Math.random() < 0.5 ? 1 : -1)
+      this.ballVX = 0.36 * (Math.random() < 0.5 ? 1 : -1)
+      this.ballVY = 0.16 *(Math.random() < 0.5 ? 1 : -1)
       this.ballx = this.ballVX;
       this.bally = this.ballVY;
       this.delta = (Math.random()  < 0.5 ? 0 : 1);
     }
     else if (this.ballx > this.PLAY_AREA_WIDTH/2){
       this.left++;
-      this.ballVX = 0.18 * (Math.random() < 0.5 ? 1 : -1)
-      this.ballVY = 0.08 *(Math.random() < 0.5 ? 1 : -1)
+      this.ballVX = 0.36 * (Math.random() < 0.5 ? 1 : -1)
+      this.ballVY = 0.16 *(Math.random() < 0.5 ? 1 : -1)
       this.ballx = this.ballVX;
       this.bally = this.ballVY;
       this.delta = (Math.random()  < 0.5 ? 0 : 1);
