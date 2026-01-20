@@ -1,6 +1,17 @@
 
 
 services:
+
+  rabbitmq:
+    image: "rabbitmq:3-management"
+    container_name: "rabbitmq"
+    networks:
+      - app-network
+    ports:
+      - "5672:5672"   # RabbitMQ's default AMQP port
+      - "15672:15672"
+
+
   nginx:
     build:
       context: .
@@ -33,6 +44,8 @@ services:
       - user-uploads:/app/public/uploads
     networks:
       - app-network
+    depends_on:
+      - rabbitmq
     restart: unless-stopped
 
   game-service:
@@ -47,6 +60,8 @@ services:
       - game-service-modules:/app/node_modules
     networks:
       - app-network
+    depends_on:
+      - rabbitmq
     restart: unless-stopped
 
   chat-service:

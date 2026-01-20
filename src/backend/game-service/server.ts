@@ -6,26 +6,18 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 17:15:36 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/19 06:56:58 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/20 02:55:47 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
+import { Room, MatchResult, PongGame } from './game_logique';
+import amqp, { Channel, ConsumeMessage } from 'amqplib';
+import { Server } from 'socket.io'
 import Fastify from 'fastify'
 import http from 'http'
-import { Server } from 'socket.io'
-import { PongGame} from './game_logique'
 
-interface Room{
-  id:string;
-  player1:string;
-  wallet1:string;
-  pid1:number;
-  player2:string;
-  wallet2:string;
-  pid2:number;
-  join1:number;
-  join2:number;
-}
+
+
 
 const rooms:Map<string,Room> = new Map();
 const games:Map<string,PongGame> = new Map;
@@ -55,20 +47,32 @@ function generateroom(): string{
   return id;
 }  
   
+async function publishMatch(data: MatchResult) {
+  const jsonresult = JSON.stringify(data,null,2);
+  try{
+    const rabbitUrl = process.env.RABBITMQ_URL || 'amqp://localhost'; 
+    const connection = await amqp.connect(rabbitUrl);
+    const channel = await connection.createChannel();
+    channel.sendToQueue("match_finished",  Buffer.from(jsonresult)), {persistent: true};
+      console.log(`📤 Published match result to match_finished`, data);
+  }
+  catch(error){
+    console.error('RabbitMQ Connection Failed:', error);
+    setTimeout(() => publishMatch(data), 5000);
+  }
+  
+}
 
 
-
-// setInterval(() => {
-//   for (const [roomId, game] of games) {
-//     game.update();
-//     io.to(roomId).emit('state', game.getState());
-//   }
-//   for (const [roomId, logame] of logames) {
-//     logame.update();
-//     io.to(roomId).emit('state', logame.getState());
-//   }
-// }, 1000 / 64);
-
+    function sendMAtch(id: string){
+      const room = rooms.get(id);
+      const game = games.get(id);
+      if(room && game){
+        const result: MatchResult = { player1Id: room.pid1, player2Id: room.pid2, score1: game.right,
+          score2: game.left,startedAt: room.startedAt};
+        publishMatch(result);
+        } 
+    }
 
 io.on('connection', (socket) => {
   console.log(`client connected ${socket.id}`);
@@ -121,6 +125,7 @@ io.on('connection', (socket) => {
         game.move = true;
         game.start = true;
         game.starTime = Date.now();
+        room.startedAt = new Date().toISOString();
       }
       game.update();
       fct(game.getState());
@@ -148,6 +153,7 @@ io.on('connection', (socket) => {
      const logame = logames.get(id);
      socket.leave(id);
      if(game && game.input.mode === "remote"){
+       sendMAtch(id);
        rooms.delete(id);
        games.delete(id);
      }

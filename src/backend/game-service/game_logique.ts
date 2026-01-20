@@ -6,9 +6,31 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/13 17:23:50 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/19 06:58:19 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/20 00:58:26 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
+export interface MatchResult {
+    player1Id: number;
+    player2Id?: number;
+    score1: number;
+    score2: number;
+    startedAt: string;
+}
+
+
+export interface Room{
+  id:string;
+  player1:string;
+  wallet1:string;
+  pid1:number;
+  player2:string;
+  wallet2:string;
+  pid2:number;
+  join1:number;
+  join2:number;
+  startedAt: string;
+}
 
 export class PongGame {
   paddleLeftY = 0
