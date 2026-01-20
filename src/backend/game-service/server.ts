@@ -6,12 +6,12 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 17:15:36 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/20 02:55:47 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/20 03:23:33 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { Room, MatchResult, PongGame } from './game_logique';
-import amqp, { Channel, ConsumeMessage } from 'amqplib';
+import amqp, { Channel } from 'amqplib';
 import { Server } from 'socket.io'
 import Fastify from 'fastify'
 import http from 'http'

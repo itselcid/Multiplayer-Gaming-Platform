@@ -44,6 +44,10 @@ class RabbitMQService {
                     console.log('Received match result:', matchData); //! logs
 
                     // Save to DB
+                    if(matchData.player1Id)
+                        matchData.player1Id = Number(matchData.player1Id);
+                    if(matchData.player2Id)
+                        matchData.player2Id = Number(matchData.player2Id);
                     await saveMatch(matchData);
 
                     // Acknowledge message (remove from queue)
