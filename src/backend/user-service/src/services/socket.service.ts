@@ -11,7 +11,8 @@ interface SocketUser {
 
 class SocketService {
     private io: Server | null = null;
-    // Map<UserId, SocketId> - simple in-memory store
+
+    // Map<UserId, SocketId> - simple in-memory store 
     private onlineUsers = new Map<number, string>();
 
     initialize(server: any, options: any) {

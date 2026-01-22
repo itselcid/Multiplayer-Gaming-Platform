@@ -2,6 +2,7 @@
 import amqp, { Channel, ConsumeMessage } from 'amqplib';
 import { MatchResult } from '../types/user.types';
 import { saveMatch } from '../db';
+import { env } from '../config/env';
 
 class RabbitMQService {
     private connection: any = null;
@@ -12,7 +13,7 @@ class RabbitMQService {
     async initialize() {
         try {
             // Connect to RabbitMQ
-            const rabbitUrl = process.env.RABBITMQ_URL || 'amqp://localhost';  // add RABBITMQ_URL to your env vars later
+            const rabbitUrl = env.RABBITMQ_URL || 'amqp://localhost';  // add RABBITMQ_URL to your env vars later
             this.connection = await amqp.connect(rabbitUrl);
             this.channel = await this.connection.createChannel();
 
@@ -44,6 +45,10 @@ class RabbitMQService {
                     console.log('Received match result:', matchData); //! logs
 
                     // Save to DB
+                    if (matchData.player1Id)
+                        matchData.player1Id = Number(matchData.player1Id);
+                    if (matchData.player2Id)
+                        matchData.player2Id = Number(matchData.player2Id);
                     await saveMatch(matchData);
 
                     // Acknowledge message (remove from queue)
