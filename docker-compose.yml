@@ -29,7 +29,7 @@ services:
       - PORT=3001
       - DATABASE_URL=file:/app/data/usermgmt.db
       - JWT_SEC=${JWT_SECRET:-super_secret_jwt_key_change_me_32chars}
-      - COOKIE_SECRET=${COOKIE_SECRET:-super_secret_cookie_key_32chars}
+      - COOKIE_SECRET=${COOKIE_SECRET:-super_secret_cookie_key_32_chars!}
       - FRONTEND_URL=https://localhost
       - BACKEND_URL=http://user-service:3001
       - EMAIL_HOST=${EMAIL_HOST:-smtp.example.com}

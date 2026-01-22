@@ -15,7 +15,7 @@ export const	isUsernameTaken = async (username: string): Promise<boolean> => {
 	const	data = {
 		"username": username
 	}
-	const	response = await fetch(VITE_USER_BACKEND_URL + '/api/users/istaken', {
+	const	response = await fetch('/api/users/istaken', {
 		method: "POST",
 		headers: {
 		"Content-Type": "application/json",

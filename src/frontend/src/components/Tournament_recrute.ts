@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/21 15:12:27 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/25 10:57:45 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/17 00:52:15 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,7 @@ import { formatEther } from "viem";
 import { addElement, Component } from "../core/Component";
 import { getAllowance, type Tournament } from "../web3/getters";
 import { bigint_to_date } from "../tools/date";
-import { web3auth } from "../core/appStore";
+import { userState, web3auth } from "../core/appStore";
 import { nullAddress } from "../web3/tools";
 import { approveAllowence, join_tournament } from "../web3/setters";
 import { join_tournament_inactive } from "./Tournament_card";
@@ -23,6 +23,7 @@ import { Metamask_error } from "./Metamask_error";
 import { logged } from "../main";
 import { getRevertReason } from "../tools/errors";
 import { formatNumber } from "../tools/tournament_tools";
+import { username_availabality_checker } from "./CreateTournament";
 
 export	const fill_tournament_recrute = async (tournament: Tournament, tournament_recrute: HTMLElement) => {
 	const	account = await web3auth.getEthAddress();
@@ -124,7 +125,7 @@ class Tournament_recrute_register extends Component {
 	async render(): Promise<void> {
 		let	username_input: HTMLInputElement;
 		
-		if (!logged) {
+		if (!userState.get()) {
 			const	username_container = addElement('div', 'mb-6', this.el);
 			username_container.insertAdjacentHTML('beforeend', `
 					<label class="flex items-center gap-2 text-cyan-300 font-bold text-sm uppercase tracking-widest mb-3">
@@ -147,6 +148,10 @@ class Tournament_recrute_register extends Component {
 		
 		register_button.mount(this.el);
 		register_button.el.onclick = async () => {
+			if (!userState.get()) {
+				if (await username_availabality_checker(username_input.value))
+					return;
+			}
 			const	pend_button = new PendingButton();
 			try {
 				const	allowence = await getAllowance(await web3auth.getEthAddress());
@@ -158,7 +163,8 @@ class Tournament_recrute_register extends Component {
 					register_button.render();
 					register_button.el.hidden = false;
 				} else {
-					await join_tournament(this._tournament, logged? 'username from db': username_input.value);
+					const state = userState.get();
+					await join_tournament(this._tournament, state && state.username !== undefined? state.username: username_input.value);
 					const	registered = new Tournament_recrute_registered(this._tournament);
 					registered.render();
 					this.el.innerHTML = registered.el.innerHTML;

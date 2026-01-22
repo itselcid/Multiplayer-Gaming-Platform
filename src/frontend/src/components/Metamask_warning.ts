@@ -6,13 +6,15 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 21:19:53 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/15 01:38:55 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/15 03:12:11 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { addElement, Component } from "../core/Component";
 import * as chains from "viem/chains";
 import { shortenEthAddress } from "../web3/tools";
+import { Metamask_error } from "./Metamask_error";
+import { getRevertReason } from "../tools/errors";
 
 function getNetworkName(chainIdHex: string): string {
 	const chainId = Number(chainIdHex);
@@ -105,6 +107,12 @@ export class Metamask_network_warning extends Component {
 		switch_button.textContent = 'Switch to Avalanche Testnet';
 		switch_button.onclick = async () => {
 			if (!window.ethereum) return;
+			const	root = document.getElementById('app');
+			if (!root)
+			{
+				console.error('root not found');
+				return ;
+			}
 
 			try {
 				const VITE_FUJI_CHAIN_ID = import.meta.env.VITE_FUJI_CHAIN_ID;
@@ -112,14 +120,24 @@ export class Metamask_network_warning extends Component {
 					method: "wallet_switchEthereumChain",
 					params: [{ chainId: VITE_FUJI_CHAIN_ID }],
 				});
-
+				console.log('chain added');
 			} catch (error: any) {
 				// If the chain is not already added to MetaMask
+				let	error_page: Metamask_error;
 				if (error.code === 4902) {
-					console.log("Chain not found in MetaMask");
-					throw new Error("CHAIN_NOT_ADDED");
+					error_page = new Metamask_error(
+						'Network not found',
+						'Avalanche testnet was not found in your metamask. Please add it then retry again.',
+						false
+					);
+				} else {
+					error_page = new Metamask_error(
+						"Network switch failed",
+						"The network switch failed for the following reason: " + getRevertReason(error),
+						false
+					);
 				}
-				throw error;
+				error_page.mount(root);
 			}
 			this.unmount();
 		}

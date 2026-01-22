@@ -12,8 +12,8 @@ services:
     volumes:
       - prometheus-data:/prometheus
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml
     networks:
-      - gateway      
       - monitoring  
     restart: unless-stopped
     mem_limit: 512m
@@ -25,8 +25,8 @@ services:
     ports:
       - "3001:3000"
     environment:
-      - GF_SERVER_ROOT_URL=http://localhost/grafana/
-      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin123}
     volumes:
       - grafana-data:/var/lib/grafana
       - ./grafana/datasources:/etc/grafana/provisioning/datasources
@@ -35,7 +35,6 @@ services:
     depends_on:
       - prometheus
     networks:
-      - gateway   
       - monitoring  
     restart: unless-stopped
     mem_limit: 512m
@@ -53,6 +52,22 @@ services:
       - monitoring  
     restart: unless-stopped
     mem_limit: 128m
+    cpus: 0.5
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    ports:
+      - "8080:8080"
+    networks:
+      - monitoring
+    restart: unless-stopped
+    mem_limit: 256m
     cpus: 0.5
 
 
@@ -81,9 +96,6 @@ volumes:
     driver: local
 
 networks:
-  gateway:
-    external: true
-    name: gateway
   monitoring:
     external: true
     name: monitoring

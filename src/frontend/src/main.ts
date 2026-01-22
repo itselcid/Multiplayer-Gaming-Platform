@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main.ts                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/12 15:53:05 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/12 03:12:57 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/17 14:12:18 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,14 +18,12 @@ import { subs } from './core/state.ts';
 import { Shouting_stars } from './pages/Shouting_stars.ts';
 import { TestBG } from './pages/TestBG.ts';
 import { AuthService } from './services/auth';
-import { initAuth } from './core/appStore.ts';
+import { initAuth, web3auth } from './core/appStore.ts';
 (window as any).AuthService = AuthService;                    // delme !!!
 import { userState } from './core/appStore';
 (window as any).userState = userState;                           // delme !!!
 import { type Tournament } from './web3/getters.ts';
-
 //  TODO: get user address from database for auth
-export const user_address = '0x26a2bf197820c79150dde3db793c23bf71a973cf';
 export let logged: boolean = true;
 export	let cachedTournaments: Tournament[] = [];
 
@@ -54,13 +52,7 @@ initAuth().then(() => {
   renderRoute();
 });
 
+// console.log(`the wallet== ${await web3auth.getEthAddress()}`);
 // const	canva = document.getElementById('starfield') as HTMLCanvasElement;
 // if (canva)
 // 	startShootingStars(canva);
-// const balance : bigint = await getBalance('0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266');
-// const balance : bigint = await getBalance('0x70997970c51812dc3a010c7d01b50e0d17dc79c8');
-// console.log('account balance', formatEther(balance));
-
-// const allowance = await getAllowance('0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266');
-// const balance : bigint = await getBalance('0x70997970c51812dc3a010c7d01b50e0d17dc79c8');
-// console.log('account allowance', allowance);

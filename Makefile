@@ -1,87 +1,63 @@
 
-all: app-up
+up:
+	@docker compose up -d --build
+	@sleep 2
+	@docker compose -f infra/elk-stack/docker-compose.yml up -d
+	@docker compose -f infra/monitoring/docker-compose.yml up -d
+
+down:
+	@docker compose -f infra/monitoring/docker-compose.yml down
+	@docker compose -f infra/elk-stack/docker-compose.yml down
+	@docker compose down
+
+restart: down up
+
+logs:
+	@docker compose logs -f
+
+clean: down
+	@docker compose down -v 2>/dev/null || true
+	@docker compose -f infra/elk-stack/docker-compose.yml down -v 2>/dev/null || true
+	@docker compose -f infra/monitoring/docker-compose.yml down -v 2>/dev/null || true
+
+fclean: clean
+	@docker system prune -af --volumes
+	@docker network prune -f
+
+re: fclean up
 
 
-app-up:
-	docker compose up -d --build
-
-app-down:
-	docker compose down
-
-app-logs:
-	docker compose logs -f
-
-app-restart: app-down app-up
-
-
-dev-up:
-	docker compose -f docker-compose.dev.yml up -d
+dev:
+	@docker compose -f docker-compose.dev.yml up -d --build
 
 dev-down:
-	docker compose -f docker-compose.dev.yml down
+	@docker compose -f docker-compose.dev.yml down
+
+dev-restart: dev-down dev
 
 dev-logs:
-	docker compose -f docker-compose.dev.yml logs -f
+	@docker compose -f docker-compose.dev.yml logs -f
 
-dev-restart: dev-down dev-up
+dev-clean: dev-down
+	@docker compose -f docker-compose.dev.yml down -v 2>/dev/null || true
 
-
-elk-up:
-	docker compose -f infra/elk-stack/docker-compose.yml up -d
-
-elk-down:
-	docker compose -f infra/elk-stack/docker-compose.yml down
-
-elk-logs:
-	docker compose -f infra/elk-stack/docker-compose.yml logs -f
-
-elk-restart: elk-down elk-up
+dev-re: dev-clean dev
 
 
-monitoring-up:
-	docker compose -f infra/monitoring/docker-compose.yml up -d
-
-monitoring-down:
-	docker compose -f infra/monitoring/docker-compose.yml down
-
-monitoring-logs:
-	docker compose -f infra/monitoring/docker-compose.yml logs -f
-
-
-all-up: app-up elk-up monitoring-up
-	@echo "All services started"
-
-all-down:
-	docker compose down
-	docker compose -f infra/elk-stack/docker-compose.yml down
-	docker compose -f infra/monitoring/docker-compose.yml down
-	@echo "All services stopped"
-
-all-restart: all-down all-up
-
-
-build:
-	docker compose build --no-cache
-
-ps:
-	docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
-
-clean:
-	docker compose down -v
-	docker compose -f infra/elk-stack/docker-compose.yml down -v
-	docker compose -f infra/monitoring/docker-compose.yml down -v
-	docker system prune -f
-	@echo "Cleaned up containers and volumes"
-
-
-logs-user:
-	docker logs -f user-service
-
-logs-game:
-	docker logs -f game-service
-
-logs-chat:
-	docker logs -f chat-service
-
-logs-nginx:
-	docker logs -f nginx
+help:
+	@echo "Production (full stack with monitoring/ELK):"
+	@echo "  make up        - Start all services with infrastructure"
+	@echo "  make down      - Stop all services"
+	@echo "  make restart   - Restart all services"
+	@echo "  make logs      - Follow logs"
+	@echo "  make clean     - Stop and remove volumes"
+	@echo "  make fclean    - Full cleanup (prune docker)"
+	@echo "  make re        - Full rebuild"
+	@echo ""
+	@echo "Development (app only, no infra):"
+	@echo "  make dev       - Start app services only"
+	@echo "  make dev-down  - Stop dev services"
+	@echo "  make dev-restart - Restart dev services"
+	@echo "  make dev-logs  - Follow dev logs"
+	@echo "  make dev-clean - Stop dev and remove volumes"
+	@echo "  make dev-re    - Full dev rebuild"

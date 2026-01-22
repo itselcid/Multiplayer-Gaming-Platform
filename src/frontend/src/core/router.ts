@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   router.ts                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/13 22:19:50 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/12 03:07:52 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/14 07:29:54 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -91,7 +91,7 @@ export function matchRoute(path: string): { view: any; params: Record<string, st
   return null;
 }
 
-export function renderRoute() {
+export async function renderRoute() {
   const user = userState.get();
   const root = document.getElementById("bg")!;
 
@@ -125,32 +125,29 @@ export function renderRoute() {
     // Mount the overlay
     const page = new View(params);
     page.mount(root);
-
   } else {
     // Normal navigation: Clear everything and mount the new page
     root.innerHTML = "";
 
-    if (View === Game && user) {
-      const urlParams = new URLSearchParams(window.location.search);
-      var mode = urlParams.get("mode") || "bot";
-      if (!mode || (mode !== "bot" && mode !== "local" && mode != "remote")) {
-        mode = "bot";
+    if (View === Game) {
+      if (user) {
+        const urlParams = new URLSearchParams(window.location.search);
+        let mode = urlParams.get("mode") || "bot";
+        const id = urlParams.get("id") || "";
+        if (!mode || (mode !== "bot" && mode !== "local" && mode !== "remote")) {
+          mode = "bot";
+        }
+        const gameobj = new Game(mode, id);
+        if (mode == "remote" && (!id || !(await gameobj.verify()))) {
+          const page = new Page404();
+          page.mount(root);
+          return;
+        }
+        gameobj.mount(root);
+      } else {
+        navigate("/login");
       }
-      const gameobj = new Game(mode);
-      gameobj.mount(root);
-    }
-    else if (View === Game && !user) {
-      // This case might be tricky if we want Login to overlay "Game".
-      // But usually if !user, we probably shouldn't be on Game.
-      // For now, redirecting to Login (which ends up being an overlay over Home due to logic above if root cleared).
-      // Let's just mount Login normally as overlay. 
-      // Note: If we just clear root, and mount Login, the overlay logic above kicks in?
-      // No, we are inside 'else' (isOverlay is false because View is Game).
-      // So we redirect logic:
-      navigate("/login");
-      return;
-    }
-    else {
+    } else {
       const page = new View(params);
       page.mount(root);
     }

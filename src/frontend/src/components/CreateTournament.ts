@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/18 18:01:17 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/08 16:37:36 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/17 20:32:14 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,7 @@ import { walletClientMetamask } from "../web3/contracts/contracts";
 import { Metamask_error } from "./Metamask_error";
 import { getRevertReason } from "../tools/errors";
 import { isUsernameTaken } from "../tools/fetching";
+import { userState } from "../core/appStore";
 
 class	PendingButton extends Component {
 	constructor() {
@@ -53,14 +54,40 @@ class	PendingButton extends Component {
 	}
 }
 
+export const	username_availabality_checker = async (username: string): Promise<Number> => {
+	const	root = document.getElementById('app');
+	if (!root)
+		return (1);
+	try {
+		const	usernameIsTaken = await isUsernameTaken(username);
+		if (usernameIsTaken) {
+			console.error('usrname taken');
+			const	metamask_error = new Metamask_error(
+				"Transaction failed",
+				"The transaction failed for the following reason: Username already taken",
+				false
+			);
+			metamask_error.mount(root);
+			return(1);
+		}
+	} catch (err) {
+		const	metamask_error = new Metamask_error(
+			"Transaction failed",
+			"The transaction failed for the following reason: " + getRevertReason(err),
+			false
+		);
+		metamask_error.mount(root);
+		return (1);
+	}
+	return (0);
+}
+
 export class CreateTournament extends Component {
 	constructor() {
 		super('div', 'fixed inset-0 z-10 bg-black/40 backdrop-blur-sm overflow-y-auto overscroll-y-auto no-scrollbar flex justify-center items-start');
 	}
 
 	async render(): Promise<void> {
-		const	logged = false;
-
 		const	container = addElement('div', 'relative max-w-2xl w-full my-8', this.el);
 		// outer glow
 		addElement('div', 'absolute inset-0 bg-gradient-to-r from-neon-purple via-pink-500 to-neon-cyan rounded-3xl blur-2xl opacity-30 animate-pulse', container);
@@ -97,7 +124,7 @@ export class CreateTournament extends Component {
 
 		// if not logged in:
 		let	username_input: HTMLInputElement;
-		if (!logged) {
+		if (!userState.get()) {
 			const	username = addElement('div', 'space-y-3', form);
 			username.insertAdjacentHTML('beforeend', `
 				<label class="flex items-center gap-2 text-neon-gold font-bold text-sm uppercase tracking-widest">
@@ -114,7 +141,7 @@ export class CreateTournament extends Component {
 
 		// if logged in
 		let	title;
-		if (logged)
+		if (userState.get())
 			title = addElement('div', 'col-span-2 space-y-3', form);
 		// if not logged in
 		else
@@ -211,34 +238,19 @@ export class CreateTournament extends Component {
 			create_button.textContent = 'Create';
 		}
 		create_button.onclick = async () => {
+			create_button.disabled = true;
 			const	root = document.getElementById('app');
-			if (!root)
+			if (!root) {
+				create_button.disabled = false;
 				return ;
-			if (!logged) {
-				try {
-					const	usernameIsTaken = await isUsernameTaken(username_input.value);
-					if (usernameIsTaken) {
-						console.error('usrname taken');
-						const	metamask_error = new Metamask_error(
-							"Transaction failed",
-							"The transaction failed for the following reason: Username already taken",
-							false
-						);
-						metamask_error.mount(root);
-						return ;
-					}
-				} catch (err) {
-					const	metamask_error = new Metamask_error(
-						"Transaction failed",
-						"The transaction failed for the following reason: " + getRevertReason(err),
-						false
-					);
-					metamask_error.mount(root);
-					return ;
+			}
+			if (!userState.get()) {
+				if (await username_availabality_checker(username_input.value)){
+					create_button.disabled = false;
+					return;
 				}
 			}
 			const	pend_button = new PendingButton();
-			create_button.disabled = true;
 			try {
 				allowance = await getAllowance(account);	
 				const	entryFeeValue:bigint = parseEther(entryFee_input.value);
@@ -253,12 +265,13 @@ export class CreateTournament extends Component {
 				} else {
 					create_button.hidden = true;
 					pend_button.mount(buttons);
+					const state = userState.get();
 					await create_tournament(
 						title_input.value,
 						entryFeeValue,
 						BigInt(participants_input.value),
 						date_to_bigint(startTime_input.value),
-						logged? 'user input from db': username_input.value
+						state && state.username !== undefined? state.username: username_input.value
 					);
 					this.unmount();
 				}
