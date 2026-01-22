@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 17:15:36 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/20 03:23:33 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/22 10:05:33 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,11 +18,11 @@ import http from 'http'
 
 
 
-
 const rooms:Map<string,Room> = new Map();
 const games:Map<string,PongGame> = new Map;
 const logames:Map<string,PongGame> = new Map;
 const tour:Map<string,Room> = new Map();
+
 
 
 const fastify = Fastify()
@@ -44,9 +44,10 @@ function generateroom(): string{
   const crypto = require("crypto");
   const byteLength = Math.floor(Math.random() * (8 - 4 + 1)) + 4;
   const id = crypto.randomBytes(Math.ceil(byteLength/2)).toString("hex");
+  console.log(`in generate room ${id}`);
   return id;
-}  
-  
+}
+
 async function publishMatch(data: MatchResult) {
   const jsonresult = JSON.stringify(data,null,2);
   try{
@@ -64,6 +65,7 @@ async function publishMatch(data: MatchResult) {
 }
 
 
+
     function sendMAtch(id: string){
       const room = rooms.get(id);
       const game = games.get(id);
@@ -74,8 +76,18 @@ async function publishMatch(data: MatchResult) {
         } 
     }
 
+
+
+    // setInterval(()=>{
+//   for (const [roomId, room] of rooms) {
+//     if (Date.now() - room.timeout > ) 
+//   }
+// },60000*3)
+
+
 io.on('connection', (socket) => {
   console.log(`client connected ${socket.id}`);
+  
   
   socket.once('joinroom',(id, pid)=>{
     socket.join(id);
@@ -113,7 +125,7 @@ io.on('connection', (socket) => {
   });
   
   socket.on('input', (input, fct) => {
-    const id = socket.data.roomId;
+const id = socket.data.roomId;
     if (!id) return;
     const game = games.get(id);
     const room = rooms.get(id);
@@ -124,27 +136,45 @@ io.on('connection', (socket) => {
         io.to(id).emit('resume');
         game.move = true;
         game.start = true;
-        game.starTime = Date.now();
-        room.startedAt = new Date().toISOString();
       }
       game.update();
       fct(game.getState());
-      
     }
     else if (logame){
       Object.assign(logame.input, input);
       if(!logame.move){
         logame.move = true;
-        logame.starTime = Date.now();
+        logame.start = true;
       }
       logame.update();
       fct(logame.getState());
-  }
+    }
 
   });
   
+
+    socket.on('start',()=>{
+    const id = socket.data.roomId;
+    if (!id) return;
+    const game = games.get(id);
+    const room = rooms.get(id);
+    const logame = logames.get(id);
+    // console.log(`is it here ${room?.id}`);
+    if(game && room && game.stop){
+      game.starTime = Date.now();
+      room.startedAt = new Date().toISOString();
+      game.stop = false;
+    }
+    else if (logame &&logame.stop){
+      logame.starTime = Date.now();
+      // room.startedAt = new Date().toISOString();
+      logame.stop = false;
+    }
+  });
+
   socket.on('getroom', (id, fct) => {fct(rooms.get(id));});
   
+
   socket.on('verifyroom',(id,fct)=>{fct(rooms.has(id));});
   
   socket.on('gameOver',()=>{

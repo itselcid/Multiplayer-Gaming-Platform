@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/27 01:44:47 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/20 03:07:25 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/22 10:03:20 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,8 +40,6 @@ export class Game extends Component {
 	private socket: Socket;
 	private scoreL!: HTMLDivElement;
 	private scoreR!: HTMLDivElement;
-	private nscoL!:number;
-	private	nscoR!:number;
 	private	scene!: Scene ;
 	private engine!: Engine ;
 	private camera!: UniversalCamera;
@@ -51,14 +49,14 @@ export class Game extends Component {
 	private	id?:string;
 	private role!:string;
 	private	room!:Room;
-	private input = { leftUp: false, mode: "bot",leftDown: false,rightUp: false , rightDown:false, timeout: true};
+	private countdownStarted = false;
+	private waitingStarted = false;
+	private input = { leftUp: false, mode: "bot",leftDown: false,rightUp: false , rightDown:false};
 	private state = {paddleLeftY: 0, paddleRightY:0, ballx:0, bally:0, left:0, right:0, min:1, sec:30,
-		move:false , start:false};
+		move:false , start:false, stop:true, gameOver:false};
 	
 	constructor(flag: string, id: string) {
 		super('div', 'px-25 py-20');
-		this.nscoL = 0;
-		this.nscoR = 0;
 		this.socket = io(window.location.origin, {
 			path: '/socket.io/',
 			transports: ['websocket', 'polling']
@@ -259,9 +257,14 @@ const handlekeycahnge = (event : KeyboardEvent , isDown: boolean)=>{
 		window.addEventListener('keyup', (event)=>handlekeycahnge(event,false));
 
 		const id = window.setInterval(async () => {
-			this.state = await new Promise((resolve)=>{this.socket.emit('input', this.input, resolve)})
-		if(this.input.mode === "remote" && !this.state.start){
+			this.state = await new Promise((resolve)=>{this.socket.emit('input', this.input, resolve)});
+		if(!this.state.start && this.input.mode === "remote" && !this.waitingStarted){
 			this.startWaiting();
+			this.waitingStarted = true;
+		}
+		if(this.state.start && this.state.stop && !this.countdownStarted){
+			this.startCountdown(()=>{this.socket.emit('start')});
+			this.countdownStarted = true;
 		}
 		paddleLeft.position.y = this.state.paddleLeftY
 		paddleRight.position.y = this.state.paddleRightY
@@ -272,13 +275,11 @@ const handlekeycahnge = (event : KeyboardEvent , isDown: boolean)=>{
 		timer.innerText = `${String(Math.max(0,this.state.min)).padStart(2,"0")}:${String(Math.max(0,this.state.sec)).padStart(2,"0")}`;
 		if(this.state.min == 0 && this.state.sec <= 10 && !timer.classList.contains("text-red-400"))
 			timer.classList.add("text-red-400");
-		if(this.state.min == 0 && this.state.sec == 0)
-			this.input.timeout = false;
-		if(this.state.min == 0 && this.state.sec <= 0 && this.state.right != this.state.left){this.cleardata(id);return;}
-		if(this.roundtwo()){
-			if(this.state.min == 0 && this.state.sec <= 0 && this.state.right == this.state.left){
-			this.cleardata(id);return;}
+		if(this.state.gameOver){
+			this.cleardata(id);
+			return;
 		}
+		
 	}, 1000/30);
 
 		this.engine.runRenderLoop(() => {
@@ -317,14 +318,16 @@ const handlekeycahnge = (event : KeyboardEvent , isDown: boolean)=>{
 	}
 	
 	cleardata(id : number){
-		window.clearInterval(id);
-		this.socket.emit("gameOver");
 		console.log(`whyyyyy`);
+		// this.socket.emit("gameOver");
+		window.clearInterval(id);
 		this.gameOver();
 		this.engine.stopRenderLoop();
 		this.scene.dispose();
 		this.engine.dispose();
 		this.socket.disconnect();
+		this.waitingStarted = false;
+		this.countdownStarted = false;
 	}
 
 	roundtwo(){
@@ -358,8 +361,33 @@ const handlekeycahnge = (event : KeyboardEvent , isDown: boolean)=>{
 	this.socket.on('resume', () => {
 		window.clearInterval(id);
 		ui.dispose();
+		this.startCountdown(()=>{this.socket.emit('start')});
 	});
 	}
+
+	startCountdown(onFinish: () => void) {
+  const ui = GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI", true, this.scene);
+
+  const text = new GUI.TextBlock();
+  text.color = "white";
+  text.fontSize = 120;
+  ui.addControl(text);
+
+  let count = 3;
+  text.text = count.toString();
+
+  const interval = window.setInterval(()  => {
+    count--;
+    text.text = count.toString();
+
+    if (count === 0) {
+      window.clearInterval(interval);
+      ui.dispose();
+      onFinish();
+    }
+  }, 1000);
+}
+
 }
 
 

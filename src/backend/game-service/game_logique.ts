@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/13 17:23:50 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/20 00:58:26 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/22 10:04:09 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,9 +30,12 @@ export interface Room{
   join1:number;
   join2:number;
   startedAt: string;
+  timeout: Date;
 }
 
+
 export class PongGame {
+  starTime = Date.now();
   paddleLeftY = 0
   paddleRightY = 0
   ballx = 0
@@ -40,14 +43,14 @@ export class PongGame {
   ballVX = 0.36
   ballVY = 0.16
   move = false;
-  starTime = Date.now();
+  start = false;
+  stop = true;
   left=0;
   right=0;
   min=1;
   sec=30;
-  stop = false;
   delta = 0;
-  start = false;
+  gameOver = false;
 
   readonly Duration = 90000
   readonly PADDLE_HEIGHT = 2.3;
@@ -55,20 +58,18 @@ export class PongGame {
   readonly PLAY_AREA_HEIGHT = 16;
   readonly MAX_p_Y = (this.PLAY_AREA_HEIGHT  / 2) - (this.PADDLE_HEIGHT / 2);
   readonly MAX_b_Y = (this.PLAY_AREA_HEIGHT / 2) - 0.35;
-  readonly PADDLE_SPEED = 0.66;
+  readonly PADDLE_SPEED = 0.45;
   input = {
     leftUp: false,
     leftDown: false,
     rightUp: false,
     rightDown: false,
-    timeout: true,
     mode: "bot",
   }
 
 
   update() {
     if(!this.move) return;
-    
     if(this.input.mode != "bot"){
       if (this.input.leftUp) this.paddleLeftY += this.PADDLE_SPEED
       if (this.input.leftDown) this.paddleLeftY -= this.PADDLE_SPEED
@@ -79,9 +80,9 @@ export class PongGame {
 
       this.paddleLeftY = Math.max(-this.MAX_p_Y, Math.min(this.MAX_p_Y, this.paddleLeftY))
       this.paddleRightY = Math.max(-this.MAX_p_Y, Math.min(this.MAX_p_Y, this.paddleRightY))
-    
-
-    
+      
+    if(this.stop)
+        return;
     if(this.input.mode == "bot"){
       if(this.ballx <= 0){
         if(this.bally - this.delta > (this.paddleLeftY + (this.PADDLE_HEIGHT/4))  ){
@@ -94,11 +95,14 @@ export class PongGame {
       }
     }
 
-    
-    if(this.input.timeout){
+    if(this.min >= 0 && this.sec >= 0){
       var remain = Math.floor(((Date.now() - this.starTime) - this.Duration) / -1000)
       this.min = Math.floor(remain / 60)
       this.sec = remain % 60
+    }
+    else{
+      if(this.right != this.left)
+        this.gameOver = true;
     }
     
     if (this.bally > this.MAX_b_Y || this.bally < -this.MAX_b_Y) {
@@ -173,6 +177,8 @@ export class PongGame {
       sec: this.sec,
       start: this.start,
       move: this.move,
+      stop: this.stop,
+      gameOver: this.gameOver
     };
   }
 }
