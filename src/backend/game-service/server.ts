@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 17:15:36 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/22 10:05:33 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/23 05:40:18 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -177,15 +177,19 @@ const id = socket.data.roomId;
 
   socket.on('verifyroom',(id,fct)=>{fct(rooms.has(id));});
   
-  socket.on('gameOver',()=>{
+socket.on('gameOver',()=>{
      const id = socket.data.roomId;
      const game = games.get(id);
      const logame = logames.get(id);
      socket.leave(id);
      if(game && game.input.mode === "remote"){
-       sendMAtch(id);
-       rooms.delete(id);
-       games.delete(id);
+      game.delet++;
+      if(game.delet == 2){
+          sendMAtch(id);
+          rooms.delete(id);
+          games.delete(id);
+        
+       }
      }
      else if (logame ){
        logames.delete(id);

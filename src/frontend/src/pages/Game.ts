@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/27 01:44:47 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/22 10:03:20 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/23 05:40:50 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -318,8 +318,8 @@ const handlekeycahnge = (event : KeyboardEvent , isDown: boolean)=>{
 	}
 	
 	cleardata(id : number){
-		console.log(`whyyyyy`);
-		// this.socket.emit("gameOver");
+		// console.log(`whyyyyy`);
+		this.socket.emit("gameOver");
 		window.clearInterval(id);
 		this.gameOver();
 		this.engine.stopRenderLoop();
