@@ -1,29 +1,27 @@
 import createHttpError from "http-errors";
 import { acceptFriendRequest, blockFriend, getBlockedFriends, getFriends, getFriendship, getReceivedFriendRequests, getSentFriendRequests, getUserById, removeFriend, sendFriendRequest, unblockFriend } from "../db";
+import { Friend } from "../types";
+import { socketService } from "../services/socket.service";
 
 
 export const friendController = {
     getFriends: async (request: any, reply: any) => {
 
-        const rawFriends = await getFriends(request.user!.userId);
-        // Map nested objects to flat structure, checking if it's already flat or needs unwrapping
-        const friends = rawFriends.map(f => (f as any).addressee || f);
+        const friends: Friend[] = await getFriends(request.user!.userId);
 
         return reply.send({ friends });
     },
 
     getFriendRequests: async (request: any, reply: any) => {
-        const rawRequests = await getReceivedFriendRequests(request.user!.userId);
-        const friendRequests = rawRequests.map(r => r.requester);
+        const friendRequests: Friend[] = await getReceivedFriendRequests(request.user!.userId);
 
         return reply.send({ friends: friendRequests });
     },
 
     getSentFriendRequests: async (request: any, reply: any) => {
-        const rawRequests = await getSentFriendRequests(request.user!.userId);
-        const friends = rawRequests.map(r => r.addressee);
+        const sentFriendRequests: Friend[] = await getSentFriendRequests(request.user!.userId);
 
-        return reply.send({ friends });
+        return reply.send({ friends: sentFriendRequests });
     },
 
     sendFriendRequest: async (request: any, reply: any) => {
@@ -87,10 +85,23 @@ export const friendController = {
     },
 
     getBlockedUsers: async (request: any, reply: any) => {
-        const rawBlocked = await getBlockedFriends(request.user!.userId);
-        const blockedUsers = rawBlocked.map(b => b.addressee);
+        const blockedUsers: Friend[] = await getBlockedFriends(request.user!.userId);
 
         return reply.send({ friends: blockedUsers });
+    },
+
+    getOnlineFriends: async (request: any, reply: any) => {
+        const friends = await getFriends(request.user!.userId);
+
+        console.log(friends);
+        let onlineFriends: Friend[] = [];
+        for (const friend of friends) {
+            if (socketService.isUserOnline(friend.id)) {
+                onlineFriends.push(friend);
+            }
+        }
+
+        return reply.send({ friends: onlineFriends });
     }
 
 }

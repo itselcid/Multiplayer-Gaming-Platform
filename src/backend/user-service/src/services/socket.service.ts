@@ -36,6 +36,7 @@ class SocketService {
                 (socket as any).user = { userId: userId, username: decoded.username };
                 console.log(`Socket Auth Success: ${decoded.username} (${userId}) type: ${typeof userId}`);
                 next();
+
             } catch (err) {
                 console.error("Socket Auth Failed:", err);
                 next(new Error("Authentication error"));

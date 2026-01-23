@@ -579,7 +579,7 @@ export async function getReceivedFriendRequests(addresseeId: number) {
         }
     });
 
-    return friendRequests;
+    return friendRequests.map(r => r.requester);
 }
 
 export async function getBlockedFriends(userId: number) {
@@ -600,7 +600,7 @@ export async function getBlockedFriends(userId: number) {
         }
     });
 
-    return blockedFriends;
+    return blockedFriends.map(b => b.addressee);
 }
 
 export async function getSentFriendRequests(requesterId: number) {
@@ -620,7 +620,7 @@ export async function getSentFriendRequests(requesterId: number) {
         }
     });
 
-    return friendRequestsSent;
+    return friendRequestsSent.map(r => r.addressee);
 }
 
 export async function saveMatch(matchData: MatchResult) {
@@ -661,7 +661,7 @@ export async function saveMatch(matchData: MatchResult) {
 
 /////// Temporary ///////
 export async function createTestUserIfNeeded() {
-    const user = await getUserByUsername('test')
+    let user = await getUserByUsername('test')
 
     if (!user) {
         const testUser = await createUser({
@@ -672,5 +672,17 @@ export async function createTestUserIfNeeded() {
         if (testUser)
             console.log("\x1b[32m%s\x1b[0m", 'Test user created: username=test, password=test')
     }
+
+    user = await getUserByUsername('messi')
+    if (!user) {
+        const messiUser = await createUser({
+            username: 'messi',
+            email: 'messi@messi.com',
+            password: 'messi'
+        })
+        if (messiUser)
+            console.log("\x1b[32m%s\x1b[0m", 'Messi user created: username=messi, password=messi')
+    }
+
 }
 

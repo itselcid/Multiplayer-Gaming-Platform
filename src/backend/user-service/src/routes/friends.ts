@@ -58,6 +58,9 @@ export default function friendsRoutes(server: FastifyInstance) {
     server.put<{ Params: { friendId: number } }>('/unblock/:friendId', { preHandler: [server.authenticate], schema: ManageFriendSchema }, friendController.unblockUser);
     // get blocked users
     server.get<{ Body: { blockedUsers: Friend[] } }>('/blocked', { preHandler: [server.authenticate], schema: GetFriendsSchema }, friendController.getBlockedUsers);
+    // get online friends
+    server.get<{ Body: { onlineFriends: Friend[] } }>('/online', { preHandler: [server.authenticate], schema: GetFriendsSchema }, friendController.getOnlineFriends);
+
 
 }
 

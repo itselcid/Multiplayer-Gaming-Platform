@@ -12,6 +12,7 @@ async function start() {
 
         await server.ready(); // Important!
         socketService.initialize(server.server, {
+            path: '/online-status',
             cors: {
                 origin: env.FRONTEND_URL,
                 credentials: true,
