@@ -2,14 +2,14 @@
 
 services:
 
-  # rabbitmq:
-  #   image: "rabbitmq:3-management"
-  #   container_name: "rabbitmq"
-  #   networks:
-  #     - app-network
-  #   ports:
-  #     - "5672:5672"   # RabbitMQ's default AMQP port
-  #     - "15672:15672"
+  rabbitmq:
+    image: "rabbitmq:3-management"
+    container_name: "rabbitmq"
+    networks:
+      - app-network
+    ports:
+      - "5672:5672"   # RabbitMQ's default AMQP port
+      - "15672:15672"
 
 
   nginx:
@@ -19,7 +19,7 @@ services:
     container_name: nginx
     ports:
       - "8080:80"
-      - "443:443"
+      - "1443:443"
     depends_on:
       - user-service
       - game-service

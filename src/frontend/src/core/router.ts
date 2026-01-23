@@ -145,7 +145,8 @@ export async function renderRoute() {
         }
         gameobj.mount(root);
       } else {
-        navigate("/login");
+        const page = new Login();
+        page.mount(root);
       }
     } else {
       const page = new View(params);
