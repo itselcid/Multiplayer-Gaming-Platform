@@ -20,8 +20,6 @@ class SocketService {
 
         const SOCKET_URL = '/';
 
-        console.log('Connecting to socket...');  //debuging
-
         this.socket = io(SOCKET_URL, {
             withCredentials: true, // Critical for cookie-based auth
             path: '/online-status/',
@@ -30,7 +28,6 @@ class SocketService {
         });
 
         this.socket.on('connect', () => {
-            console.log('Socket connected:', this.socket?.id);    // for debuginh
             this.reattachListeners();
         });
 

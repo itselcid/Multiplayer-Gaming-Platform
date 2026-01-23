@@ -9,6 +9,14 @@ export const friendController = {
 
         const friends: Friend[] = await getFriends(request.user!.userId);
 
+        for (const friend of friends) {
+            if (socketService.isUserOnline(friend.id)) {
+                friend.isOnline = true;
+            } else {
+                friend.isOnline = false;
+            }
+        }
+
         return reply.send({ friends });
     },
 
@@ -93,7 +101,6 @@ export const friendController = {
     getOnlineFriends: async (request: any, reply: any) => {
         const friends = await getFriends(request.user!.userId);
 
-        console.log(friends);
         let onlineFriends: Friend[] = [];
         for (const friend of friends) {
             if (socketService.isUserOnline(friend.id)) {

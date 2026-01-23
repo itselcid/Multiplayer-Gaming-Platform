@@ -16,8 +16,10 @@ const GetFriendsSchema = {
                         properties: {
                             id: { type: 'string' },
                             username: { type: 'string' },
-                            avatar: { type: 'string' }
-                        }
+                            avatar: { type: 'string' },
+                            isOnline: { type: 'boolean' }
+                        },
+                        required: ['id', 'username', 'avatar']
                     }
                 }
             }
