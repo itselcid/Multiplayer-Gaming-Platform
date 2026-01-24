@@ -11,7 +11,8 @@ interface SocketUser {
 
 class SocketService {
     private io: Server | null = null;
-    // Map<UserId, SocketId> - simple in-memory store
+
+    // Map<UserId, SocketId> - simple in-memory store 
     private onlineUsers = new Map<number, string>();
 
     initialize(server: any, options: any) {
@@ -35,6 +36,7 @@ class SocketService {
                 (socket as any).user = { userId: userId, username: decoded.username };
                 console.log(`Socket Auth Success: ${decoded.username} (${userId}) type: ${typeof userId}`);
                 next();
+
             } catch (err) {
                 console.error("Socket Auth Failed:", err);
                 next(new Error("Authentication error"));

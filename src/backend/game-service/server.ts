@@ -6,12 +6,12 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 17:15:36 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/23 07:47:32 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/24 14:44:10 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { Room, MatchResult, PongGame } from './game_logique';
-import amqp, { Channel } from 'amqplib';
+import amqp, { Channel , ConsumeMessage} from 'amqplib';
 import { Server } from 'socket.io'
 import Fastify from 'fastify'
 import http from 'http'
@@ -78,13 +78,6 @@ async function publishMatch(data: MatchResult) {
 
 
 
-    // setInterval(()=>{
-//   for (const [roomId, room] of rooms) {
-//     if (Date.now() - room.timeout > ) 
-//   }
-// },60000*3)
-
-
 io.on('connection', (socket) => {
   console.log(`client connected ${socket.id}`);
   
@@ -137,7 +130,7 @@ const id = socket.data.roomId;
         game.start = true;
       }
       // if(game.updt %2 == 0)
-        game.update();
+      game.update();
       fct(game.getState());
     }
     else if (logame){
@@ -174,7 +167,13 @@ const id = socket.data.roomId;
   socket.on('getroom', (id, fct) => {fct(rooms.get(id));});
   
 
-  socket.on('verifyroom',(id,fct)=>{fct(rooms.has(id));});
+  socket.on('verifyroom',(mode,id,fct)=>{
+    if(mode === "match"){
+      fct(tour.has(id));
+    }
+    else
+      fct(rooms.has(id));
+  });
   
 socket.on('gameOver',()=>{
      const id = socket.data.roomId;
@@ -205,3 +204,4 @@ const PORT = Number(process.env.PORT) || 3500
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`Game service running on http://0.0.0.0:${PORT}`)
 })
+

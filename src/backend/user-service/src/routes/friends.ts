@@ -16,8 +16,10 @@ const GetFriendsSchema = {
                         properties: {
                             id: { type: 'string' },
                             username: { type: 'string' },
-                            avatar: { type: 'string' }
-                        }
+                            avatar: { type: 'string' },
+                            isOnline: { type: 'boolean' }
+                        },
+                        required: ['id', 'username', 'avatar']
                     }
                 }
             }
@@ -58,6 +60,9 @@ export default function friendsRoutes(server: FastifyInstance) {
     server.put<{ Params: { friendId: number } }>('/unblock/:friendId', { preHandler: [server.authenticate], schema: ManageFriendSchema }, friendController.unblockUser);
     // get blocked users
     server.get<{ Body: { blockedUsers: Friend[] } }>('/blocked', { preHandler: [server.authenticate], schema: GetFriendsSchema }, friendController.getBlockedUsers);
+    // get online friends
+    server.get<{ Body: { onlineFriends: Friend[] } }>('/online', { preHandler: [server.authenticate], schema: GetFriendsSchema }, friendController.getOnlineFriends);
+
 
 }
 

@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/13 17:23:50 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/23 22:22:45 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/24 12:56:11 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,8 +40,8 @@ export class PongGame {
   paddleRightY = 0;
   ballx = 0;
   bally = 0;
-  ballVX = 0.30; 
-  ballVY = 0.18; 
+  ballVX = 0.25; 
+  ballVY = 0.12; 
   move = false;
   start = false;
   stop = true;
@@ -60,7 +60,7 @@ export class PongGame {
   readonly PLAY_AREA_HEIGHT = 16;
   readonly MAX_p_Y = (this.PLAY_AREA_HEIGHT / 2) - (this.PADDLE_HEIGHT / 2);
   readonly MAX_b_Y = (this.PLAY_AREA_HEIGHT / 2) - 0.35;
-  readonly PADDLE_SPEED = 0.5;
+  readonly PADDLE_SPEED = 0.45;
 
   input = {
     leftUp: false,
@@ -72,8 +72,8 @@ export class PongGame {
 
   private calculateBounce(paddleY: number, ballY: number) {
     const relativeIntersectY = (ballY - paddleY) / (this.PADDLE_HEIGHT / 2);
-    this.ballVX *= -1.05; 
-    this.ballVY = relativeIntersectY * 0.3; 
+    this.ballVX *= -1.02; 
+    this.ballVY = relativeIntersectY * 0.2; 
   }
 
   update() {
@@ -148,7 +148,7 @@ export class PongGame {
   resetPoint(direction: number) {
     this.ballx = 0;
     this.bally = 0;
-    this.ballVX = 0.38 * direction;
+    this.ballVX = 0.25 * direction;
     this.ballVY = (Math.random() - 0.5) * 0.2;
   }
 

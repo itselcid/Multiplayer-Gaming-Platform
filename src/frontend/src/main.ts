@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/12 15:53:05 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/17 14:12:18 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/24 14:37:48 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,19 +36,17 @@ shouting_stars.mount(container1);
 const	navBar = new Navbar();
 navBar.mount(container2);
 
-
 const	bg = addElement("main", "flex-1 flex flex-col", container2);
 bg.id = "bg";
 document.getElementById('app')?.append(container1);
-renderRoute();
 // const page = new ConnectWallet();
 // page.mount(document.getElementById('app'));
 
 subs();
+// renderRoute();
+
 
 initAuth().then(() => {
-  // Render the initial route after checking auth
-  // console.error("wooooooooooooooooooooh");
   renderRoute();
 });
 
