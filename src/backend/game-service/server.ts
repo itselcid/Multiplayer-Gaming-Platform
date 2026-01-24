@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 17:15:36 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/23 05:40:18 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/23 07:47:32 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,7 +54,7 @@ async function publishMatch(data: MatchResult) {
     const rabbitUrl = process.env.RABBITMQ_URL || 'amqp://localhost'; 
     const connection = await amqp.connect(rabbitUrl);
     const channel = await connection.createChannel();
-    channel.sendToQueue("match_finished",  Buffer.from(jsonresult)), {persistent: true};
+    channel.sendToQueue("match_finished",  Buffer.from(jsonresult),{persistent: true});
       console.log(`📤 Published match result to match_finished`, data);
   }
   catch(error){
@@ -102,9 +102,7 @@ io.on('connection', (socket) => {
       if(room.pid2 == pid){
         room.join2 += 1;
       }
-      // if(room.join1 && room.join2 && game){
-      //     game.start = true;
-      // }
+ 
     }
   });
   
@@ -131,13 +129,15 @@ const id = socket.data.roomId;
     const room = rooms.get(id);
     const logame = logames.get(id);
     if (game){
+      game.updt++;
       Object.assign(game.input, input);
       if(room && room.join1 && room.join2 && !game.move){
         io.to(id).emit('resume');
         game.move = true;
         game.start = true;
       }
-      game.update();
+      // if(game.updt %2 == 0)
+        game.update();
       fct(game.getState());
     }
     else if (logame){
@@ -159,7 +159,6 @@ const id = socket.data.roomId;
     const game = games.get(id);
     const room = rooms.get(id);
     const logame = logames.get(id);
-    // console.log(`is it here ${room?.id}`);
     if(game && room && game.stop){
       game.starTime = Date.now();
       room.startedAt = new Date().toISOString();

@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/27 01:44:47 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/23 05:40:50 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/23 07:46:44 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -162,15 +162,13 @@ export class Game extends Component {
 		
 		
 		var paddleLeft = MeshBuilder.CreateBox("paddLeft",{width:0.20,height:2.3,size:0.4},this.scene);
-		paddleLeft.position = new Vector3(-18.1,0,0.2);
+		paddleLeft.position = new Vector3(-19.4,0,0.2);
 		paddleLeft.material = new StandardMaterial("matLeft",this.scene);
 		(paddleLeft.material as StandardMaterial).diffuseColor = new Color3(0.3, 0.485, 0.678);
 		
 		
-		
-		
 		var paddleRight = MeshBuilder.CreateBox("paddRight",{width:0.20,height:2.3,size:0.4},this.scene);
-		paddleRight.position = new Vector3(18.1,0,0.2);
+		paddleRight.position = new Vector3(19.4,0,0.2);
 		paddleRight.material = new StandardMaterial("matRight",this.scene);
 		(paddleRight.material as StandardMaterial).diffuseColor = new Color3(0.85, 0.023, 0.395);
 		
@@ -182,7 +180,7 @@ export class Game extends Component {
 		shadowGenerator.useBlurExponentialShadowMap = true;		
 		shadowGenerator.setDarkness(0.45);
 
-		const ground = MeshBuilder.CreatePlane("ground",{width:36.83,height:16.3},this.scene);
+		const ground = MeshBuilder.CreatePlane("ground",{width:39.6,height:16},this.scene);
 		ground.position = new Vector3(0,0,0.4);
 		ground.material = new StandardMaterial("mground",this.scene);
 		(ground.material as StandardMaterial).diffuseColor = new Color3(0, 0.133, 0.371);
@@ -190,27 +188,26 @@ export class Game extends Component {
 		(ground.material as StandardMaterial).specularColor = new Color3(0.3,0.3,0.3);
 		ground.receiveShadows = true;
 		
-		const line1 = MeshBuilder.CreateBox("line1",{width:36.83,height:0.2,size:0.4},this.scene);
+		const line1 = MeshBuilder.CreateBox("line1",{width:39.6,height:0.2,size:0.4},this.scene);
 		line1.position = new Vector3(0,8.1,0.2);
 		line1.material = new StandardMaterial("mtest",this.scene);
 		(line1.material as StandardMaterial).diffuseColor = new Color3(0, 0.133, 0.371);
 		(line1.material as StandardMaterial).specularColor = new Color3(0.5,0.5,0.5);
-		const line2 = MeshBuilder.CreateBox("line2",{width:36.83,height:0.2,size:0.4},this.scene);
+		const line2 = MeshBuilder.CreateBox("line2",{width:39.6,height:0.2,size:0.4},this.scene);
 		line2.position = new Vector3(0,-8.1,0.2);
 		line2.material = new StandardMaterial("mtest",this.scene);
 		(line2.material as StandardMaterial).diffuseColor = new Color3(0, 0.133, 0.371);
 		(line2.material as StandardMaterial).specularColor = new Color3(0.5,0.5,0.5);
 		const line3  = MeshBuilder.CreateBox("line3",{width:0.2,height:16,size:0.4},this.scene);
-		line3.position = new Vector3(18.32,0,0.2);
+		line3.position = new Vector3(19.7,0,0.2);
 		line3.material = new StandardMaterial("mtest",this.scene);
 		(line3.material as StandardMaterial).diffuseColor = new Color3(0, 0.133, 0.371);
 		(line3.material as StandardMaterial).specularColor = new Color3(0.5,0.5,0.5);
 		const line4  = MeshBuilder.CreateBox("line4",{width:0.2,height:16,size:0.4},this.scene);
-		line4.position = new Vector3(-18.32,0,0.2);
+		line4.position = new Vector3(-19.7,0,0.2);
 		line4.material = new StandardMaterial("mtest",this.scene);
 		(line4.material as StandardMaterial).diffuseColor = new Color3(0, 0.133, 0.371);
 		(line4.material as StandardMaterial).specularColor = new Color3(0.5,0.5,0.5);
-
 
 const handlekeycahnge = (event : KeyboardEvent , isDown: boolean)=>{
 			event.preventDefault();
@@ -256,7 +253,11 @@ const handlekeycahnge = (event : KeyboardEvent , isDown: boolean)=>{
 		window.addEventListener('keydown', (event)=>{handlekeycahnge(event,true);handlevision(event);});
 		window.addEventListener('keyup', (event)=>handlekeycahnge(event,false));
 
-		const id = window.setInterval(async () => {
+		// const id = window.setInterval(async () => {
+			
+		// }, 1000/30);
+		
+		this.engine.runRenderLoop(async() => {
 			this.state = await new Promise((resolve)=>{this.socket.emit('input', this.input, resolve)});
 		if(!this.state.start && this.input.mode === "remote" && !this.waitingStarted){
 			this.startWaiting();
@@ -276,13 +277,9 @@ const handlekeycahnge = (event : KeyboardEvent , isDown: boolean)=>{
 		if(this.state.min == 0 && this.state.sec <= 10 && !timer.classList.contains("text-red-400"))
 			timer.classList.add("text-red-400");
 		if(this.state.gameOver){
-			this.cleardata(id);
+			this.cleardata();
 			return;
 		}
-		
-	}, 1000/30);
-
-		this.engine.runRenderLoop(() => {
 			this.scene.render();
 		});
 	}
@@ -317,10 +314,9 @@ const handlekeycahnge = (event : KeyboardEvent , isDown: boolean)=>{
 		container.querySelector("#home")?.addEventListener("click", () => { navigate("/home")});
 	}
 	
-	cleardata(id : number){
-		// console.log(`whyyyyy`);
+	cleardata(){
 		this.socket.emit("gameOver");
-		window.clearInterval(id);
+		// window.clearInterval(id);
 		this.gameOver();
 		this.engine.stopRenderLoop();
 		this.scene.dispose();
