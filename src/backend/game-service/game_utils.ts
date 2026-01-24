@@ -1,14 +1,17 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   game_logique.ts                                    :+:      :+:    :+:   */
+/*   game_utils.ts                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/13 17:23:50 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/24 12:56:11 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/24 23:32:43 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
+
+import amqp, { Channel , ConsumeMessage} from 'amqplib';
 
 export interface MatchResult {
     player1Id: number;
@@ -18,6 +21,19 @@ export interface MatchResult {
     startedAt: string;
 }
 
+export interface Player {
+    addr: string;
+    claimed: boolean;
+    username: string;
+}
+
+export interface Match {
+	player1: Player;
+	player1Score: number;
+  player2: Player;
+	player2Score: number;
+  status: number;
+}
 
 export interface Room{
   id:string;
@@ -31,8 +47,53 @@ export interface Room{
   join2:number;
   startedAt: string;
   timeout: Date;
+  created:number;
 }
 
+export class rabbitmq {
+  private channel_match: Channel | null = null;
+  private channel_game: Channel | null = null;
+  private conne_match: any = null;
+  private conne_game: any = null;
+  private readonly QUEUE_GAME = 'game_finished';
+  private readonly QUEUE_MATCH = 'match_finished';
+  
+  async start() {
+    try {
+      const rabbitUrl = process.env.RABBITMQ_URL || 'amqp://localhost'; 
+      this.conne_game = await amqp.connect(rabbitUrl);
+      this.channel_game= await this.conne_game.createChannel();
+      await this.channel_game.assertQueue(this.QUEUE_GAME, {durable: true });
+      console.log(`Connected to RabbitMQ, listening on ${this.QUEUE_GAME}`);
+      this.conne_match = await amqp.connect(rabbitUrl);
+      this.channel_match= await this.conne_match.createChannel();
+      await this.channel_match.assertQueue(this.QUEUE_MATCH, {durable: true });
+      console.log(`Connected to RabbitMQ, listening on ${this.QUEUE_MATCH}`);
+    }
+    catch(error){
+       console.error('RabbitMQ Connection Failed:', error);
+        setTimeout(() => this.start(), 5000);
+    }     
+  }
+  
+  publishGame(data: MatchResult){
+    const jsonresult = JSON.stringify(data,null,2);
+    this.channel_game.sendToQueue(this.QUEUE_GAME,  Buffer.from(jsonresult),{persistent: true});
+    console.log(`game published: `, data);
+  }
+
+  publishMatch(data: Match){
+    const jsonresult = JSON.stringify(data,null,2);
+    this.channel_match.sendToQueue(this.QUEUE_MATCH,  Buffer.from(jsonresult),{persistent: true});
+    console.log(`match published: `, data);
+    
+  }
+  
+  // async getMatch(){
+    
+  // }
+  
+}
 
 export class PongGame {
   starTime = Date.now();
@@ -40,8 +101,8 @@ export class PongGame {
   paddleRightY = 0;
   ballx = 0;
   bally = 0;
-  ballVX = 0.25; 
-  ballVY = 0.12; 
+  ballVX = 0.20; 
+  ballVY = 0.10; 
   move = false;
   start = false;
   stop = true;
@@ -60,7 +121,7 @@ export class PongGame {
   readonly PLAY_AREA_HEIGHT = 16;
   readonly MAX_p_Y = (this.PLAY_AREA_HEIGHT / 2) - (this.PADDLE_HEIGHT / 2);
   readonly MAX_b_Y = (this.PLAY_AREA_HEIGHT / 2) - 0.35;
-  readonly PADDLE_SPEED = 0.45;
+  readonly PADDLE_SPEED = 0.35;
 
   input = {
     leftUp: false,
@@ -73,7 +134,7 @@ export class PongGame {
   private calculateBounce(paddleY: number, ballY: number) {
     const relativeIntersectY = (ballY - paddleY) / (this.PADDLE_HEIGHT / 2);
     this.ballVX *= -1.02; 
-    this.ballVY = relativeIntersectY * 0.2; 
+    this.ballVY = relativeIntersectY * 0.1; 
   }
 
   update() {
@@ -111,6 +172,7 @@ export class PongGame {
     }
 
     if(this.updt % 2 != 0) return;
+    
     this.ballx += this.ballVX;
     this.bally += this.ballVY;
     
@@ -148,8 +210,8 @@ export class PongGame {
   resetPoint(direction: number) {
     this.ballx = 0;
     this.bally = 0;
-    this.ballVX = 0.25 * direction;
-    this.ballVY = (Math.random() - 0.5) * 0.2;
+    this.ballVX = 0.20 * direction;
+    this.ballVY = (Math.random() - 0.5) * 0.1;
   }
 
   reset(){
@@ -185,4 +247,4 @@ export class PongGame {
     };
   }
 }
-//npm install fastify socket.io
+

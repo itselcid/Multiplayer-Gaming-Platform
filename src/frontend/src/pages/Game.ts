@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/27 01:44:47 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/24 15:19:46 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/24 22:33:01 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,6 +58,9 @@ export class Game extends Component {
 	private input = { leftUp: false, mode: "bot",leftDown: false,rightUp: false , rightDown:false};
 	private state = {paddleLeftY: 0, paddleRightY:0, ballx:0, bally:0, left:0, right:0, min:1, sec:30,
 		move:false , start:false, stop:true, gameOver:false};
+
+		
+		
 	constructor(id:string);
 	constructor(id: string, flag: string);
 	constructor(id: string, flag?: string) {
@@ -83,7 +86,6 @@ export class Game extends Component {
 	}
 	
 	async matchHandler(){
-		this.role = "playerR";
 		this.room = await new Promise<Room>((resolve)=> {
 			this.socket.emit('getroom', this.id, resolve);
 		});
@@ -91,15 +93,18 @@ export class Game extends Component {
 		if(wallet === this.room.wallet1 ){
 			this.user1 = this.room.player1;
 			this.user2 = this.room.player2;
+			this.role = "playerR";
 		}
 		else if (wallet === this.room.wallet2 ){
 			this.user1 = this.room.player2;
 			this.user2 = this.room.player1;
+			this.role = "playerL";
 		}
 		else{
 			this.role = "viewer";
 		}
-}
+		this.socket.emit('joinroom',wallet,this.id,0);
+	}
 	
 	async remotehandler(){
 			this.room = await new Promise<Room>((resolve) => {
@@ -114,12 +119,11 @@ export class Game extends Component {
 			else if(this.user1 !== this.room.player1 && this.user1 !== this.room.player2){
 				this.role = "viewer";
 			}
-			this.socket.emit('joinroom',this.id,userState.get()?.id);
+			this.socket.emit('joinroom',"",this.id,userState.get()?.id);
 			
-		}
+	}
 		
 	async verify():Promise<boolean>{
-		// console.log(`inside verify`);
 		const l:boolean = await new Promise((resolve)=>{
 			this.socket.emit('verifyroom',this.input.mode,this.id, resolve);
 		});
@@ -141,13 +145,14 @@ export class Game extends Component {
 			return `/game?mode=remote&id=${this.id}`;
 		}
 		
-		async render() {
-			if(this.input.mode === "remote")
-				await this.remotehandler();
-			else if (this.input.mode === "match")
-				await this.matchHandler();
-			else
-				this.socket.emit("logame");
+	async render() {
+		if(this.input.mode === "remote")
+			await this.remotehandler();
+		else if (this.input.mode === "match")
+			await this.matchHandler();
+		else
+			this.socket.emit("logame");
+		
 		const container = document.createElement("div");
 		container.classList.add("flex","flex-col" ,"items-center");
 		const	timer = document.createElement("div");
@@ -167,8 +172,8 @@ export class Game extends Component {
 		canvas.style.outline = "none" ;
         canvas.id = "renderCanvas";
 		canvas.style.marginTop = "10px";
-		canvas.width *= 6;
-		canvas.height *= 5;
+		canvas.width *= 7;
+		canvas.height *= 6;
 		
 		this.engine = new Engine(canvas, true, {stencil: true,adaptToDeviceRatio: false});
 		
@@ -284,10 +289,6 @@ export class Game extends Component {
 		window.addEventListener('keydown', (event)=>{handlekeycahnge(event,true);handlevision(event);});
 		window.addEventListener('keyup', (event)=>handlekeycahnge(event,false));
 		
-		// const id = window.setInterval(async () => {
-			
-		// }, 1000/30);
-		
 		this.engine.runRenderLoop(async() => {
 			this.state = await new Promise((resolve)=>{this.socket.emit('input', this.input, resolve)});
 			if(!this.state.start && this.input.mode === "remote" && !this.waitingStarted){
@@ -301,54 +302,53 @@ export class Game extends Component {
 			paddleLeft.position.y = this.state.paddleLeftY
 			paddleRight.position.y = this.state.paddleRightY
 			ball.position.x = this.state.ballx;
-		ball.position.y = this.state.bally;
-		this.scoreL.innerText = `${this.user2}- ${this.state.left}`
-		this.scoreR.innerText = `${this.state.right} -${this.user1}`;
-		timer.innerText = `${String(Math.max(0,this.state.min)).padStart(2,"0")}:${String(Math.max(0,this.state.sec)).padStart(2,"0")}`;
-		if(this.state.min == 0 && this.state.sec <= 10 && !timer.classList.contains("text-red-400"))
-			timer.classList.add("text-red-400");
-		if(this.state.gameOver){
-			this.cleardata();
-			return;
-		}
-		this.scene.render();
-	});
-}
+			ball.position.y = this.state.bally;
+			this.scoreL.innerText = `${this.user2}- ${this.state.left}`
+			this.scoreR.innerText = `${this.state.right} -${this.user1}`;
+			timer.innerText = `${String(Math.max(0,this.state.min)).padStart(2,"0")}:${String(Math.max(0,this.state.sec)).padStart(2,"0")}`;
+			if(this.state.min == 0 && this.state.sec <= 10 && !timer.classList.contains("text-red-400"))
+				timer.classList.add("text-red-400");
+			if(this.state.gameOver){
+				this.cleardata();
+				return;
+			}
+			this.scene.render();
+		});
+	}
 
-gameOver(){
-	const container = document.createElement("div");
-	container.className = "fixed inset-0 flex items-center justify-center bg-space-blue/40 backdrop-blur-sm z-50 p-4";	
-	container.innerHTML = `
-	<div class="bg-white/5 backdrop-blur-xl rounded-2xl flex flex-col gap-6 p-8 border border-white/20 max-w-lg w-full">
-	<h1 class="text-5xl font-bold text-center text-ctex">Game Over</h1>
-	<div class="flex flex-row justify-around items-center gap-8 py-4">
-	<div class="flex flex-col items-center">
-	<h2 class="text-xl opacity-80 text-ctex uppercase tracking-wider">${this.user2}</h2>
-	<span class="text-4xl font-mono font-bold text-ctex">${this.state.left}</span>
-	</div>
-	
-	<div class="text-3xl font-light text-white/30">VS</div>
-	
-	<div class="flex flex-col items-center">
-	<h2 class="text-xl opacity-80 text-ctex uppercase tracking-wider">${this.user1}</h2>
-	<span class="text-4xl font-mono font-bold text-ctex">${this.state.right}</span>
-	</div>
-	</div>
-	
-	<button id="home" class="w-full bg-neon-cyan/20 border border-neon-cyan/50 py-3 rounded-lg text-white font-semibold hover:bg-neon-cyan/40 transition-all duration-300">
-	Return Home
-	</button>
-	</div>`;
-	
-	this.el.append(container);
-	
-	container.querySelector("#home")?.addEventListener("click", () => { navigate("/home")});
-}
+	gameOver(){
+		const container = document.createElement("div");
+		container.className = "fixed inset-0 flex items-center justify-center bg-space-blue/40 backdrop-blur-sm z-50 p-4";	
+		container.innerHTML = `
+		<div class="bg-white/5 backdrop-blur-xl rounded-2xl flex flex-col gap-6 p-8 border border-white/20 max-w-lg w-full">
+		<h1 class="text-5xl font-bold text-center text-ctex">Game Over</h1>
+		<div class="flex flex-row justify-around items-center gap-8 py-4">
+		<div class="flex flex-col items-center">
+		<h2 class="text-xl opacity-80 text-ctex uppercase tracking-wider">${this.user2}</h2>
+		<span class="text-4xl font-mono font-bold text-ctex">${this.state.left}</span>
+		</div>
+		
+		<div class="text-3xl font-light text-white/30">VS</div>
+		
+		<div class="flex flex-col items-center">
+		<h2 class="text-xl opacity-80 text-ctex uppercase tracking-wider">${this.user1}</h2>
+		<span class="text-4xl font-mono font-bold text-ctex">${this.state.right}</span>
+		</div>
+		</div>
+		
+		<button id="home" class="w-full bg-neon-cyan/20 border border-neon-cyan/50 py-3 rounded-lg text-white font-semibold hover:bg-neon-cyan/40 transition-all duration-300">
+		Return Home
+		</button>
+		</div>`;
+		
+		this.el.append(container);
+		
+		container.querySelector("#home")?.addEventListener("click", () => { navigate("/home")});
+	}
 
-cleardata(){
-	this.socket.emit("gameOver");
-	// window.clearInterval(id);
-	this.gameOver();
+	cleardata(){
+		this.socket.emit("gameOver");
+		this.gameOver();
 		this.engine.stopRenderLoop();
 		this.scene.dispose();
 		this.engine.dispose();
@@ -362,6 +362,7 @@ cleardata(){
 			return true;
 		return false;
 	}
+	
 	
 	
 	startWaiting() {
@@ -403,18 +404,15 @@ cleardata(){
 		let count = 3;
 		text.text = count.toString();
 		
-  const interval = window.setInterval(()  => {
-    count--;
-    text.text = count.toString();
-	
-    if (count === 0) {
-		window.clearInterval(interval);
-		ui.dispose();
-		onFinish();
-    }
-}, 1000);
-}
+  		const interval = window.setInterval(()  => {
+    		count--;
+    		text.text = count.toString();
+    		if (count === 0) {
+				window.clearInterval(interval);
+				ui.dispose();
+				onFinish();
+    		}
+		}, 1000);
+	}
 
 }
-
-//docker network create gateway

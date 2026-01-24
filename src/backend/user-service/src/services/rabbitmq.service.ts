@@ -7,7 +7,7 @@ import { env } from '../config/env';
 class RabbitMQService {
     private connection: any = null;
     private channel: Channel | null = null;
-    private readonly QUEUE_NAME = 'match_finished';
+    private readonly QUEUE_NAME = 'game_finished';
 
     //  --------- -------------- -------------- ------------- ------------- ------------- ------------- ----------- //
     async initialize() {
