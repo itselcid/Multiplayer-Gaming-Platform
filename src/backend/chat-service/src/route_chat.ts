@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { blockuser, unblockuser } from './utils/block_user.js';
+import { blockuser, unblockuser, isBlocked } from './utils/block_user.js';
 import { prisma } from "./prisma.js";
 
 export async function chatRoutes(fastify: FastifyInstance) {
@@ -67,12 +67,46 @@ export async function chatRoutes(fastify: FastifyInstance) {
       return reply.code(400).send({ error: 'Invalid data' });
     }
 
+    // Check if sender is blocked by receiver
+    const blocked = await isBlocked(senderId, receiverId);
+    if (blocked) {
+      return reply.code(403).send({ error: 'You are blocked by this user' });
+    }
+
     const message = await prisma.message.create({
       data: {
-        senderId,
-        receiverId,
-        content
+        content,
+        sender: {
+          connectOrCreate: {
+            where: { id: senderId },
+            create: { id: senderId, username: `user_${senderId}` }
+          }
+        },
+        receiver: {
+          connectOrCreate: {
+            where: { id: receiverId },
+            create: { id: receiverId, username: `user_${receiverId}` }
+          }
+        }
       }
+    });
+
+    // Emit the message via WebSocket to receiver
+    fastify.io.to(receiverId.toString()).emit('receive-message', {
+      id: message.id,
+      content: message.content,
+      from: message.senderId,
+      to: message.receiverId,
+      createdAt: message.createdAt
+    });
+
+    // Emit to sender for multi-tab synchronization
+    fastify.io.to(senderId.toString()).emit('receive-message', {
+      id: message.id,
+      content: message.content,
+      from: message.senderId,
+      to: message.receiverId,
+      createdAt: message.createdAt
     });
 
     return message;
@@ -141,7 +175,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
         },
         orderBy: { createdAt: 'desc' }
       });
-      
+
       if (lastMsg) {
         results[otherId] = lastMsg;
       }

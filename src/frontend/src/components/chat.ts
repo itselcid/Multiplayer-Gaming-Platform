@@ -2,8 +2,9 @@ import { Component } from "../core/Component";
 import { io, Socket } from "socket.io-client";
 import { userState } from "../core/appStore";
 
-// Use relative URL to go through nginx proxy
+// Use relative URLs to go through nginx proxy
 const API_URL = '/api';
+const CHAT_WS_URL = '/chat-ws/'; // WebSocket endpoint for chat
 
 interface Friend {
   id: number;
@@ -38,46 +39,35 @@ export class chat extends Component {
   private oldestMessageId: number | null = null;
   private messageInput: string = '';
   private searchQuery: string = '';
-  private activeTab: 'users' | 'tournaments' = 'users';
   private activeMenuUserId: number | null = null;
   private isLoadingFriends: boolean = false;
-  
-  // Friends loaded from backend API
+
   private users: Record<number, User> = {};
-
   private conversations: Record<number, Message[]> = {};
-
-  // Set of blocked user IDs
   private blockedUsers: Set<number> = new Set();
 
   async fetchOlderMessages() {
     if (!this.currentChatUserId || !this.oldestMessageId) return;
-
     const currentUser = userState.get();
     if (!currentUser) return;
 
     try {
       const res = await fetch(
-        `http://localhost:4000/messages/${this.currentChatUserId}/older?cursor=${this.oldestMessageId}`,
-        { 
-            credentials: 'include',
-            headers: { 
-                'x-user-id': currentUser.id.toString()
-            } 
+        `${API_URL}/chat/messages/${this.currentChatUserId}/older?cursor=${this.oldestMessageId}`,
+        {
+          credentials: 'include',
+          headers: {
+            'x-user-id': currentUser.id.toString()
+          }
         }
       );
       const older = await res.json();
-      if (!older.length) return; // no more messages
+      if (!older.length) return;
 
-      // Update oldest message id
       this.oldestMessageId = older[older.length - 1].id;
-
-      // Reverse older messages to be ASC (Oldest -> Newest)
       older.reverse();
 
       const myUserId = currentUser.id;
-
-      // Prepend older messages
       const oldMsgs = older.map((m: any) => ({
         text: m.content,
         isMine: m.senderId === myUserId,
@@ -88,20 +78,18 @@ export class chat extends Component {
 
       if (this.currentChatUserId) {
         this.conversations[this.currentChatUserId] = [
-            ...oldMsgs,
-            ...this.conversations[this.currentChatUserId]
+          ...oldMsgs,
+          ...this.conversations[this.currentChatUserId]
         ];
       }
 
       this.render();
-
-      // Maintain scroll position (important!)
       const container = this.el.querySelector('#messages-container');
       if (container) {
-        container.scrollTop = 50; // adjust as needed
+        container.scrollTop = 50;
       }
     } catch (error) {
-        console.error("Error fetching older messages:", error);
+      console.error("Error fetching older messages:", error);
     }
   }
 
@@ -110,45 +98,40 @@ export class chat extends Component {
     if (!currentUser) return;
 
     try {
-        const res = await fetch(`http://localhost:4000/messages/${userId}`, {
-            credentials: 'include',
-            headers: { 
-                'x-user-id': currentUser.id.toString()
-            }
-        });
-        const messages = await res.json();
+      const res = await fetch(`${API_URL}/chat/messages/${userId}`, {
+        credentials: 'include',
+        headers: {
+          'x-user-id': currentUser.id.toString()
+        }
+      });
+      const messages = await res.json();
+      const myUserId = currentUser.id;
 
-        const myUserId = currentUser.id;
+      this.oldestMessageId = messages[messages.length - 1]?.id || null;
+      messages.reverse();
 
-        // Oldest message id for pagination (messages are DESC, so last one is oldest)
-        this.oldestMessageId = messages[messages.length - 1]?.id || null;
+      this.conversations[userId] = messages.map((m: any) => ({
+        text: m.content,
+        isMine: m.senderId === myUserId,
+        time: new Date(m.createdAt).toLocaleTimeString(),
+        id: m.id,
+        reactions: []
+      }));
 
-        // Reverse to show oldest first (ASC)
-        messages.reverse();
-
-        // Save in your conversations object
-        this.conversations[userId] = messages.map((m: any) => ({
-            text: m.content,
-            isMine: m.senderId === myUserId,
-            time: new Date(m.createdAt).toLocaleTimeString(),
-            id: m.id,  // keep the id for pagination
-            reactions: []
-        }));
-
-        this.render();
-        this.scrollToBottom();
+      this.render();
+      this.scrollToBottom();
     } catch (error) {
-        console.error("Error fetching messages:", error);
+      console.error("Error fetching messages:", error);
     }
   }
 
-  // Load friends from backend API (user-service)
   private async loadFriends() {
     if (this.isLoadingFriends) return;
     this.isLoadingFriends = true;
 
     try {
-      const response = await fetch(`${API_URL}/users/friends`, {
+      // CHANGE THIS ENDPOINT - FROM '/users/friends' TO '/friends'
+      const response = await fetch(`${API_URL}/friends`, {  // <-- CHANGE HERE
         credentials: 'include',
       });
 
@@ -157,26 +140,27 @@ export class chat extends Component {
       }
 
       const data = await response.json();
-      const friends: Friend[] = data.friends;
 
-      // Convert friends to users format
+      // CHANGE HERE - Your Friends component returns { friends: [...] }
+      const friends: Friend[] = data.friends || [];  // <-- ADD '.friends'
+
       this.users = {};
       const friendIds: number[] = [];
 
       friends.forEach((friend: Friend) => {
+        // IMPORTANT: Your Friends component uses 'username', not 'name'
         this.users[friend.id] = {
           id: friend.id,
-          name: friend.username,
+          name: friend.username,  // <-- CHANGE 'username' to 'name' for chat
           avatar: friend.avatar || '👤',
-          status: 'Offline',
-          lastSeen: '',
+          status: 'Online',  // <-- Default to Online for now
+          lastSeen: 'Just now',
           unread: 0,
           typing: false
         };
         friendIds.push(friend.id);
       });
 
-      // Fetch last messages for these friends
       if (friendIds.length > 0) {
         this.fetchLastMessages(friendIds);
       }
@@ -184,6 +168,8 @@ export class chat extends Component {
       this.render();
     } catch (error) {
       console.error('Failed to load friends:', error);
+      this.users = {};  // <-- Clear users on error
+      this.render();    // <-- Re-render to show empty state
     } finally {
       this.isLoadingFriends = false;
     }
@@ -194,11 +180,12 @@ export class chat extends Component {
     if (!currentUser) return;
 
     try {
-      const response = await fetch(`http://localhost:4000/messages/latest-batch`, {
+      // ADD HEADER like in your Friends component
+      const response = await fetch(`${API_URL}/chat/messages/latest-batch`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': currentUser.id.toString()
+          'x-user-id': currentUser.id.toString()  // <-- ADD THIS
         },
         body: JSON.stringify({ userIds }),
         credentials: 'include'
@@ -206,14 +193,16 @@ export class chat extends Component {
 
       if (response.ok) {
         const data = await response.json();
-        // data is Record<number, Message>
-        
+
         Object.keys(data).forEach((key) => {
           const userId = Number(key);
           const msg = data[userId];
           if (this.users[userId]) {
             this.users[userId].lastMessage = msg.content;
-            this.users[userId].lastMessageTime = new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            this.users[userId].lastMessageTime = new Date(msg.createdAt).toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit'
+            });
           }
         });
         this.render();
@@ -223,13 +212,12 @@ export class chat extends Component {
     }
   }
 
-  // Load list of blocked users from backend
   private async loadBlockedUsers() {
     const currentUser = userState.get();
     if (!currentUser) return;
 
     try {
-      const response = await fetch('http://localhost:4000/blocked', {
+      const response = await fetch(`${API_URL}/chat/blocked`, {
         headers: {
           'x-user-id': currentUser.id.toString()
         },
@@ -249,17 +237,20 @@ export class chat extends Component {
   private initSocket() {
     this.unsubscribeAuth = userState.subscribe((user) => {
       if (user) {
-        // Load friends and blocked users from backend
-        this.loadFriends();
-        this.loadBlockedUsers();
+        // Only load if we haven't already loaded
+        if (Object.keys(this.users).length === 0) {
+          this.loadFriends();
+          this.loadBlockedUsers();
+        }
+
         if (!this.socket || !this.socket.connected) {
-            this.connectSocket(user);
+          this.connectSocket(user);
         }
       } else {
-        // Clear data when logged out
         this.users = {};
         this.conversations = {};
         this.blockedUsers.clear();
+
         if (this.socket) {
           this.socket.disconnect();
           this.socket = null;
@@ -272,7 +263,11 @@ export class chat extends Component {
   private connectSocket(user: any) {
     if (this.socket && this.socket.connected) return;
 
-    this.socket = io("http://localhost:4000");
+    // Connect to WebSocket through nginx proxy
+    this.socket = io('/', {
+      path: '/chat-ws/',
+      transports: ['websocket', 'polling']
+    });
 
     this.socket.on("connect", () => {
       console.log("Connected to chat server");
@@ -282,6 +277,14 @@ export class chat extends Component {
     this.socket.on("receive-message", (message: any) => {
       this.handleReceiveMessage(message);
     });
+
+    this.socket.on("disconnect", () => {
+      console.log("Disconnected from chat server");
+    });
+
+    this.socket.on("error", (error: any) => {
+      console.error("Socket error:", error);
+    });
   }
 
   private handleReceiveMessage(message: any) {
@@ -290,23 +293,32 @@ export class chat extends Component {
 
     const isMine = message.from === currentUser.id;
     const otherUserId = isMine ? message.to : message.from;
-    
+
+    console.log('socket received message:', message);
     if (!this.conversations[otherUserId]) {
       this.conversations[otherUserId] = [];
     }
 
-    // Check if message already exists (to avoid duplicates if we optimistically added it)
-    // But currently sendMessage adds it optimistically without ID.
-    // If we receive it back from socket, we might want to update the ID or ignore if we don't care about ID sync yet.
-    // However, since we are syncing across tabs, we should add it if it's not there.
-    // Or better: The optimistic add in sendMessage should probably be replaced by waiting for the socket event 
-    // OR we just handle the duplication check.
-    
-    // Simple duplication check by ID if available
-    const exists = this.conversations[otherUserId].some(m => m.id === message.id);
-    if (exists) return;
+    // Check if we already have this message (deduplication)
+    // But allow replacing optimistic messages (negative IDs)
+    const existingIndex = this.conversations[otherUserId].findIndex(m => m.id === message.id);
+    if (existingIndex !== -1) return;
 
-    const timeStr = new Date(message.createdAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    // Check if we have an optimistic version (content matches, ID is negative)
+    // and replace it properly
+    const optimisticIndex = this.conversations[otherUserId].findIndex(m =>
+      m.isMine && m.text === message.content && (m.id && m.id < 0)
+    );
+
+    if (optimisticIndex !== -1) {
+      console.log('Replacing optimistic message', this.conversations[otherUserId][optimisticIndex].id, 'with real message', message.id);
+      this.conversations[otherUserId].splice(optimisticIndex, 1);
+    }
+
+    const timeStr = new Date(message.createdAt).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit'
+    });
 
     this.conversations[otherUserId].push({
       text: message.content,
@@ -316,10 +328,9 @@ export class chat extends Component {
       reactions: []
     });
 
-    // Update last message in user list
     if (this.users[otherUserId]) {
-        this.users[otherUserId].lastMessage = message.content;
-        this.users[otherUserId].lastMessageTime = timeStr;
+      this.users[otherUserId].lastMessage = message.content;
+      this.users[otherUserId].lastMessageTime = timeStr;
     }
 
     if (this.currentChatUserId === otherUserId) {
@@ -327,23 +338,30 @@ export class chat extends Component {
       this.scrollToBottom();
     } else {
       if (!isMine && this.users[otherUserId]) {
-          this.users[otherUserId].unread = (this.users[otherUserId].unread || 0) + 1;
-          this.render();
-      } else {
-          // Re-render to show updated last message even if not unread
-          this.render();
+        this.users[otherUserId].unread = (this.users[otherUserId].unread || 0) + 1;
       }
+      this.render();
     }
   }
 
   constructor() {
     super("div", "w-full max-w-3xl mx-auto");
+
+    // Check immediately if user is logged in
+    const currentUser = userState.get();
+    if (currentUser) {
+      console.log('User already logged in, loading friends...');
+      this.loadFriends();
+      this.loadBlockedUsers();
+      this.connectSocket(currentUser);
+    }
+
     this.initSocket();
   }
 
   unmount() {
     if (this.unsubscribeAuth) {
-        this.unsubscribeAuth();
+      this.unsubscribeAuth();
     }
     if (this.socket) {
       this.socket.disconnect();
@@ -352,7 +370,7 @@ export class chat extends Component {
   }
 
   getStatusColor(status: string) {
-    switch(status) {
+    switch (status) {
       case 'Online': return 'bg-green-500';
       case 'Away': return 'bg-yellow-500';
       default: return 'bg-gray-400';
@@ -373,39 +391,16 @@ export class chat extends Component {
   }
 
   renderUsersList() {
-    if (this.activeTab === 'tournaments') {
-      return `
-        <div class="p-4 space-y-3">
-          <div class="bg-neon-cyan/10 p-3 rounded-lg border border-neon-cyan/30">
-            <div class="flex justify-between items-start mb-1">
-              <h3 class="font-bold text-gray-200 text-sm">Summer Championship</h3>
-              <span class="text-xs bg-neon-cyan/30 text-neon-cyan px-1.5 py-0.5 rounded">Live</span>
-            </div>
-            <p class="text-xs text-gray-400 mb-2">Semi-finals starting in 10m</p>
-            <button class="w-full bg-neon-cyan text-space-dark text-xs py-1.5 rounded hover:bg-neon-cyan/80 transition font-medium">Watch Now</button>
-          </div>
-          
-          <div class="bg-space-dark/50 p-3 rounded-lg border border-neon-purple/20">
-            <div class="flex justify-between items-start mb-1">
-              <h3 class="font-bold text-gray-200 text-sm">Weekly Blitz</h3>
-              <span class="text-xs bg-neon-purple/30 text-neon-purple px-1.5 py-0.5 rounded">Upcoming</span>
-            </div>
-            <p class="text-xs text-gray-400 mb-2">Registration closes in 2h</p>
-            <button class="w-full border border-neon-purple text-neon-purple text-xs py-1.5 rounded hover:bg-neon-purple/10 transition">Register</button>
-          </div>
-        </div>
-      `;
-    }
 
-    const filtered = Object.values(this.users).filter(user => 
+
+    const filtered = Object.values(this.users).filter(user =>
       user.name.toLowerCase().includes(this.searchQuery.toLowerCase())
     );
 
     return filtered.map(user => `
-      <div class="user-item p-2 cursor-pointer transition-all hover:bg-neon-cyan/10 border-l-4 ${
-        this.currentChatUserId === user.id 
-          ? 'bg-neon-cyan/10 border-neon-cyan' 
-          : 'border-transparent'
+      <div class="user-item p-2 cursor-pointer transition-all hover:bg-neon-cyan/10 border-l-4 ${this.currentChatUserId === user.id
+        ? 'bg-neon-cyan/10 border-neon-cyan'
+        : 'border-transparent'
       }" data-user-id="${user.id}">
         <div class="flex items-center gap-2">
           <div class="relative">
@@ -461,7 +456,6 @@ export class chat extends Component {
             </button>
           </div>
         </div>
-
         <div id="messages-container" class="space-y-4 flex-1 overflow-y-auto no-scrollbar flex items-center justify-center">
           <p class="text-gray-500 text-sm">You have blocked this user</p>
         </div>
@@ -471,11 +465,10 @@ export class chat extends Component {
     const messagesHtml = messages.map((msg) => `
       <div class="flex ${msg.isMine ? 'justify-end' : 'justify-start'}">
         <div class="group max-w-xs lg:max-w-md ${msg.isMine ? 'order-2' : 'order-1'}">
-          <div class="px-4 py-3 rounded-2xl ${
-            msg.isMine 
-              ? 'bg-blue-600 text-white rounded-br-sm' 
-              : 'bg-space-blue/80 text-gray-200 rounded-bl-sm border border-neon-cyan/20'
-          }">
+          <div class="px-4 py-3 rounded-2xl ${msg.isMine
+        ? 'bg-blue-600 text-white rounded-br-sm'
+        : 'bg-space-blue/80 text-gray-200 rounded-bl-sm border border-neon-cyan/20'
+      }">
             <p class="text-sm leading-relaxed">${this.escapeHtml(msg.text)}</p>
           </div>
           <div class="flex items-center gap-2 mt-1 px-2">
@@ -513,7 +506,6 @@ export class chat extends Component {
           <div class="menu-actions-container" data-user-id="${user.id}"></div>
         </div>
       </div>
-
       <div id="messages-container" class="space-y-4 flex-1 overflow-y-auto no-scrollbar">
         ${messagesHtml}
       </div>
@@ -526,7 +518,7 @@ export class chat extends Component {
 
     const userId = parseInt(container.dataset.userId || '0');
     const isBlocked = this.blockedUsers.has(userId);
-    
+
     if (this.activeMenuUserId === userId) {
       container.innerHTML = `
         <div class="absolute right-0 top-2 bg-space-blue border border-neon-cyan/20 shadow-xl rounded-xl py-2 z-50 w-40">
@@ -553,14 +545,10 @@ export class chat extends Component {
     const currentUser = this.currentChatUserId ? this.users[this.currentChatUserId] : null;
     const loggedInUser = userState.get();
 
-    // Show login message if not logged in
+    // Redirect to login if not logged in
     if (!loggedInUser) {
-      this.el.innerHTML = `
-        <div class="bg-space-blue/80 border border-neon-cyan/20 rounded-2xl shadow-xl p-8 text-center backdrop-blur-md">
-          <div class="text-4xl mb-4">🔒</div>
-          <p class="text-gray-400">Please login</p>
-        </div>
-      `;
+      window.history.pushState({}, '', '/login');
+      window.dispatchEvent(new PopStateEvent('popstate'));
       return;
     }
 
@@ -572,14 +560,9 @@ export class chat extends Component {
           <div class="p-3 border-b border-neon-cyan/10">
             <div class="flex justify-between items-center mb-2">
               <h1 class="text-lg font-bold text-neon-cyan">Messages</h1>
-              ${loggedInUser ? `<span class="text-xs text-gray-400 font-mono">#${loggedInUser.id} ${this.escapeHtml(loggedInUser.username)}</span>` : ''}
+              ${loggedInUser ? `<span class="text-xs text-gray-400 font-mono"></span>` : ''}
             </div>
             
-            <!-- Tabs -->
-            <div class="flex gap-2 mb-3 bg-space-dark/50 p-1 rounded-lg">
-              <button id="tab-users" class="flex-1 py-1 px-2 rounded-md text-sm font-medium transition-all ${this.activeTab === 'users' ? 'bg-neon-cyan/20 text-neon-cyan shadow-sm' : 'text-gray-400 hover:text-neon-cyan'}">Users</button>
-              <button id="tab-tournaments" class="flex-1 py-1 px-2 rounded-md text-sm font-medium transition-all ${this.activeTab === 'tournaments' ? 'bg-neon-cyan/20 text-neon-cyan shadow-sm' : 'text-gray-400 hover:text-neon-cyan'}">Tournaments</button>
-            </div>
 
             <div class="relative">
               <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -612,7 +595,6 @@ export class chat extends Component {
             <div class="flex-1 overflow-y-auto no-scrollbar p-6 bg-gradient-to-b from-space-dark/30 to-space-blue/30 flex flex-col">
               ${this.renderMessages()}
             </div>
-
             ${!this.blockedUsers.has(this.currentChatUserId!) ? `
               <div class="p-4 border-t border-neon-cyan/10 bg-space-dark/50">
                 <div class="bg-space-blue/50 border border-neon-cyan/20 rounded-2xl px-4 py-2 flex items-end gap-2">
@@ -650,23 +632,7 @@ export class chat extends Component {
       });
     }
 
-    // Tabs
-    const tabUsers = this.el.querySelector('#tab-users');
-    const tabTournaments = this.el.querySelector('#tab-tournaments');
 
-    if (tabUsers) {
-      tabUsers.addEventListener('click', () => {
-        this.activeTab = 'users';
-        this.render();
-      });
-    }
-
-    if (tabTournaments) {
-      tabTournaments.addEventListener('click', () => {
-        this.activeTab = 'tournaments';
-        this.render();
-      });
-    }
 
     // User selection
     this.el.querySelectorAll('.user-item').forEach(item => {
@@ -694,8 +660,8 @@ export class chat extends Component {
       headerMenuBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         if (this.currentChatUserId) {
-            this.activeMenuUserId = this.activeMenuUserId === this.currentChatUserId ? null : this.currentChatUserId;
-            this.updateMenuDropdown();
+          this.activeMenuUserId = this.activeMenuUserId === this.currentChatUserId ? null : this.currentChatUserId;
+          this.updateMenuDropdown();
         }
       });
     }
@@ -706,7 +672,7 @@ export class chat extends Component {
       const playBtn = target.closest('.menu-action-play');
       const blockBtn = target.closest('.menu-action-block');
       const unblockBtn = target.closest('.menu-action-unblock');
-      
+
       if (playBtn) {
         e.stopPropagation();
         const userId = parseInt((playBtn as HTMLElement).dataset.userId || '0');
@@ -714,7 +680,7 @@ export class chat extends Component {
         this.activeMenuUserId = null;
         this.updateMenuDropdown();
       }
-      
+
       if (blockBtn) {
         e.stopPropagation();
         const userId = parseInt((blockBtn as HTMLElement).dataset.userId || '0');
@@ -734,16 +700,16 @@ export class chat extends Component {
 
     // Close menu when clicking outside
     this.el.addEventListener('click', (e) => {
-        const target = e.target as HTMLElement;
-        if (!target.closest('#chat-header-menu-btn') && !target.closest('.menu-actions-container') && this.activeMenuUserId !== null) {
-            this.activeMenuUserId = null;
-            this.updateMenuDropdown();
-        }
+      const target = e.target as HTMLElement;
+      if (!target.closest('#chat-header-menu-btn') && !target.closest('.menu-actions-container') && this.activeMenuUserId !== null) {
+        this.activeMenuUserId = null;
+        this.updateMenuDropdown();
+      }
     });
 
     // Unblock button
     const unblockBtn = this.el.querySelector('#unblock-user-btn');
-    
+
     if (unblockBtn) {
       unblockBtn.addEventListener('click', () => {
         const userId = parseInt((unblockBtn as HTMLElement).dataset.userId || '0');
@@ -793,9 +759,9 @@ export class chat extends Component {
   selectUser(userId: number) {
     this.currentChatUserId = userId;
     if (this.users[userId]) {
-        this.users[userId].unread = 0;
+      this.users[userId].unread = 0;
     }
-    
+
     if (this.socket) {
       this.socket.emit("join-conversation", userId);
     }
@@ -807,25 +773,148 @@ export class chat extends Component {
 
   sendMessage() {
     const content = this.messageInput.trim();
-    if (!content || !this.currentChatUserId) return;
 
-    // Don't add optimistically, wait for socket event to ensure sync and no duplicates
-    // The server will emit 'receive-message' back to us
+    console.log('=== DEBUG sendMessage() ===');
+    console.log('1. Message content:', content);
+    console.log('2. Current chat user ID:', this.currentChatUserId);
+    console.log('3. Socket exists:', !!this.socket);
+    console.log('4. Socket connected:', this.socket?.connected);
 
-    if (this.socket) {
+    if (!content || !this.currentChatUserId) {
+      console.log('❌ Cannot send: No content or no user selected');
+      return;
+    }
+
+    // Check if socket is actually connected
+    if (this.socket && this.socket.connected) {
+      console.log('5. Emitting socket event "send_message"...');
+      console.log('6. Payload:', { to: this.currentChatUserId, content: content });
+
       this.socket.emit("send_message", {
-          to: this.currentChatUserId,
-          content: content
+        to: this.currentChatUserId,
+        content: content
       });
+
+      console.log('✅ Socket emit called');
+
+    } else {
+      console.error('❌ Socket is NOT connected! Cannot send via WebSocket.');
+      console.log('   Trying HTTP fallback...');
+
+      // Use HTTP fallback immediately
+      this.sendMessageViaHttp(content);
     }
 
     this.messageInput = '';
-    // We don't render here, we wait for the message to come back
-    // But we should clear the input in the UI
     const inputEl = this.el.querySelector('#message-input') as HTMLTextAreaElement;
     if (inputEl) {
-        inputEl.value = '';
+      inputEl.value = '';
+      console.log('7. Input cleared');
     }
+
+    console.log('=== END DEBUG ===');
+  }
+
+  private async sendMessageViaHttp(content: string) {
+    if (!this.currentChatUserId) return;
+
+    const currentUser = userState.get();
+    if (!currentUser) {
+      console.error('No user logged in for HTTP fallback');
+      return;
+    }
+
+    try {
+      console.log('📡 Sending message via HTTP POST...');
+
+      // Use optimistic update so user sees message immediately
+      this.addOptimisticMessage(content);
+
+      const response = await fetch(`${API_URL}/chat/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': currentUser.id.toString()
+        },
+        body: JSON.stringify({
+          receiverId: this.currentChatUserId,
+          content: content
+        }),
+        credentials: 'include'
+      });
+
+      console.log('HTTP Response status:', response.status);
+
+      // Check if response is HTML (error) or JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('❌ Server returned HTML instead of JSON:', text.substring(0, 200));
+        throw new Error('Server returned HTML error page');
+      }
+
+      if (response.ok) {
+        const message = await response.json();
+        console.log('✅ Message sent via HTTP:', message);
+
+        // Update the optimistic message with real data
+        //this.updateOptimisticMessage(message);
+
+      } else {
+        const error = await response.json();
+        console.error('❌ HTTP send failed:', error);
+
+        if (response.status === 403) {
+          alert('You cannot send messages to this user (Blocked)');
+          // Remove optimistic message
+          if (this.currentChatUserId && this.conversations[this.currentChatUserId]) {
+            const optIndex = this.conversations[this.currentChatUserId].findIndex(m => m.id && m.id < 0);
+            if (optIndex !== -1) {
+              this.conversations[this.currentChatUserId].splice(optIndex, 1);
+              this.render();
+            }
+          }
+        } else {
+          alert(`Failed to send message: ${error.message || error.error || 'Unknown error'}`);
+        }
+      }
+    } catch (error) {
+      console.error('❌ HTTP send error:', error);
+      alert('Network error. Please check your connection and try again.');
+    }
+  }
+
+  private addOptimisticMessage(content: string): number {
+    if (!this.currentChatUserId) return -1;
+
+    console.log('Adding optimistic message...');
+
+    if (!this.conversations[this.currentChatUserId]) {
+      this.conversations[this.currentChatUserId] = [];
+    }
+
+    // Generate a unique temporary ID (use negative numbers to distinguish from real IDs)
+    const tempId = -Date.now();
+
+    const tempMessage: Message = {
+      text: content,
+      isMine: true,
+      time: new Date().toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit'
+      }),
+      id: tempId,  // Negative ID = optimistic message
+      reactions: []
+    };
+
+    this.conversations[this.currentChatUserId].push(tempMessage);
+
+    // Update UI immediately
+    this.render();
+    this.scrollToBottom();
+
+    console.log('Optimistic message added with temp ID:', tempId);
+    return tempId; // Return the temp ID so we can find it later
   }
 
   async blockUser(userId: number) {
@@ -833,7 +922,7 @@ export class chat extends Component {
     if (!currentUser) return;
 
     try {
-      const res = await fetch('http://localhost:4000/block', {
+      const res = await fetch(`${API_URL}/chat/block`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -861,7 +950,7 @@ export class chat extends Component {
     if (!currentUser) return;
 
     try {
-      const res = await fetch('http://localhost:4000/unblock', {
+      const res = await fetch(`${API_URL}/chat/unblock`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
