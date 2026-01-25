@@ -4,7 +4,7 @@ import { env } from '../config/env'
 // Create transporter (email sender)
 const transporter = nodemailer.createTransport({
     host: env.EMAIL_HOST,
-    port: parseInt(env.EMAIL_PORT),
+    port: env.EMAIL_PORT,
     secure: false, // true for 465, false for other ports
     auth: {
         user: env.EMAIL_USER,
