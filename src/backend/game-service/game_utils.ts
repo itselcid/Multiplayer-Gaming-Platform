@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/13 17:23:50 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/24 23:32:43 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/25 16:15:10 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,16 +23,15 @@ export interface MatchResult {
 
 export interface Player {
     addr: string;
-    claimed: boolean;
     username: string;
 }
 
 export interface Match {
+  id:string;
 	player1: Player;
 	player1Score: number;
   player2: Player;
 	player2Score: number;
-  status: number;
 }
 
 export interface Room{
@@ -69,6 +68,7 @@ export class rabbitmq {
       this.channel_match= await this.conne_match.createChannel();
       await this.channel_match.assertQueue(this.QUEUE_MATCH, {durable: true });
       console.log(`Connected to RabbitMQ, listening on ${this.QUEUE_MATCH}`);
+      this.getMatch();
     }
     catch(error){
        console.error('RabbitMQ Connection Failed:', error);
@@ -89,9 +89,30 @@ export class rabbitmq {
     
   }
   
-  // async getMatch(){
-    
-  // }
+  getMatch(){
+     if (!this.channel_match) return;
+
+        this.channel_match.consume(this.QUEUE_MATCH, async (msg: ConsumeMessage | null) => {
+            if (msg !== null) {
+                try {
+                    const content = msg.content.toString();
+                    const matchData: Match = JSON.parse(content);
+
+                    console.log('Received match result:', matchData); //! logs
+
+                    // Save to DB
+                    // const room : Room{id: matchData.id, player1:matchData.Pla};
+                    // Acknowledge message (remove from queue)
+                    this.channel_match.ack(msg);
+                } catch (err) {
+                    console.error('Error processing match result:', err);
+                    // we drop the message if it fails to process, data not really thet important lol
+                    this.channel_match.ack(msg);
+                }
+        }
+  
+})
+  }
   
 }
 

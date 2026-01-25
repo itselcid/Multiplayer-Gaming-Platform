@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 17:15:36 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/24 23:23:43 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/25 15:32:54 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,10 +59,10 @@ function generateroom(): string{
       service.publishGame(result);
     } 
     if(room && match){
-      const Player1 :Player = {addr: room.wallet1, username:room.player1, claimed:true};
-      const player2:Player = {addr: room.wallet2, username:room.player2, claimed:true};
+      const Player1 :Player = {addr: room.wallet1, username:room.player1};
+      const player2:Player = {addr: room.wallet2, username:room.player2};
       const result: Match = {player1:Player1, player1Score: match.right, player2:player2,
-        player2Score:match.left,status:0};
+        player2Score:match.left};
       service.publishMatch(result);
     }
   }
@@ -78,6 +78,7 @@ function generateroom(): string{
           rooms.delete(id);
         }
         if(match && !match.updt){
+          //
           tour.delete(id);
           rooms.delete(id);
         }

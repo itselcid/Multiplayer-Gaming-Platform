@@ -5,11 +5,13 @@ services:
   rabbitmq:
     image: "rabbitmq:3-management"
     container_name: "rabbitmq"
+    # env_file:
+    #   .env
     networks:
       - app-network
     ports:
-      - "5672:5672"   # RabbitMQ's default AMQP port
       - "15672:15672"
+      - "5672:5672"   # RabbitMQ's default AMQP port #for security reason
 
 
   nginx:

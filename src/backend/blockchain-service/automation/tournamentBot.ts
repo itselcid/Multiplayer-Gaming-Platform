@@ -1,8 +1,27 @@
 import { Match, publicClient, signingAccount, Tournament, TournamentFactoryAbi, TournamentFactoryAddress, walletClient } from "../contract/contracts";
+import { MatchMsg, rabbitmq } from "../rabbitmq";
+import { keccak256, encodePacked } from 'viem';
+
+
+
+export function getMatchKey(
+  tournamentId: bigint,
+  round: bigint,
+  matchNumber: bigint
+): `0x${string}` {
+  return keccak256(
+    encodePacked(
+      ['uint256', 'uint256', 'uint256'],
+      [tournamentId, round, matchNumber]
+    )
+  )
+}
+
 
 let processing = false;
 let	pendingTournaments: Tournament[] = [];
 let timer: NodeJS.Timeout | null = null;
+const rabbit = new rabbitmq();
 
 const	print_tournament_queue = () => {
 	console.log('----- current queue -----');
@@ -239,7 +258,11 @@ const watchMatchCreated = () => {
 							_matchId: bigint;
 						}
 					};
-					
+					const match = await getMatch(typedLog.args._id, typedLog.args._round,typedLog.args._matchId);
+					const matchmsg : MatchMsg = {id: getMatchKey(typedLog.args._id, typedLog.args._round,typedLog.args._matchId), 
+						player1:match.player1, player2:match.player2, player1Score:0, player2Score:0
+					};
+					rabbit.publishMatch(matchmsg);
 					console.log(typedLog.args);
 				})
 			}
@@ -266,6 +289,7 @@ const initPendingTournaments = async () => {
 // export const	automationBot = async () => {
 export const	automationBot = async () => {
 	console.log("🟢 Automation bot started");
+	rabbit.start();
 	await initPendingTournaments();
 	watchTournamentCreated();
 	watchFinishedMatches();
