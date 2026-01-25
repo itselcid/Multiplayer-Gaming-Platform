@@ -75,9 +75,13 @@ class SocketService {
     }
 
     emit(event: string, data?: any) {
-        if (this.socket) {
+        if (this.socket?.connected) {
             this.socket.emit(event, data);
         }
+    }
+
+    isSocketConnected(): boolean {
+        return this.socket?.connected ?? false;
     }
 
     private reattachListeners() {

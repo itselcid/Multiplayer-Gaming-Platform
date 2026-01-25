@@ -156,6 +156,9 @@ export async function chatRoutes(fastify: FastifyInstance) {
 
   // Get latest message for a list of users (for inbox preview)
   fastify.post<{ Body: { userIds: number[] } }>('/messages/latest-batch', async (req, reply) => {
+    if (!req.user?.id) {
+      return reply.code(401).send({ error: 'Not authenticated' });
+    }
     const me = req.user.id;
     const { userIds } = req.body;
 
@@ -165,7 +168,8 @@ export async function chatRoutes(fastify: FastifyInstance) {
 
     const results: Record<number, any> = {};
 
-    for (const otherId of userIds) {
+    for (const id of userIds) {
+      const otherId = Number(id);  // Convert to number to fix Prisma type error
       const lastMsg = await prisma.message.findFirst({
         where: {
           OR: [

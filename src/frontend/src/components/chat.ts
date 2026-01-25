@@ -1,6 +1,7 @@
 import { Component } from "../core/Component";
 import { io, Socket } from "socket.io-client";
 import { userState } from "../core/appStore";
+import { socketService } from "../services/socket";
 
 // Use relative URLs to go through nginx proxy
 const API_URL = '/api';
@@ -45,6 +46,9 @@ export class chat extends Component {
   private users: Record<number, User> = {};
   private conversations: Record<number, Message[]> = {};
   private blockedUsers: Set<number> = new Set();
+  
+  // Cache for online friends list
+  private cachedOnlineFriends: number[] = [];
 
   async fetchOlderMessages() {
     if (!this.currentChatUserId || !this.oldestMessageId) return;
@@ -153,8 +157,8 @@ export class chat extends Component {
           id: friend.id,
           name: friend.username,  // <-- CHANGE 'username' to 'name' for chat
           avatar: friend.avatar || '👤',
-          status: 'Online',  // <-- Default to Online for now
-          lastSeen: 'Just now',
+          status: 'Offline',  // Default to Offline, actual status comes from socket/API
+          lastSeen: '',  // Empty - will show last message if exists
           unread: 0,
           typing: false
         };
@@ -162,9 +166,15 @@ export class chat extends Component {
       });
 
       if (friendIds.length > 0) {
-        this.fetchLastMessages(friendIds);
+        await this.fetchLastMessages(friendIds);
       }
 
+      // Fetch online friends via REST API
+      await this.fetchOnlineFriends();
+      
+      // Apply cached online status
+      this.applyOnlineStatus();
+      
       this.render();
     } catch (error) {
       console.error('Failed to load friends:', error);
@@ -212,6 +222,46 @@ export class chat extends Component {
     }
   }
 
+  // Fetch online friends via REST API
+  private async fetchOnlineFriends() {
+    try {
+      const response = await fetch(`${API_URL}/friends/online`, {
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const onlineFriends: Friend[] = data.friends || [];
+        
+        // Update cache with online friend IDs
+        this.cachedOnlineFriends = onlineFriends.map(f => f.id);
+        console.log('Fetched online friends:', this.cachedOnlineFriends);
+      }
+    } catch (error) {
+      console.error('Failed to fetch online friends:', error);
+    }
+  }
+
+  // Apply online status from cache to loaded users
+  private applyOnlineStatus() {
+    if (Object.keys(this.users).length === 0) return;
+    
+    // Set all users to offline first
+    Object.keys(this.users).forEach((key) => {
+      const userId = Number(key);
+      this.users[userId].status = 'Offline';
+    });
+    
+    // Mark cached online friends as online
+    this.cachedOnlineFriends.forEach((friendId: number) => {
+      if (this.users[friendId]) {
+        this.users[friendId].status = 'Online';
+      }
+    });
+    
+    this.render();
+  }
+
   private async loadBlockedUsers() {
     const currentUser = userState.get();
     if (!currentUser) return;
@@ -246,6 +296,9 @@ export class chat extends Component {
         if (!this.socket || !this.socket.connected) {
           this.connectSocket(user);
         }
+        
+        // Subscribe to online status updates
+        this.subscribeToOnlineStatus();
       } else {
         this.users = {};
         this.conversations = {};
@@ -255,9 +308,50 @@ export class chat extends Component {
           this.socket.disconnect();
           this.socket = null;
         }
+        
+        // Unsubscribe from online status events
+        this.unsubscribeFromOnlineStatus();
+        
         this.render();
       }
     });
+  }
+  
+  private subscribeToOnlineStatus() {
+    // Listen for initial online friends list
+    socketService.on('initial_online_list', (onlineFriendIds: number[]) => {
+      console.log('Received initial online list:', onlineFriendIds);
+      this.cachedOnlineFriends = onlineFriendIds;
+      this.applyOnlineStatus();
+    });
+
+    // Listen for friend status changes (online/offline)
+    socketService.on('friend_status', (data: { userId: number, status: 'online' | 'offline' }) => {
+      console.log('Friend status update:', data);
+      
+      // Update the cache
+      if (data.status === 'online') {
+        if (!this.cachedOnlineFriends.includes(data.userId)) {
+          this.cachedOnlineFriends.push(data.userId);
+        }
+      } else {
+        this.cachedOnlineFriends = this.cachedOnlineFriends.filter(id => id !== data.userId);
+      }
+      
+      // Update the user status if user is loaded
+      if (this.users[data.userId]) {
+        this.users[data.userId].status = data.status === 'online' ? 'Online' : 'Offline';
+        this.render();
+      }
+    });
+
+    // Request the online friends list if socket is connected
+    socketService.emit('get_online_friends');
+  }
+  
+  private unsubscribeFromOnlineStatus() {
+    socketService.off('initial_online_list');
+    socketService.off('friend_status');
   }
 
   private connectSocket(user: any) {
@@ -354,6 +448,7 @@ export class chat extends Component {
       this.loadFriends();
       this.loadBlockedUsers();
       this.connectSocket(currentUser);
+      this.subscribeToOnlineStatus();
     }
 
     this.initSocket();
@@ -366,6 +461,7 @@ export class chat extends Component {
     if (this.socket) {
       this.socket.disconnect();
     }
+    this.unsubscribeFromOnlineStatus();
     super.unmount();
   }
 
@@ -415,7 +511,7 @@ export class chat extends Component {
               ${user.lastMessageTime ? `<span class="text-[10px] text-gray-500">${user.lastMessageTime}</span>` : ''}
             </div>
             <div class="flex justify-between items-center">
-              <p class="text-xs text-gray-500 truncate max-w-[120px]">${user.lastMessage ? this.escapeHtml(user.lastMessage) : this.escapeHtml(user.lastSeen)}</p>
+              ${user.lastMessage ? `<p class="text-xs text-gray-500 truncate max-w-[120px]">${this.escapeHtml(user.lastMessage)}</p>` : '<p class="text-xs text-gray-500">&nbsp;</p>'}
               ${user.unread > 0 ? `
                 <span class="bg-neon-cyan text-space-dark text-xs rounded-full px-2 py-0.5 font-semibold">
                   ${user.unread}
