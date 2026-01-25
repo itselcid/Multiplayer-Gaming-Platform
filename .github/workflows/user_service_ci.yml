@@ -2,7 +2,7 @@ name: user_service_ci
 
 on:
     push:
-        branches: [ "main_ums", "main" ]
+        branches: [ "main_ums", "main", "ums_ci" ]
         # Triggers only if files in this directory change
         paths:
             - 'src/backend/user-service/**'
