@@ -6,11 +6,11 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 17:15:36 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/25 15:32:54 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/25 22:41:45 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-import { Room, MatchResult, PongGame, rabbitmq, Match, Player} from './game_utils';
+import { Room, MatchResult, PongGame, rabbitmq, Match, Player,} from './game_utils';
 import { Server } from 'socket.io'
 import Fastify from 'fastify'
 import http from 'http'
@@ -36,14 +36,17 @@ cors: {
 fastify.get('/health', async () => ({ status: 'ok', service: 'game-service' }))
 
 
-
+export function setroom(room: Room){
+  rooms.set(room.id,room);
+  tour.set(room.id,new PongGame);
+}
 
 
 function generateroom(): string{
   const crypto = require("crypto");
   const byteLength = Math.floor(Math.random() * (8 - 4 + 1)) + 4;
   const id = crypto.randomBytes(Math.ceil(byteLength/2)).toString("hex");
-  console.log(`in generate room ${id}`);
+  // console.log(`in generate room ${id}`);
   return id;
 }
 
@@ -61,7 +64,7 @@ function generateroom(): string{
     if(room && match){
       const Player1 :Player = {addr: room.wallet1, username:room.player1};
       const player2:Player = {addr: room.wallet2, username:room.player2};
-      const result: Match = {player1:Player1, player1Score: match.right, player2:player2,
+      const result: Match = {id:room.id,player1:Player1, player1Score: match.right, player2:player2,
         player2Score:match.left};
       service.publishMatch(result);
     }
@@ -78,7 +81,11 @@ function generateroom(): string{
           rooms.delete(id);
         }
         if(match && !match.updt){
-          //
+          if(rooms.get(id)?.join1 && !rooms.get(id)?.join2 )
+              match.left = 3;
+          else if (rooms.get(id)?.join2 && !rooms.get(id)?.join1)
+              match.right = 3;
+          sendMAtch(id);
           tour.delete(id);
           rooms.delete(id);
         }
@@ -105,10 +112,12 @@ io.on('connection', (socket) => {
     }
     else{
       if(room){
-        if(room.wallet1 == wallet){
+        // console.log(wallet);
+        // console.log(`room== `,room);
+        if(room.wallet1?.toLowerCase() === wallet){
           room.join1 += 1;
         } 
-        if(room.wallet2 == wallet){
+        if(room.wallet2?.toLowerCase() === wallet){
           room.join2 += 1;
         }
       }  
@@ -224,9 +233,12 @@ socket.on('gameOver',()=>{
         }
       }
       else if (match){
-        sendMAtch(id);
-        rooms.delete(id);
-        tour.delete(id);
+        match.delet++;
+        if(match.delet == 2){
+          sendMAtch(id);
+          rooms.delete(id);
+          tour.delete(id);
+        }
       }
     });
     
@@ -240,7 +252,7 @@ socket.on('gameOver',()=>{
   });
 })
 
-const PORT = Number(process.env.PORT) || 3500
+const PORT = Number(process.env.GAME_PORT) || 3500
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`Game service running on http://0.0.0.0:${PORT}`)
 })

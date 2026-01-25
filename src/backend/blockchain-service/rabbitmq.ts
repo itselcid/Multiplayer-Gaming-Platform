@@ -11,15 +11,18 @@ export interface MatchMsg{
 
 export class rabbitmq {
   private channel_match: Channel | null = null;
+  private consum_match: Channel | null = null;
   private conne_match: any = null;
   private readonly QUEUE_MATCH = 'match_finished';
+  private readonly QUEUE_CREAT = 'match_created';
   
   async start() {
     try {
       const rabbitUrl = process.env.RABBITMQ_URL || 'amqp://localhost'; 
-      this.conne_match = await amqp.connect(rabbitUrl);
+      this.conne_match = await amqp.connect(rabbitUrl, {rejectUnauthorized: false});
       this.channel_match= await this.conne_match.createChannel();
-      await this.channel_match.assertQueue(this.QUEUE_MATCH, {durable: true });
+      this.consum_match= await this.conne_match.createChannel();
+      await this.consum_match.assertQueue(this.QUEUE_MATCH, {durable: true });
       console.log(`Connected to RabbitMQ, listening on ${this.QUEUE_MATCH}`);
     }
     catch(error){
@@ -31,15 +34,15 @@ export class rabbitmq {
 
   publishMatch(data: MatchMsg){
     const jsonresult = JSON.stringify(data,null,2);
-    this.channel_match.sendToQueue(this.QUEUE_MATCH,  Buffer.from(jsonresult),{persistent: true});
+    this.channel_match.sendToQueue(this.QUEUE_CREAT,  Buffer.from(jsonresult),{persistent: true});
     console.log(`match published: `, data);
     
   }
   
   getMatch() {
-    if (!this.channel_match) return;
+    if (!this.consum_match) return;
 
-        this.channel_match.consume(this.QUEUE_MATCH, async (msg: ConsumeMessage | null) => {
+        this.consum_match.consume(this.QUEUE_MATCH, async (msg: ConsumeMessage | null) => {
             if (msg !== null) {
                 try {
                     const content = msg.content.toString();
@@ -50,11 +53,11 @@ export class rabbitmq {
                     // Save to DB
 
                     // Acknowledge message (remove from queue)
-                    this.channel_match.ack(msg);
+                    this.consum_match.ack(msg);
                 } catch (err) {
                     console.error('Error processing match result:', err);
                     // we drop the message if it fails to process, data not really thet important lol
-                    this.channel_match.ack(msg);
+                    this.consum_match.ack(msg);
                 }
             }
   

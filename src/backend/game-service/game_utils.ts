@@ -6,15 +6,16 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/13 17:23:50 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/25 16:15:10 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/25 23:10:14 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 
 import amqp, { Channel , ConsumeMessage} from 'amqplib';
+import { setroom } from './server';
 
 export interface MatchResult {
-    player1Id: number;
+    player1Id?: number;
     player2Id?: number;
     score1: number;
     score2: number;
@@ -22,7 +23,7 @@ export interface MatchResult {
 }
 
 export interface Player {
-    addr: string;
+    addr?: string;
     username: string;
 }
 
@@ -37,36 +38,38 @@ export interface Match {
 export interface Room{
   id:string;
   player1:string;
-  wallet1:string;
-  pid1:number;
+  wallet1:string | undefined;
+  pid1:number | undefined;
   player2:string;
-  wallet2:string;
-  pid2:number;
+  wallet2:string | undefined;
+  pid2:number | undefined;
   join1:number;
   join2:number;
   startedAt: string;
-  timeout: Date;
   created:number;
 }
 
 export class rabbitmq {
   private channel_match: Channel | null = null;
   private channel_game: Channel | null = null;
+  private consume_match: Channel | null = null;
   private conne_match: any = null;
   private conne_game: any = null;
   private readonly QUEUE_GAME = 'game_finished';
   private readonly QUEUE_MATCH = 'match_finished';
+  private readonly QUEUE_CREAT = 'match_created';
   
   async start() {
     try {
       const rabbitUrl = process.env.RABBITMQ_URL || 'amqp://localhost'; 
-      this.conne_game = await amqp.connect(rabbitUrl);
+      this.conne_game = await amqp.connect(rabbitUrl, {rejectUnauthorized: false});
       this.channel_game= await this.conne_game.createChannel();
       await this.channel_game.assertQueue(this.QUEUE_GAME, {durable: true });
       console.log(`Connected to RabbitMQ, listening on ${this.QUEUE_GAME}`);
-      this.conne_match = await amqp.connect(rabbitUrl);
+      this.conne_match = await amqp.connect(rabbitUrl, {rejectUnauthorized: false});
       this.channel_match= await this.conne_match.createChannel();
-      await this.channel_match.assertQueue(this.QUEUE_MATCH, {durable: true });
+      this.consume_match = await this.conne_match.createChannel();
+      await this.consume_match.assertQueue(this.QUEUE_CREAT, {durable: true });
       console.log(`Connected to RabbitMQ, listening on ${this.QUEUE_MATCH}`);
       this.getMatch();
     }
@@ -82,32 +85,34 @@ export class rabbitmq {
     console.log(`game published: `, data);
   }
 
-  publishMatch(data: Match){
+  async publishMatch(data: Match){
     const jsonresult = JSON.stringify(data,null,2);
-    this.channel_match.sendToQueue(this.QUEUE_MATCH,  Buffer.from(jsonresult),{persistent: true});
+    await this.channel_match.sendToQueue(this.QUEUE_MATCH,  Buffer.from(jsonresult),{persistent: true});
     console.log(`match published: `, data);
     
   }
   
   getMatch(){
-     if (!this.channel_match) return;
+     if (!this.consume_match) return;
 
-        this.channel_match.consume(this.QUEUE_MATCH, async (msg: ConsumeMessage | null) => {
+        this.consume_match.consume(this.QUEUE_CREAT, async (msg: ConsumeMessage | null) => {
             if (msg !== null) {
                 try {
                     const content = msg.content.toString();
                     const matchData: Match = JSON.parse(content);
 
-                    console.log('Received match result:', matchData); //! logs
-
-                    // Save to DB
-                    // const room : Room{id: matchData.id, player1:matchData.Pla};
-                    // Acknowledge message (remove from queue)
-                    this.channel_match.ack(msg);
+                    console.log('Received match result:', matchData);
+                    
+                    const room : Room = {id : matchData.id, join1:0, join2:0, created:Date.now(),
+                      player1:matchData.player1.username, player2:matchData.player2.username,pid1:undefined,
+                      pid2:undefined, wallet1:matchData.player1.addr, wallet2:matchData.player2.addr,startedAt:new Date().toISOString(),
+                    };
+                    // console.log('created room :', room);
+                    setroom(room);
+                    this.consume_match.ack(msg);
                 } catch (err) {
                     console.error('Error processing match result:', err);
-                    // we drop the message if it fails to process, data not really thet important lol
-                    this.channel_match.ack(msg);
+                    this.consume_match.ack(msg);
                 }
         }
   

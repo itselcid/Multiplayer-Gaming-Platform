@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/27 01:44:47 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/24 22:33:01 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/25 22:14:37 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -90,17 +90,19 @@ export class Game extends Component {
 			this.socket.emit('getroom', this.id, resolve);
 		});
 		const wallet = await web3auth.getEthAddress();
-		if(wallet === this.room.wallet1 ){
+		if(wallet === this.room.wallet1.toLowerCase() ){
 			this.user1 = this.room.player1;
 			this.user2 = this.room.player2;
 			this.role = "playerR";
 		}
-		else if (wallet === this.room.wallet2 ){
+		else if (wallet === this.room.wallet2.toLowerCase() ){
 			this.user1 = this.room.player2;
 			this.user2 = this.room.player1;
 			this.role = "playerL";
 		}
 		else{
+			this.user1 = this.room.player1;
+			this.user2 = this.room.player2;
 			this.role = "viewer";
 		}
 		this.socket.emit('joinroom',wallet,this.id,0);
