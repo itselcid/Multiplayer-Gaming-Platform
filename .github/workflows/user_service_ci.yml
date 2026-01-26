@@ -1,22 +1,22 @@
 name: user_service_ci
 
-on: [push, workflow_dispatch] # workflow_dispatch allows you to run it manually
-# on:
-#     push:
-#         branches:
-#             - "main_ums"
-#             - "ums_ci"
-#             - "main"
-#         # Triggers only if files in this directory change
-#         paths:
-#             - 'src/backend/user-service/**'
-#     pull_request:
-#         branches:
-#             - "main_ums"
-#             - "ums_ci"
-#             - "main"
-#         paths:
-#             - 'src/backend/user-service/**'
+on:
+    push:
+        branches:
+            - "main_ums"
+            - "ums_ci"
+            - "main"
+        # Triggers only if files in this directory change
+        paths:
+            - 'src/backend/user-service/**'
+    pull_request:
+        branches:
+            - "main_ums"
+            - "ums_ci"
+            - "main"
+        paths:
+            - 'src/backend/user-service/**'
+    workflow_dispatch:
 
 jobs:
     test_user_service:
