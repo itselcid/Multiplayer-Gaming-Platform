@@ -1,8 +1,9 @@
 import createHttpError from "http-errors";
-import { deleteUser, getAllUsers, getUserById, getUserByUsername, searchUsers, updateUser } from "../db";
+import { deleteUser, getAllUsers, getMatchHistory, getUserById, getUserByUsername, searchUsers, updateUser } from "../db";
 import path from "node:path";
 import fs from "node:fs";
 import { pipeline } from "node:stream/promises";
+import { MatchHistory } from "../types";
 
 
 export const userController = {
@@ -124,5 +125,22 @@ export const userController = {
             return reply.code(409).send({ message: 'Username is already taken' });
 
         return reply.code(200).send({ message: 'Username is available' });
-    }   // /istaken?username=
+    },
+
+    getMatchHistory: async (request: any, reply: any) => {
+        const userId = parseInt(request.params.id, 10) || request.user!.userId;
+
+        console.log("\ndebuging message ---------------\n");
+        if (isNaN(userId))
+            throw createHttpError(400, 'Invalid user ID');
+
+        const user = await getUserById(userId);
+        if (!user)
+            throw createHttpError(404, 'User not found');
+        const historyData: MatchHistory[] = await getMatchHistory(userId);
+        console.log("\ndebuging message ---------------\n");
+
+        return reply.send({ historyData });
+    }
+
 }

@@ -68,5 +68,9 @@ export default async function userRoutes(server: FastifyInstance): Promise<void>
     server.get<{ Querystring: { username: string } }>('/search', { preHandler: [server.authenticate] }, userController.searchUsers);
     // is username taken
     server.post<{ Body: { username: string } }>('/istaken', { schema: UsernameSchema }, userController.isUsernameTaken);
+    // get match history
+    server.get<{ Params: { id: string } }>('/:id/history', { preHandler: [server.authenticate], schema: UserIdSchema }, userController.getMatchHistory);
+    // get match history for logged in user
+    server.get('/me/history', { preHandler: [server.authenticate] }, userController.getMatchHistory);
 }
 

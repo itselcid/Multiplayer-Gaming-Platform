@@ -603,6 +603,48 @@ export async function getBlockedFriends(userId: number) {
     return blockedFriends.map(b => b.addressee);
 }
 
+export async function getMatchHistory(userId: number) {
+    const rawHistory = await prisma.match.findMany({
+        where: {
+            OR: [
+                { player1Id: userId },
+                { player2Id: userId }
+            ]
+        },
+        select: {
+            player1Id: true,
+            player1: {
+                select: {
+                    id: true,
+                    username: true,
+                    avatar: true
+                }
+            },
+            player2Id: true,
+            player2: {
+                select: {
+                    id: true,
+                    username: true,
+                    avatar: true
+                }
+            },
+            score1: true,
+            score2: true,
+            startedAt: true
+        }
+    });
+
+    return rawHistory.map(match => ({
+        player1Id: match.player1Id,
+        player1: match.player1,
+        player2Id: match.player2Id,
+        player2: match.player2,
+        player1Score: match.score1,
+        player2Score: match.score2,
+        playedAt: match.startedAt
+    }));
+}
+
 export async function getSentFriendRequests(requesterId: number) {
     const friendRequestsSent = await prisma.friendship.findMany({
         where: {

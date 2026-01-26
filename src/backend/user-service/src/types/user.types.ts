@@ -82,3 +82,22 @@ export interface MatchResult {
     startedAt: string; // ISO string
 }
 
+export interface MatchHistory {
+    player1Id: number;
+    player1: {
+        id: number;
+        username: string;
+        avatar: string;
+    };
+    player2Id: number;
+    player2: {
+        id: number;
+        username: string;
+        avatar: string;
+    };
+    player1Score: number;
+    player2Score: number;
+    playedAt: Date;
+}
+
+
