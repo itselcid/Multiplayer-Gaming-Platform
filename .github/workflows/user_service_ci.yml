@@ -2,12 +2,18 @@ name: user_service_ci
 
 on:
     push:
-        branches: [ "main_ums", "ums_ci" ]
+        branches:
+            - "main_ums"
+            - "ums_ci"
+            - "main"
         # Triggers only if files in this directory change
         paths:
             - 'src/backend/user-service/**'
     pull_request:
-        branches: [ "main_ums", "ums_ci" ]
+        branches:
+            - "main_ums"
+            - "ums_ci"
+            - "main"
         paths:
             - 'src/backend/user-service/**'
 
