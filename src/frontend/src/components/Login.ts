@@ -65,7 +65,7 @@ export class Login extends Component {
 
                         <!-- Forgot Password -->
                         <div class="text-center -mt-2">
-                            <button type="button" class="font-['Zen_Dots',sans-serif] text-[9px] text-white/50 hover:text-[#00d9ff] transition-colors">forgot password?</button>
+                            <button type="button" id="forgot-password-btn" class="font-['Zen_Dots',sans-serif] text-[9px] text-white/50 hover:text-[#00d9ff] transition-colors">forgot password?</button>
                         </div>
                     </form>
 
@@ -132,6 +132,7 @@ export class Login extends Component {
         const passwordContainer = this.el.querySelector('#password-container') as HTMLElement;
         const form = this.el.querySelector('#login-form') as HTMLFormElement;
         const registerBtn = this.el.querySelector('#register-btn') as HTMLButtonElement;
+        const forgotPasswordBtn = this.el.querySelector('#forgot-password-btn') as HTMLButtonElement;
         const githubBtn = this.el.querySelector('#github-btn') as HTMLButtonElement;
         const closeArea = this.el.querySelector('#close-area') as HTMLElement;
 
@@ -176,6 +177,10 @@ export class Login extends Component {
         });
 
         // Navigation
+        forgotPasswordBtn?.addEventListener('click', () => {
+            this.onNavigate('/forgot-password');
+        });
+
         registerBtn?.addEventListener('click', () => {
             this.onNavigate('/register');
         });

@@ -135,12 +135,16 @@ export const web3_login_sub = () => {
 
 // ===== USER AUTHENTICATION STATE =====
 export const userState = new State<User | null>(null);
+export const authLoading = new State<boolean>(true);
 
-// Initialize: Check if user is already logged in
 export async function initAuth() {
-	const user = await AuthService.getCurrentUser();
-	if (user)
-		userState.set(user);  // Will be null if not logged in
+	authLoading.set(true);
+	try {
+		const user = await AuthService.getCurrentUser();
+		userState.set(user);
+	} finally {
+		authLoading.set(false);
+	}
 }
 
 // Subscribe to user state changes

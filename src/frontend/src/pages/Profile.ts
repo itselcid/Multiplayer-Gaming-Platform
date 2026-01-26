@@ -13,6 +13,7 @@
 import { Achievements } from "../components/Achievements";
 import { Player_card } from "../components/Player_card";
 import { Tournament_history } from "../components/Tournament_history";
+import { Match_history } from "../components/match_history";
 import { addElement, Component } from "../core/Component";
 import { userState } from "../core/appStore";
 
@@ -104,7 +105,7 @@ export class ProfileView extends Component {
 
 	render() {
 		this.el.innerHTML = '';
-		
+
 		this.el.insertAdjacentHTML('beforeend', `
 								<div class="mb-12">
 								   <h1 class="text-5xl font-bold mb-4 pb-2 bg-gradient-to-r from-neon-cyan to-neon-purple bg-clip-text text-transparent">
@@ -112,21 +113,24 @@ export class ProfileView extends Component {
 								   </h1>
 								</div>
 								   `);
-		const	container = addElement('div', 'grid grid-cols-1 lg:grid-cols-3 gap-8', this.el);
-		const	profile_achievement = addElement('div', 'lg:col-span-1 space-y-6', container);
+		const container = addElement('div', 'grid grid-cols-1 lg:grid-cols-3 gap-8', this.el);
+		const profile_achievement = addElement('div', 'lg:col-span-1 space-y-6', container);
 
 		// If viewing another user's profile, render inline; otherwise use Player_card component
 		if (!this.isOwnProfile) {
 			profile_achievement.insertAdjacentHTML('beforeend', this.renderOtherUserCard());
 		} else {
-			const	player_card = new Player_card();
+			const player_card = new Player_card();
 			player_card.mount(profile_achievement);
 		}
 
-		const	achievements = new Achievements();
+		const achievements = new Achievements();
 		achievements.mount(profile_achievement);
 
-		const	tournament_history = new Tournament_history();
-		tournament_history.mount(container);
+		// const tournament_history = new Tournament_history();
+		// tournament_history.mount(container);
+
+		const match_history = new Match_history();
+		match_history.mount(container);
 	}
 }

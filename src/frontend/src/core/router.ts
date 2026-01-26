@@ -18,10 +18,12 @@ import { TournamentView } from "../pages/Tournament";
 import { TournamentsView } from "../pages/Tournaments";
 import { Login } from "../components/Login";
 import { Register } from "../components/Register";
+import { ForgotPassword } from "../components/ForgotPassword";
 import { chat } from "../components/chat";
 import { Friends } from "../components/Friends";
 import { Game } from "../pages/Game";
-import { userState } from "../core/appStore";
+import { userState, authLoading } from "../core/appStore";
+import { ResetPassword } from "../components/ResetPassword";
 // --- Route Definitions ---
 const routes: Record<string, any> = {
   "/": Home,
@@ -33,6 +35,8 @@ const routes: Record<string, any> = {
   "/match/:key": MatchView,
   "/login": Login,
   "/register": Register,
+  "/forgot-password": ForgotPassword,
+  "/reset-password": ResetPassword,
   "/chat": chat,
   "/friends": Friends,
   "/game": Game,
@@ -103,9 +107,51 @@ export async function renderRoute() {
     return;
   }
 
+  // Guard Logic
+  const currentPath = location.pathname.replace(/\/+$/, "") || "/";
+  // Define route types
+  const protectedRoutes = ["/chat", "/friends", "/game?mode=remote"];
+
+  // 1. Loading State
+  if (authLoading.get()) {
+    // Show a minimal loading state while we verify session
+    root.innerHTML = `
+      <div class="fixed inset-0 flex items-center justify-center bg-space-dark z-50">
+        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-neon-cyan"></div>
+      </div>
+    `;
+    return;
+  }
+
+  // 2. Auth Guards
+  const isProtectedRoute = protectedRoutes.includes(currentPath);
+
+  if (!user) {
+    // User is NOT logged in
+
+    // If trying to access a protected route (not public AND not guest-only)
+    // Note: We allow guest routes (login/register) and public routes.
+    if (isProtectedRoute) {
+      console.log("🔒 Unauthorized access to protected route. Redirecting to /login");
+      navigate("/login");
+      return;
+    }
+  } else {
+    // User IS logged in
+
+    // If trying to access guest-only routes (Login/Register)
+    if (isProtectedRoute) {
+      console.log("👤 User already logged in. Redirecting to /profile");
+      navigate("/profile");
+      return;
+    }
+  }
+
   const { view: View, params } = match;
 
   // Check if the target view is an overlay (Login or Register)
+  // Note: With the guards above, a logged-in user won't reach here for Login/Register,
+  // and a logged-out user won't reach here for Protected routes.
   const isOverlay = (View === Login || View === Register);
 
   // Remove any existing overlay if we are navigating

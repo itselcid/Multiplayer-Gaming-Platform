@@ -15,23 +15,26 @@ import { userState } from "../core/appStore";
 // Use relative URL to go through nginx proxy
 const API_URL = '/api';
 
-// Define the User type based on your backend response
+// the User type based on backend response
 export interface User {
     id: number;
     username: string;
     email: string;
-    role: string;
+    avatar: string;
+    twoFactor?: {
+        method: string | null;
+        enabled?: boolean;
+    } | null;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
-// Define what the login and register response looks like
 interface SignResponse {
     message: string;
     user: User;
 }
 
 export class AuthService {
-
-
     // returns a User as a promise, or throw an Error in case of failer !!!
     static async login(username: string, password: string): Promise<User> {
         try {
@@ -39,7 +42,7 @@ export class AuthService {
             const response = await fetch(`${API_URL}/auth/login`, {
                 method: 'POST',
                 headers: {
-                'Content-Type': 'application/json',
+                    'Content-Type': 'application/json',
                 },
                 credentials: 'include',  // Allows cookies to be sent/received
                 body: JSON.stringify({ username, password }),
@@ -48,7 +51,7 @@ export class AuthService {
             const data: SignResponse = await response.json();
 
             if (!response.ok) {  // ok in between 200-299
-                
+
                 // Handle different error status codes
                 if (response.status === 401) {
                     throw new Error('Invalid email or password');
@@ -113,7 +116,7 @@ export class AuthService {
     }
 
     static async getCurrentUser(): Promise<User | null> {
-        
+
         try {
             const response = await fetch(`${API_URL}/users/me`, {
                 method: 'GET',
@@ -129,7 +132,7 @@ export class AuthService {
             }
 
             const data = await response.json();
-            
+
             userState.set(data.user);        // THE RIGHT PLACE ???
             return data.user;
 
