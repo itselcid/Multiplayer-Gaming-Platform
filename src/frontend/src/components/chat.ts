@@ -1,7 +1,8 @@
 import { Component } from "../core/Component";
 import { io, Socket } from "socket.io-client";
-import { userState } from "../core/appStore";
+import { userState, matchNotificationState } from "../core/appStore";
 import { socketService } from "../services/socket";
+import type { MatchNotification } from "../web3/getters";
 
 // Use relative URLs to go through nginx proxy
 const API_URL = '/api';
@@ -31,6 +32,9 @@ interface Message {
   isMine: boolean;
   time: string;
   reactions: string[];
+  isSystemMessage?: boolean;
+  matchLink?: string;
+  tournamentLink?: string;
 }
 
 export class chat extends Component {
@@ -46,6 +50,12 @@ export class chat extends Component {
   private users: Record<number, User> = {};
   private conversations: Record<number, Message[]> = {};
   private blockedUsers: Set<number> = new Set();
+  
+  // Tournament notification subscription
+  private unsubscribeMatchNotification: (() => void) | null = null;
+  
+  // System user ID for tournament notifications
+  private static TOURNAMENT_SYSTEM_USER_ID = 999999;
   
   // Cache for online friends list
   private cachedOnlineFriends: number[] = [];
@@ -175,6 +185,9 @@ export class chat extends Component {
       // Apply cached online status
       this.applyOnlineStatus();
       
+      // Load saved tournament notifications
+      await this.loadTournamentNotifications();
+      
       this.render();
     } catch (error) {
       console.error('Failed to load friends:', error);
@@ -242,6 +255,111 @@ export class chat extends Component {
     }
   }
 
+  // Load saved tournament notifications from backend
+  private async loadTournamentNotifications() {
+    const currentUser = userState.get();
+    if (!currentUser) {
+      console.log('loadTournamentNotifications: No current user');
+      return;
+    }
+
+    console.log('loadTournamentNotifications: Fetching for user', currentUser.id);
+
+    try {
+      const response = await fetch(`${API_URL}/chat/tournament-notifications`, {
+        credentials: 'include',
+        headers: {
+          'x-user-id': currentUser.id.toString()
+        }
+      });
+
+      console.log('loadTournamentNotifications: Response status', response.status);
+
+      if (response.ok) {
+        const data = await response.json();
+        const notifications = data.notifications || [];
+
+        console.log('loadTournamentNotifications: Got', notifications.length, 'notifications', notifications);
+
+        if (notifications.length > 0) {
+          // Ensure tournament system user exists
+          this.ensureTournamentSystemUser();
+
+          // Convert notifications to messages
+          notifications.forEach((n: any) => {
+            const message: Message = {
+              id: n.id,
+              text: n.text || `🎮 Tournament Match Started!\n\n📋 Tournament #${n.tournamentId}\n🔄 Round ${n.round}\n⚔️ Opponent: ${n.opponentUsername}\n\nYour match is ready! Good luck! 🍀`,
+              isMine: false,
+              time: new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              reactions: [],
+              isSystemMessage: true,
+              tournamentLink: n.tournamentLink || `/tournament/${n.tournamentId}`
+            };
+
+            if (!this.conversations[chat.TOURNAMENT_SYSTEM_USER_ID]) {
+              this.conversations[chat.TOURNAMENT_SYSTEM_USER_ID] = [];
+            }
+            
+            // Avoid duplicates
+            const exists = this.conversations[chat.TOURNAMENT_SYSTEM_USER_ID].some(m => m.id === n.id);
+            if (!exists) {
+              this.conversations[chat.TOURNAMENT_SYSTEM_USER_ID].push(message);
+              console.log('loadTournamentNotifications: Added message', message.id);
+            }
+          });
+
+          // Update last message for user list
+          const lastNotification = notifications[notifications.length - 1];
+          if (lastNotification) {
+            this.users[chat.TOURNAMENT_SYSTEM_USER_ID].lastMessage = `🎮 Match vs ${lastNotification.opponentUsername} - Tournament #${lastNotification.tournamentId}`;
+            this.users[chat.TOURNAMENT_SYSTEM_USER_ID].lastMessageTime = new Date(lastNotification.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          }
+
+          console.log('Loaded tournament notifications:', notifications.length);
+        } else {
+          console.log('loadTournamentNotifications: No notifications found');
+        }
+      } else {
+        console.error('loadTournamentNotifications: Error response', await response.text());
+      }
+    } catch (error) {
+      console.error('Failed to load tournament notifications:', error);
+    }
+  }
+
+  // Save tournament notification to backend
+  private async saveTournamentNotification(notification: MatchNotification) {
+    const currentUser = userState.get();
+    if (!currentUser) return;
+
+    try {
+      const response = await fetch(`${API_URL}/chat/tournament-notifications`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': currentUser.id.toString()
+        },
+        body: JSON.stringify({
+          tournamentId: Number(notification.tournamentId),
+          round: Number(notification.round),
+          opponentUsername: notification.opponentUsername,
+          tournamentLink: `/tournament/${notification.tournamentId}`,
+          content: `🎮 Tournament Match Started!\n\n📋 Tournament #${notification.tournamentId}\n🔄 Round ${notification.round}\n⚔️ Opponent: ${notification.opponentUsername}\n\nYour match is ready! Good luck! 🍀`
+        })
+      });
+
+      if (response.ok) {
+        console.log('Tournament notification saved to database');
+      } else {
+        console.error('Failed to save tournament notification:', await response.text());
+      }
+    } catch (error) {
+      console.error('Error saving tournament notification:', error);
+    }
+  }
+
   // Apply online status from cache to loaded users
   private applyOnlineStatus() {
     if (Object.keys(this.users).length === 0) return;
@@ -259,7 +377,7 @@ export class chat extends Component {
       }
     });
     
-    this.render();
+    // Don't call render here - let the caller decide when to render
   }
 
   private async loadBlockedUsers() {
@@ -299,6 +417,9 @@ export class chat extends Component {
         
         // Subscribe to online status updates
         this.subscribeToOnlineStatus();
+        
+        // Subscribe to tournament match notifications
+        this.subscribeToMatchNotifications();
       } else {
         this.users = {};
         this.conversations = {};
@@ -312,9 +433,97 @@ export class chat extends Component {
         // Unsubscribe from online status events
         this.unsubscribeFromOnlineStatus();
         
+        // Unsubscribe from match notifications
+        this.unsubscribeFromMatchNotifications();
+        
         this.render();
       }
     });
+  }
+  
+  private subscribeToMatchNotifications() {
+    console.log('chat.subscribeToMatchNotifications: Setting up subscription');
+    // Ensure tournament system user exists
+    this.ensureTournamentSystemUser();
+    
+    // Subscribe to match notification state
+    this.unsubscribeMatchNotification = matchNotificationState.subscribe((notification: MatchNotification | null) => {
+      console.log('chat.subscribeToMatchNotifications: Received notification state:', notification);
+      if (!notification) return;
+      
+      console.log('chat.subscribeToMatchNotifications: Calling handleMatchNotification');
+      this.handleMatchNotification(notification);
+    });
+  }
+  
+  private unsubscribeFromMatchNotifications() {
+    if (this.unsubscribeMatchNotification) {
+      this.unsubscribeMatchNotification();
+      this.unsubscribeMatchNotification = null;
+    }
+  }
+  
+  private ensureTournamentSystemUser() {
+    const systemUserId = chat.TOURNAMENT_SYSTEM_USER_ID;
+    console.log('ensureTournamentSystemUser: checking for user', systemUserId, 'exists:', !!this.users[systemUserId]);
+    if (!this.users[systemUserId]) {
+      this.users[systemUserId] = {
+        id: systemUserId,
+        name: 'Tournament 🏆',
+        avatar: '/logo.png',
+        status: 'Online',
+        lastSeen: 'System',
+        unread: 0,
+        typing: false,
+        lastMessage: 'Tournament notifications'
+      };
+      // Initialize empty conversation
+      this.conversations[systemUserId] = [];
+      console.log('ensureTournamentSystemUser: Created tournament user, users now:', Object.keys(this.users));
+    }
+  }
+  
+  private handleMatchNotification(notification: MatchNotification) {
+    const systemUserId = chat.TOURNAMENT_SYSTEM_USER_ID;
+    
+    // Ensure system user exists
+    this.ensureTournamentSystemUser();
+    
+    // Create notification message
+    const message: Message = {
+      id: Date.now(),
+      text: `🎮 Tournament Match Started!\n\n📋 Tournament #${notification.tournamentId}\n🔄 Round ${notification.round}\n⚔️ Opponent: ${notification.opponentUsername}\n\nYour match is ready! Good luck! 🍀`,
+      isMine: false,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      reactions: [],
+      isSystemMessage: true,
+      matchLink: `/match/${notification.matchKey}`,
+      tournamentLink: `/tournament/${notification.tournamentId}`
+    };
+    
+    // Add to tournament conversation
+    if (!this.conversations[systemUserId]) {
+      this.conversations[systemUserId] = [];
+    }
+    this.conversations[systemUserId].push(message);
+    
+    // Update last message for the user list - include tournament link info
+    this.users[systemUserId].lastMessage = `🎮 Match vs ${notification.opponentUsername} - Tournament #${notification.tournamentId}`;
+    this.users[systemUserId].lastMessageTime = message.time;
+    this.users[systemUserId].unread = (this.users[systemUserId].unread || 0) + 1;
+    
+    // If not currently viewing tournament chat, increment unread
+    if (this.currentChatUserId !== systemUserId) {
+      console.log('New tournament notification - unread count:', this.users[systemUserId].unread);
+    }
+    
+    // Save notification to backend for persistence
+    this.saveTournamentNotification(notification);
+    
+    this.render();
+    
+    // Auto-open tournament chat if desired (optional)
+    // this.openChat(systemUserId);
   }
   
   private subscribeToOnlineStatus() {
@@ -323,6 +532,7 @@ export class chat extends Component {
       console.log('Received initial online list:', onlineFriendIds);
       this.cachedOnlineFriends = onlineFriendIds;
       this.applyOnlineStatus();
+      this.render();
     });
 
     // Listen for friend status changes (online/offline)
@@ -558,52 +768,98 @@ export class chat extends Component {
       `;
     }
 
-    const messagesHtml = messages.map((msg) => `
-      <div class="flex ${msg.isMine ? 'justify-end' : 'justify-start'}">
-        <div class="group max-w-xs lg:max-w-md ${msg.isMine ? 'order-2' : 'order-1'}">
-          <div class="px-4 py-3 rounded-2xl ${msg.isMine
-        ? 'bg-blue-600 text-white rounded-br-sm'
-        : 'bg-space-blue/80 text-gray-200 rounded-bl-sm border border-neon-cyan/20'
-      }">
-            <p class="text-sm leading-relaxed">${this.escapeHtml(msg.text)}</p>
-          </div>
-          <div class="flex items-center gap-2 mt-1 px-2">
-            <span class="text-xs text-gray-500">${this.escapeHtml(msg.time)}</span>
-            ${msg.reactions.length > 0 ? `
-              <div class="flex gap-1">
-                ${msg.reactions.map(r => `<span class="text-xs">${r}</span>`).join('')}
+    const messagesHtml = messages.map((msg) => {
+      // Check if it's a system message (tournament notification)
+      if (msg.isSystemMessage) {
+        return `
+          <div class="flex justify-center my-4">
+            <div class="max-w-sm w-full bg-gradient-to-r from-neon-purple/20 to-neon-cyan/20 border border-neon-cyan/30 rounded-xl p-4 shadow-lg">
+              <div class="text-center">
+                <p class="text-sm text-gray-200 whitespace-pre-line mb-3">${this.escapeHtml(msg.text)}</p>
+                ${msg.tournamentLink ? `
+                  <a href="${msg.tournamentLink}" class="inline-block bg-gradient-to-r from-neon-purple to-neon-cyan text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition shadow-md">
+                    🏆 View Tournament →
+                  </a>
+                ` : ''}
               </div>
-            ` : ''}
+              <div class="text-center mt-3">
+                <span class="text-xs text-gray-500">${this.escapeHtml(msg.time)}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      
+      // Regular message
+      return `
+        <div class="flex ${msg.isMine ? 'justify-end' : 'justify-start'}">
+          <div class="group max-w-xs lg:max-w-md ${msg.isMine ? 'order-2' : 'order-1'}">
+            <div class="px-4 py-3 rounded-2xl ${msg.isMine
+          ? 'bg-blue-600 text-white rounded-br-sm'
+          : 'bg-space-blue/80 text-gray-200 rounded-bl-sm border border-neon-cyan/20'
+        }">
+              <p class="text-sm leading-relaxed">${this.escapeHtml(msg.text)}</p>
+            </div>
+            <div class="flex items-center gap-2 mt-1 px-2">
+              <span class="text-xs text-gray-500">${this.escapeHtml(msg.time)}</span>
+              ${msg.reactions.length > 0 ? `
+                <div class="flex gap-1">
+                  ${msg.reactions.map(r => `<span class="text-xs">${r}</span>`).join('')}
+                </div>
+              ` : ''}
+            </div>
           </div>
         </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
+
+    // Check if this is the tournament system user
+    const isSystemUser = this.currentChatUserId === chat.TOURNAMENT_SYSTEM_USER_ID;
+    
+    // Show welcome message for tournament system if no messages
+    let displayMessages = messagesHtml;
+    if (isSystemUser && messages.length === 0) {
+      displayMessages = `
+        <div class="flex justify-center my-4">
+          <div class="max-w-sm w-full bg-gradient-to-r from-neon-purple/20 to-neon-cyan/20 border border-neon-cyan/30 rounded-xl p-4 shadow-lg">
+            <div class="text-center">
+              <p class="text-2xl mb-2">🏆</p>
+              <h3 class="text-lg font-bold text-neon-cyan mb-2">Tournament Notifications</h3>
+              <p class="text-sm text-gray-300 mb-3">When your tournament match starts, you'll receive a notification here with a link to view your tournament.</p>
+              <p class="text-xs text-gray-500">Join a tournament to get started!</p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
 
     return `
       <div class="px-4 py-2 border-b border-neon-cyan/10 bg-space-dark/50 flex items-center justify-between rounded-lg mb-4">
-        <div class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition" id="chat-user-profile-link" data-user-id="${user.id}" title="View profile">
+        <div class="flex items-center gap-2 ${!isSystemUser ? 'cursor-pointer hover:opacity-80' : ''} transition" ${!isSystemUser ? `id="chat-user-profile-link" data-user-id="${user.id}" title="View profile"` : ''}>
           <div class="relative">
-            <div class="w-8 h-8 bg-gradient-to-br from-neon-purple to-neon-cyan rounded-full flex items-center justify-center overflow-hidden">
+            <div class="w-8 h-8 ${isSystemUser ? 'bg-gradient-to-r from-neon-purple to-neon-cyan' : 'bg-gradient-to-br from-neon-purple to-neon-cyan'} rounded-full flex items-center justify-center overflow-hidden">
               ${this.renderAvatar(user.avatar)}
             </div>
-            <div class="absolute bottom-0 right-0 w-2.5 h-2.5 ${this.getStatusColor(user.status)} rounded-full border-2 border-space-dark"></div>
+            ${!isSystemUser ? `<div class="absolute bottom-0 right-0 w-2.5 h-2.5 ${this.getStatusColor(user.status)} rounded-full border-2 border-space-dark"></div>` : ''}
           </div>
           <div>
-            <h2 class="font-semibold text-gray-200">${this.escapeHtml(user.name)}</h2>
-            <p class="text-xs text-gray-500">${this.escapeHtml(user.lastSeen)}</p>
+            <h2 class="font-semibold ${isSystemUser ? 'text-neon-cyan' : 'text-gray-200'}">${this.escapeHtml(user.name)}</h2>
+            <p class="text-xs text-gray-500">${isSystemUser ? 'Tournament Notifications' : this.escapeHtml(user.lastSeen)}</p>
           </div>
         </div>
-        <div class="flex items-center gap-2 relative">
-          <button id="chat-header-menu-btn" class="p-2 hover:bg-neon-cyan/10 rounded-lg transition text-gray-400">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
-            </svg>
-          </button>
-          <div class="menu-actions-container" data-user-id="${user.id}"></div>
-        </div>
+        ${!isSystemUser ? `
+          <div class="flex items-center gap-2 relative">
+            <button id="chat-header-menu-btn" class="p-2 hover:bg-neon-cyan/10 rounded-lg transition text-gray-400">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
+              </svg>
+            </button>
+            <div class="menu-actions-container" data-user-id="${user.id}"></div>
+          </div>
+        ` : ''}
       </div>
       <div id="messages-container" class="space-y-4 flex-1 overflow-y-auto no-scrollbar">
-        ${messagesHtml}
+        ${displayMessages}
       </div>
     `;
   }
@@ -691,7 +947,7 @@ export class chat extends Component {
             <div class="flex-1 overflow-y-auto no-scrollbar p-6 bg-gradient-to-b from-space-dark/30 to-space-blue/30 flex flex-col">
               ${this.renderMessages()}
             </div>
-            ${!this.blockedUsers.has(this.currentChatUserId!) ? `
+            ${!this.blockedUsers.has(this.currentChatUserId!) && this.currentChatUserId !== chat.TOURNAMENT_SYSTEM_USER_ID ? `
               <div class="p-4 border-t border-neon-cyan/10 bg-space-dark/50">
                 <div class="bg-space-blue/50 border border-neon-cyan/20 rounded-2xl px-4 py-2 flex items-end gap-2">
                   <textarea

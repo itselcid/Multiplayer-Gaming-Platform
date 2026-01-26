@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   appStore.ts                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: voussama <voussama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/03 15:31:14 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/12 02:13:32 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/26 14:18:27 by voussama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,7 @@ import { TournamentView } from "../pages/Tournament";
 import { TournamentsDisplay, TournamentTab } from "../pages/Tournaments";
 import { get_tournament_status, tournament_id_to_index } from "../tools/tournament_tools";
 import { Web3Auth } from "../web3/auth";
-import { get_tournament_batch, getTournament, watchCreatedRounds, watchFinishedMatches, watchTournamentCreation, watchTournamentStatus } from "../web3/getters";
+import { get_tournament_batch, getTournament, watchCreatedRounds, watchFinishedMatches, watchMatchCreated, watchTournamentCreation, watchTournamentStatus, setMatchNotificationCallback, type MatchNotification } from "../web3/getters";
 import { shortenEthAddress } from "../web3/tools";
 import { matchRoute } from "./router";
 import { State } from "./state";
@@ -323,3 +323,21 @@ export const finishedMatchesStateSub = () => {
 		}
 	})
 }
+
+// Match started notifications - notify users when their tournament match begins
+export const matchNotificationState = new State<MatchNotification | null>(null);
+export const matchNotificationStateSub = () => {
+	// Set up the callback for match notifications
+	setMatchNotificationCallback((notification: MatchNotification) => {
+		console.log('Match notification received:', notification);
+		matchNotificationState.set(notification);
+	});
+	
+	// Start watching for match created events with wallet address getter
+	watchMatchCreated(async () => {
+		return await web3auth.getEthAddress();
+	});
+	
+	// Note: The actual notification display is now handled by the chat component
+	// which subscribes to matchNotificationState
+};

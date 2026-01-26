@@ -2,7 +2,32 @@ import { FastifyInstance } from 'fastify';
 import { blockuser, unblockuser, isBlocked } from './utils/block_user.js';
 import { prisma } from "./prisma.js";
 
+// System user ID for tournament notifications (using large positive ID to avoid conflicts)
+const TOURNAMENT_SYSTEM_USER_ID = 999999;
+
 export async function chatRoutes(fastify: FastifyInstance) {
+  // Ensure tournament system user exists
+  async function ensureTournamentSystemUser() {
+    try {
+      const existing = await prisma.user.findUnique({
+        where: { id: TOURNAMENT_SYSTEM_USER_ID }
+      });
+      if (!existing) {
+        console.log('Creating tournament system user with ID:', TOURNAMENT_SYSTEM_USER_ID);
+        await prisma.user.create({
+          data: {
+            id: TOURNAMENT_SYSTEM_USER_ID,
+            username: 'Tournament System'
+          }
+        });
+        console.log('Tournament system user created successfully');
+      }
+    } catch (error) {
+      console.error('Error ensuring tournament system user:', error);
+      throw error;
+    }
+  }
+
   // Block a user
   fastify.post<{ Body: { userId: number } }>('/block', async (req, reply) => {
     if (!req.user?.id) {
@@ -186,5 +211,94 @@ export async function chatRoutes(fastify: FastifyInstance) {
     }
 
     return results;
+  });
+
+  // ============ TOURNAMENT NOTIFICATIONS ============
+
+  // Save a tournament notification
+  fastify.post<{ Body: { tournamentId: number; round: number; opponentUsername: string; tournamentLink: string; content: string } }>('/tournament-notifications', async (req, reply) => {
+    if (!req.user?.id) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+    const userId = req.user.id;
+    const { tournamentId, round, opponentUsername, tournamentLink, content } = req.body;
+
+    if (!tournamentId || !content) {
+      return reply.code(400).send({ error: 'Invalid data' });
+    }
+
+    try {
+      // Ensure system user exists
+      await ensureTournamentSystemUser();
+
+      // Ensure current user exists
+      await prisma.user.upsert({
+        where: { id: userId },
+        update: {},
+        create: { id: userId, username: `user_${userId}` }
+      });
+
+      // Save notification as a message from system to user
+      const message = await prisma.message.create({
+        data: {
+          content: JSON.stringify({
+            type: 'tournament_notification',
+            tournamentId,
+            round,
+            opponentUsername,
+            tournamentLink,
+            text: content
+          }),
+          senderId: TOURNAMENT_SYSTEM_USER_ID,
+          receiverId: userId
+        }
+      });
+
+      return { success: true, message };
+    } catch (err: any) {
+      console.error('Error saving tournament notification:', err);
+      return reply.code(500).send({ error: 'Failed to save notification' });
+    }
+  });
+
+  // Get tournament notifications for a user
+  fastify.get('/tournament-notifications', async (req, reply) => {
+    if (!req.user?.id) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+    const userId = req.user.id;
+
+    try {
+      const notifications = await prisma.message.findMany({
+        where: {
+          senderId: TOURNAMENT_SYSTEM_USER_ID,
+          receiverId: userId
+        },
+        orderBy: { createdAt: 'asc' }
+      });
+
+      // Parse the JSON content
+      const parsedNotifications = notifications.map((n: { id: number; content: string; createdAt: Date }) => {
+        try {
+          const data = JSON.parse(n.content);
+          return {
+            id: n.id,
+            ...data,
+            createdAt: n.createdAt
+          };
+        } catch {
+          return {
+            id: n.id,
+            text: n.content,
+            createdAt: n.createdAt
+          };
+        }
+      });
+
+      return { notifications: parsedNotifications };
+    } catch (err: any) {
+      console.error('Error fetching tournament notifications:', err);
+      return reply.code(500).send({ error: 'Failed to fetch notifications' });
+    }
   });
 }

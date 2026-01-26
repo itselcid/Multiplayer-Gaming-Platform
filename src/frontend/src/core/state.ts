@@ -3,14 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   state.ts                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: voussama <voussama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/18 00:04:38 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/12 02:18:08 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/26 14:18:28 by voussama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-import { active_tab_sub, addTouranamentStateSub, currentWeb3AccountSub, finishedMatchesStateSub, tournament_tab_sub, updateTournamentStateSub, user_state_sub, web3_login_sub } from "./appStore";
+import { active_tab_sub, addTouranamentStateSub, currentWeb3AccountSub, finishedMatchesStateSub, matchNotificationStateSub, tournament_tab_sub, updateTournamentStateSub, user_state_sub, web3_login_sub } from "./appStore";
 
 	type Subscriber<T> = (value: T) => void;
 
@@ -63,6 +63,7 @@ export const subs = () => {
 	addTouranamentStateSub();
 	updateTournamentStateSub();
 	finishedMatchesStateSub();
+	matchNotificationStateSub();
   	user_state_sub();
 }
 
