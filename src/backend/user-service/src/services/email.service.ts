@@ -4,7 +4,7 @@ import { env } from '../config/env'
 // Create transporter (email sender)
 const transporter = nodemailer.createTransport({
     host: env.EMAIL_HOST,
-    port: parseInt(env.EMAIL_PORT),
+    port: env.EMAIL_PORT,
     secure: false, // true for 465, false for other ports
     auth: {
         user: env.EMAIL_USER,
@@ -13,7 +13,7 @@ const transporter = nodemailer.createTransport({
 })
 
 // Send password reset email
-async function sendPasswordResetEmail(email, token, username) {
+async function sendPasswordResetEmail(email: string, token: string, username: string) {
     const resetUrl = `${env.FRONTEND_URL}/reset-password?token=${token}`
 
     const mailOptions = {
@@ -104,7 +104,7 @@ async function sendPasswordResetEmail(email, token, username) {
     return info
 }
 
-async function send2faEmailCode(email, code) {
+async function send2faEmailCode(email: string, code: string) {
     const mailOptions = {
         from: env.EMAIL_FROM,
         to: email,

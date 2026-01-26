@@ -141,7 +141,7 @@ export const authController = {
         if (user) {
             const resetToken = await createPasswordResetToken(user.id);
 
-            // await sendPasswordResetEmail(user.email, resetToken.token);      // ! uncomment in production
+            await sendPasswordResetEmail(user.email, resetToken.token, user.username);
 
             return reply.send({
                 message: "Password reset email sent successfully",
