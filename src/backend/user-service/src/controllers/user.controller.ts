@@ -129,16 +129,17 @@ export const userController = {
 
     getMatchHistory: async (request: any, reply: any) => {
         const userId = parseInt(request.params.id, 10) || request.user!.userId;
+        const page = parseInt(request.query.page, 10) || 1;
+        const limit = parseInt(request.query.limit, 10) || 10;
+        const offset = (page - 1) * limit;
 
-        console.log("\ndebuging message ---------------\n");
         if (isNaN(userId))
             throw createHttpError(400, 'Invalid user ID');
 
         const user = await getUserById(userId);
         if (!user)
             throw createHttpError(404, 'User not found');
-        const historyData: MatchHistory[] = await getMatchHistory(userId);
-        console.log("\ndebuging message ---------------\n");
+        const historyData: MatchHistory[] = await getMatchHistory(userId, offset, limit);
 
         return reply.send({ historyData });
     }

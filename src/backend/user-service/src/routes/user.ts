@@ -70,7 +70,7 @@ export default async function userRoutes(server: FastifyInstance): Promise<void>
     server.post<{ Body: { username: string } }>('/istaken', { schema: UsernameSchema }, userController.isUsernameTaken);
     // get match history
     server.get<{ Params: { id: string } }>('/:id/history', { preHandler: [server.authenticate], schema: UserIdSchema }, userController.getMatchHistory);
-    // get match history for logged in user
-    server.get('/me/history', { preHandler: [server.authenticate] }, userController.getMatchHistory);
+    // get match history for logged in user with pagination
+    server.get<{ Querystring: { page: number, limit: number } }>('/me/history', { preHandler: [server.authenticate] }, userController.getMatchHistory);
 }
 

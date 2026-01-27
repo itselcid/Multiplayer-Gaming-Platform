@@ -16,10 +16,21 @@ export interface UserData {
     username: string;
     email: string;
     avatar: string | null;
+    xp: number;
     twoFactor?: {
         method: string | null;
         enabled?: boolean;
     } | null;
+    achievements?: {
+        unlockedAt: Date;
+        achievement: {
+            id: number;
+            key: string;
+            name: string;
+            description: string;
+            icon: string;
+        };
+    }[];
     createdAt: Date;
     updatedAt: Date;
 }
@@ -28,6 +39,7 @@ export interface UserSearchData {
     id: number;
     username: string;
     avatar: string;
+    xp: number;
 }
 
 export interface CreateUserInput {

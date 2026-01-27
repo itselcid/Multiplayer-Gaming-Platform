@@ -1,11 +1,12 @@
 import createHttpError from "http-errors";
 import { CreateUserInput, GithubProfile } from "../types";
-import { createPasswordResetToken, createUser, deletePasswordResetToken, deleteTwoFactorCode, findOrCreateGithubUser, findPasswordResetToken, findTwoFactorCode, generateTwoFactorCode, getUserByRefreshToken, getUserByUsername, getUserForAuth, saveRefreshToken, updateUser } from "../db";
+import { createPasswordResetToken, createUser, deletePasswordResetToken, deleteTwoFactorCode, findOrCreateGithubUser, findPasswordResetToken, findTwoFactorCode, generateTwoFactorCode, getUserById, getUserByRefreshToken, getUserByUsername, getUserForAuth, saveRefreshToken, updateUser } from "../db";
 import { tokenService } from "../services/auth.service";
 import bcrypt from 'bcrypt';
 import { send2faEmailCode, sendPasswordResetEmail } from "../services/email.service";
 import { env } from "node:process";
 import speakeasy from 'speakeasy';
+import user from "../routes/user";
 
 type GitHubTokenResponse = {
     access_token?: string;
@@ -22,24 +23,24 @@ export const authController = {
         if (!password || !username)
             throw createHttpError(400, 'username and password are requierd!');
 
-        const user = await getUserForAuth(username);
+        const authUser = await getUserForAuth(username);
 
-        if (!user)
+        if (!authUser)
             throw createHttpError(401, 'Invalid username or password!');
 
-        const isValidPassword = await bcrypt.compare(password, user.password);
+        const isValidPassword = await bcrypt.compare(password, authUser.password);
 
         if (!isValidPassword)
             throw createHttpError(401, 'Invalid username or password!');
 
-        const accessToken = tokenService.generateToken(request.server, user, 'access');
+        const accessToken = tokenService.generateToken(request.server, authUser, 'access');
         tokenService.setCookie(reply, accessToken, 'authToken');
 
-        if (user.twoFactor?.enabled) {
+        if (authUser.twoFactor?.enabled) {
             let code: string | undefined;
-            if (user.twoFactor.method === 'email') {
-                code = await generateTwoFactorCode(user.id);
-                await send2faEmailCode(user.email, code);
+            if (authUser.twoFactor.method === 'email') {
+                code = await generateTwoFactorCode(authUser.id);
+                await send2faEmailCode(authUser.email, code);
             }
 
             return reply.send({
@@ -50,17 +51,15 @@ export const authController = {
             });
         }
 
-        const refreshToken = tokenService.generateToken(request.server, user, 'refresh');
-        await saveRefreshToken(user.id, refreshToken);
+        const refreshToken = tokenService.generateToken(request.server, authUser, 'refresh');
+        await saveRefreshToken(authUser.id, refreshToken);
         tokenService.setCookie(reply, refreshToken, 'refreshToken');
+
+        const user = await getUserById(authUser.id);
 
         return reply.send({
             message: 'Login successful',
-            user: {   // use interface later
-                id: user.id,
-                username: user.username,
-                email: user.email
-            }
+            user
         });
     },
 
