@@ -40,6 +40,16 @@ const UpdateProfileSchema = {
     }
 } as const;
 
+const DeleteProfileSchema = {
+    body: {
+        type: 'object',
+        required: ['password'],
+        properties: {
+            password: { type: 'string' }
+        }
+    }
+} as const;
+
 type updateLoggedInUserBody = {
     email?: string;
     username?: string;
@@ -59,7 +69,7 @@ export default async function userRoutes(server: FastifyInstance): Promise<void>
     //! update logged in user data only email available for now
     server.put<{ Body: updateLoggedInUserBody }>('/me', { preHandler: [server.authenticate], schema: UpdateProfileSchema }, userController.updateLoggedInUser);
     // delete logged in user account
-    server.delete('/me', { preHandler: [server.authenticate] }, userController.deleteLoggedInUser);
+    server.delete<{ Body: { password: string } }>('/me', { preHandler: [server.authenticate], schema: DeleteProfileSchema }, userController.deleteLoggedInUser);
     // get user by id
     server.get<{ Params: { id: string } }>('/:id', { preHandler: [server.authenticate], schema: UserIdSchema }, userController.getUserById);
     // upload avatar

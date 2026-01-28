@@ -1,7 +1,7 @@
 
 import { Component } from "../core/Component";
 import { navigate } from "../core/router";
-import { AuthService } from "../services/auth";
+import { AuthService, TwoFactorRequiredError } from "../services/auth";
 
 export class Login extends Component {
     private errorMessage: string = '';
@@ -168,6 +168,12 @@ export class Login extends Component {
                 await AuthService.login(usernameInput.value, passwordInput.value);
                 this.onNavigate('/profile');
             } catch (error) {
+                // Check if 2FA is required
+                if (error instanceof TwoFactorRequiredError) {
+                    // Navigate to 2FA verification page with method
+                    this.onNavigate(`/login/verify?method=${error.method}`);
+                    return;
+                }
                 if (error instanceof Error) {
                     this.setErrorMessage(error.message);
                 } else {

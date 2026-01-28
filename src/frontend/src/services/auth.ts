@@ -45,8 +45,26 @@ interface SignResponse {
     user: User;
 }
 
+interface LoginResponse {
+    message: string;
+    user?: User;
+    requires2FA?: boolean;
+    method?: 'email' | 'totp';
+}
+
+// Custom error class for 2FA required
+export class TwoFactorRequiredError extends Error {
+    public method: 'email' | 'totp';
+
+    constructor(method: 'email' | 'totp' = 'totp') {
+        super('2FA verification required');
+        this.name = 'TwoFactorRequiredError';
+        this.method = method;
+    }
+}
+
 export class AuthService {
-    // returns a User as a promise, or throw an Error in case of failer !!!
+    // returns a User as a promise, throws TwoFactorRequiredError if 2FA is needed
     static async login(username: string, password: string): Promise<User> {
         try {
             // Make the API request
@@ -59,10 +77,9 @@ export class AuthService {
                 body: JSON.stringify({ username, password }),
             });
 
-            const data: SignResponse = await response.json();
+            const data: LoginResponse = await response.json();
 
             if (!response.ok) {  // ok in between 200-299
-
                 // Handle different error status codes
                 if (response.status === 401) {
                     throw new Error('Invalid email or password');
@@ -75,13 +92,67 @@ export class AuthService {
                 }
             }
 
-            userState.set(data.user);        // THE RIGHT PLACE ???
+            // Check if 2FA is required
+            if (data.requires2FA) {
+                // Determine method from message or default to totp
+                const method = data.message?.includes('email') ? 'email' : 'totp';
+                throw new TwoFactorRequiredError(method);
+            }
+
+            if (!data.user) {
+                throw new Error('Invalid response from server');
+            }
+
+            userState.set(data.user);
             return data.user;
 
         } catch (error) {
+            // Re-throw TwoFactorRequiredError as-is
+            if (error instanceof TwoFactorRequiredError) {
+                throw error;
+            }
             // Handle network errors (server down, no internet, etc.)
             if (error instanceof Error) {
                 throw error;  // Re-throw our custom error messages
+            }
+            throw new Error('Network error. Please check your connection.');
+        }
+    }
+
+    static async verify2FA(code: string): Promise<User> {
+        try {
+            const response = await fetch(`${API_URL}/auth/login/verify`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({ code }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                if (response.status === 401) {
+                    throw new Error('Invalid verification code');
+                } else if (response.status === 400) {
+                    throw new Error(data.message || 'Invalid request');
+                } else {
+                    throw new Error('Verification failed. Please try again.');
+                }
+            }
+
+            // Fetch full user data after successful 2FA
+            const user = await AuthService.getCurrentUser();
+            if (!user) {
+                throw new Error('Failed to get user data');
+            }
+
+            return user;
+
+        } catch (error) {
+            if (error instanceof Error) {
+                throw error;
             }
             throw new Error('Network error. Please check your connection.');
         }

@@ -24,6 +24,7 @@ import { Friends } from "../components/Friends";
 import { Game } from "../pages/Game";
 import { userState, authLoading } from "../core/appStore";
 import { ResetPassword } from "../components/ResetPassword";
+import { TwoFactorVerify } from "../components/TwoFactorVerify";
 // --- Route Definitions ---
 const routes: Record<string, any> = {
   "/": Home,
@@ -34,6 +35,7 @@ const routes: Record<string, any> = {
   "/tournaments/:id": TournamentView,
   "/match/:key": MatchView,
   "/login": Login,
+  "/login/verify": TwoFactorVerify,
   "/register": Register,
   "/forgot-password": ForgotPassword,
   "/reset-password": ResetPassword,
@@ -152,12 +154,16 @@ export async function renderRoute() {
   // Check if the target view is an overlay (Login or Register)
   // Note: With the guards above, a logged-in user won't reach here for Login/Register,
   // and a logged-out user won't reach here for Protected routes.
-  const isOverlay = (View === Login || View === Register);
+  const isOverlay = (View === Login || View === Register || View === TwoFactorVerify);
 
   // Remove any existing overlay if we are navigating
-  const existingOverlay = document.getElementById('auth-overlay');
-  if (existingOverlay) {
-    existingOverlay.remove();
+  const existingAuthOverlay = document.getElementById('auth-overlay');
+  if (existingAuthOverlay) {
+    existingAuthOverlay.remove();
+  }
+  const existingTwofaOverlay = document.getElementById('twofa-overlay');
+  if (existingTwofaOverlay) {
+    existingTwofaOverlay.remove();
   }
 
   if (isOverlay) {

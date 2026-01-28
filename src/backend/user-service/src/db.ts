@@ -721,10 +721,10 @@ async function UpdateXps(player1: any, player2: any, score1: number, score2: num
 
 async function UpdateAchievements(player1: any, player2: any) {
     // Helper function to check and unlock achievements for a single player
-    async function checkPlayerAchievements(playerId: number) {
-        const achievementKeys = ['FIRST_WIN', 'CONSISTENT', 'ON_FIRE', 'FLAWLESS'];
+    async function checkPlayerAchievements(player: any, playerId: number) {
+        const achievementKeys = ['FIRST_WIN', 'CONSISTENT', 'ON_FIRE', 'FLAWLESS', 'FAMILY', 'LEVEL_UP'];
         // Fetch all match-related achievements and which ones this player has already unlocked in a single query
-        const [allAchievements, unlockedAchievements, allMatches] = await Promise.all([
+        const [allAchievements, unlockedAchievements, allMatches, friendships] = await Promise.all([
             prisma.achievement.findMany({
                 where: {
                     key: {
@@ -750,6 +750,15 @@ async function UpdateAchievements(player1: any, player2: any) {
                     player2Id: true,
                     score1: true,
                     score2: true
+                }
+            }),
+            prisma.friendship.findFirst({
+                where: {
+                    OR: [
+                        { requesterId: playerId },
+                        { addresseeId: playerId }
+                    ],
+                    status: 'ACCEPTED'
                 }
             })
         ]);
@@ -813,6 +822,18 @@ async function UpdateAchievements(player1: any, player2: any) {
             }
         }
 
+        if (!unlockedKeys.has('FAMILY') && achievementMap.has('FAMILY')) {
+            if (friendships) {
+                achievementsToUnlock.push(achievementMap.get('FAMILY')! as number);
+            }
+        }
+
+        if (!unlockedKeys.has('LEVEL_UP') && achievementMap.has('LEVEL_UP')) {
+            if (player.xp > 150) {
+                achievementsToUnlock.push(achievementMap.get('LEVEL_UP')! as number);
+            }
+        }
+
         // Unlock all new achievements in a single transaction
         if (achievementsToUnlock.length > 0) {
             console.log("\n -- achievementsToUnlock", achievementsToUnlock, "\n");
@@ -829,8 +850,8 @@ async function UpdateAchievements(player1: any, player2: any) {
 
     // Check achievements for both players in parallel
     await Promise.all([
-        checkPlayerAchievements(player1.id),
-        checkPlayerAchievements(player2.id)
+        checkPlayerAchievements(player1, player1.id),
+        checkPlayerAchievements(player2, player2.id)
     ]);
 }
 

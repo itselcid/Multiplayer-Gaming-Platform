@@ -12,6 +12,8 @@
 
 import { Achievements } from "../components/Achievements";
 import { Player_card } from "../components/Player_card";
+import { XPTracker } from "../components/xpStatus";
+import { Settings } from "../components/Settings";
 import { Tournament_history } from "../components/Tournament_history";
 import { Match_history } from "../components/match_history";
 import { addElement, Component } from "../core/Component";
@@ -122,12 +124,23 @@ export class ProfileView extends Component {
 		this.el.innerHTML = '';
 
 		this.el.insertAdjacentHTML('beforeend', `
-								<div class="mb-12">
+								<div class="mb-12 flex items-center justify-between">
 								   <h1 class="text-5xl font-bold mb-4 pb-2 bg-gradient-to-r from-neon-cyan to-neon-purple bg-clip-text text-transparent">
 								   Player Profile
 								   </h1>
+								   <div id="profile-settings-container"></div>
 								</div>
 								   `);
+
+		// Add settings button (only for own profile)
+		const currentUser = userState.get();
+		if (this.isOwnProfile && currentUser) {
+			const settingsContainer = this.el.querySelector('#profile-settings-container');
+			if (settingsContainer) {
+				const settings = new Settings();
+				settings.mount(settingsContainer as HTMLElement);
+			}
+		}
 		const container = addElement('div', 'grid grid-cols-1 lg:grid-cols-3 gap-8', this.el);
 		const profile_achievement = addElement('div', 'lg:col-span-1 space-y-6', container);
 
@@ -139,7 +152,6 @@ export class ProfileView extends Component {
 			player_card.mount(profile_achievement);
 		}
 
-		const currentUser = userState.get();
 
 		// Check if user is a guest (not logged in)
 		if (!currentUser) {
@@ -193,13 +205,22 @@ export class ProfileView extends Component {
 			return;
 		}
 
+		// XP Tracker - between player card and achievements
+		// TODO: Replace with actual user XP data when available
+		const user = this.isOwnProfile ? currentUser : this.otherUser;
+		if (user) {
+			const xpTracker = new XPTracker({
+				currentXP: (user as any).xp ?? 750,
+				maxXP: (user as any).maxXp ?? 1000,
+				level: (user as any).level ?? 1
+			});
+			xpTracker.mount(profile_achievement);
+		}
+
 		const achievements = new Achievements(
 			!this.isOwnProfile ? this.otherUser?.achievements : undefined
 		);
 		achievements.mount(profile_achievement);
-
-		// const tournament_history = new Tournament_history();
-		// tournament_history.mount(container);
 
 		// Determine the target user ID for match history
 		const targetUserId = this.isOwnProfile
