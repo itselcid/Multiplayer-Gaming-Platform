@@ -297,12 +297,12 @@ export class chat extends Component {
           notifications.forEach((n: any) => {
             const message: Message = {
               id: n.id,
-              text: `Tournament id=${n.tournamentId} is ready!`,
+              text: `your next match in Tournament is ready!`,
               isMine: false,
               time: new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
               reactions: [],
               isSystemMessage: true,
-              matchLink: n.matchLink || `/match/${n.matchKey}`
+              matchLink: n.matchLink // Use the saved matchLink from database
             };
 
             if (!this.conversations[chat.TOURNAMENT_SYSTEM_USER_ID]) {
@@ -320,7 +320,7 @@ export class chat extends Component {
           // Update last message for user list
           const lastNotification = notifications[notifications.length - 1];
           if (lastNotification) {
-            this.users[chat.TOURNAMENT_SYSTEM_USER_ID].lastMessage = `Tournament id=${lastNotification.tournamentId} ready`;
+            this.users[chat.TOURNAMENT_SYSTEM_USER_ID].lastMessage = `your next match in Tournament is ready!`;
             this.users[chat.TOURNAMENT_SYSTEM_USER_ID].lastMessageTime = new Date(lastNotification.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
           }
 
@@ -355,7 +355,7 @@ export class chat extends Component {
           opponentUsername: notification.opponentUsername,
           matchKey: notification.matchKey,
           matchLink: `/match/${notification.matchKey}`,
-          content: `Tournament id=${notification.tournamentId} is ready!`
+          content: `your next match in Tournament is ready!`
         })
       });
 
@@ -501,7 +501,7 @@ export class chat extends Component {
     // Create notification message
     const message: Message = {
       id: Date.now(),
-      text: `Tournament id=${notification.tournamentId} is ready!`,
+      text: `your next match in Tournament is ready!`,
       isMine: false,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       reactions: [],
@@ -516,7 +516,7 @@ export class chat extends Component {
     this.conversations[systemUserId].push(message);
     
     // Update last message for the user list - include tournament link info
-    this.users[systemUserId].lastMessage = `Tournament id=${notification.tournamentId} ready`;
+    this.users[systemUserId].lastMessage = `your next match in Tournament is ready!`;
     this.users[systemUserId].lastMessageTime = message.time;
     this.users[systemUserId].unread = (this.users[systemUserId].unread || 0) + 1;
     
@@ -781,16 +781,15 @@ export class chat extends Component {
     const messagesHtml = messages.map((msg) => {
       // Check if it's a system message (tournament notification)
       if (msg.isSystemMessage) {
+        console.log('Tournament message:', msg); // Debug log
         return `
           <div class="flex justify-center my-4">
             <div class="max-w-sm w-full bg-gradient-to-r from-neon-purple/20 to-neon-cyan/20 border border-neon-cyan/30 rounded-xl p-4 shadow-lg">
               <div class="text-center">
                 <p class="text-lg font-bold text-neon-cyan mb-3">${this.escapeHtml(msg.text)}</p>
-                ${msg.matchLink ? `
-                  <button class="play-match-btn inline-flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-lg font-bold hover:opacity-90 transition shadow-md text-lg cursor-pointer" data-match-link="${msg.matchLink}">
-                    Play Now
-                  </button>
-                ` : ''}
+                <button class="play-match-btn inline-flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-lg font-bold hover:opacity-90 transition shadow-md text-lg cursor-pointer" data-match-link="${msg.matchLink || '/match/test'}">
+                  Play Now
+                </button>
               </div>
               <div class="text-center mt-3">
                 <span class="text-xs text-gray-500">${this.escapeHtml(msg.time)}</span>

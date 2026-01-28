@@ -216,12 +216,12 @@ export async function chatRoutes(fastify: FastifyInstance) {
   // ============ TOURNAMENT NOTIFICATIONS ============
 
   // Save a tournament notification
-  fastify.post<{ Body: { tournamentId: number; round: number; opponentUsername: string; tournamentLink: string; content: string } }>('/tournament-notifications', async (req, reply) => {
+  fastify.post<{ Body: { tournamentId: number; round: number; opponentUsername: string; matchKey: string; matchLink: string; content: string } }>('/tournament-notifications', async (req, reply) => {
     if (!req.user?.id) {
       return reply.code(401).send({ error: 'Unauthorized' });
     }
     const userId = req.user.id;
-    const { tournamentId, round, opponentUsername, tournamentLink, content } = req.body;
+    const { tournamentId, round, opponentUsername, matchKey, matchLink, content } = req.body;
 
     if (!tournamentId || !content) {
       return reply.code(400).send({ error: 'Invalid data' });
@@ -246,7 +246,8 @@ export async function chatRoutes(fastify: FastifyInstance) {
             tournamentId,
             round,
             opponentUsername,
-            tournamentLink,
+            matchKey,
+            matchLink,
             text: content
           }),
           senderId: TOURNAMENT_SYSTEM_USER_ID,
