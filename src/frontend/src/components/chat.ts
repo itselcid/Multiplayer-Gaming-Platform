@@ -1,4 +1,5 @@
 import { Component } from "../core/Component";
+import { navigate } from "../core/router";
 import { io, Socket } from "socket.io-client";
 import { userState, matchNotificationState } from "../core/appStore";
 import { socketService } from "../services/socket";
@@ -110,6 +111,13 @@ export class chat extends Component {
   async fetchMessages(userId: number) {
     const currentUser = userState.get();
     if (!currentUser) return;
+
+    // For tournament system user, use the tournament notifications endpoint
+    if (userId === chat.TOURNAMENT_SYSTEM_USER_ID) {
+      await this.loadTournamentNotifications();
+      this.scrollToBottom();
+      return;
+    }
 
     try {
       const res = await fetch(`${API_URL}/chat/messages/${userId}`, {
@@ -289,12 +297,12 @@ export class chat extends Component {
           notifications.forEach((n: any) => {
             const message: Message = {
               id: n.id,
-              text: n.text || `🎮 Tournament Match Started!\n\n📋 Tournament #${n.tournamentId}\n🔄 Round ${n.round}\n⚔️ Opponent: ${n.opponentUsername}\n\nYour match is ready! Good luck! 🍀`,
+              text: `Tournament id=${n.tournamentId} is ready!`,
               isMine: false,
               time: new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
               reactions: [],
               isSystemMessage: true,
-              tournamentLink: n.tournamentLink || `/tournament/${n.tournamentId}`
+              matchLink: n.matchLink || `/match/${n.matchKey}`
             };
 
             if (!this.conversations[chat.TOURNAMENT_SYSTEM_USER_ID]) {
@@ -312,7 +320,7 @@ export class chat extends Component {
           // Update last message for user list
           const lastNotification = notifications[notifications.length - 1];
           if (lastNotification) {
-            this.users[chat.TOURNAMENT_SYSTEM_USER_ID].lastMessage = `🎮 Match vs ${lastNotification.opponentUsername} - Tournament #${lastNotification.tournamentId}`;
+            this.users[chat.TOURNAMENT_SYSTEM_USER_ID].lastMessage = `Tournament id=${lastNotification.tournamentId} ready`;
             this.users[chat.TOURNAMENT_SYSTEM_USER_ID].lastMessageTime = new Date(lastNotification.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
           }
 
@@ -345,8 +353,9 @@ export class chat extends Component {
           tournamentId: Number(notification.tournamentId),
           round: Number(notification.round),
           opponentUsername: notification.opponentUsername,
-          tournamentLink: `/tournament/${notification.tournamentId}`,
-          content: `🎮 Tournament Match Started!\n\n📋 Tournament #${notification.tournamentId}\n🔄 Round ${notification.round}\n⚔️ Opponent: ${notification.opponentUsername}\n\nYour match is ready! Good luck! 🍀`
+          matchKey: notification.matchKey,
+          matchLink: `/match/${notification.matchKey}`,
+          content: `Tournament id=${notification.tournamentId} is ready!`
         })
       });
 
@@ -492,13 +501,12 @@ export class chat extends Component {
     // Create notification message
     const message: Message = {
       id: Date.now(),
-      text: `🎮 Tournament Match Started!\n\n📋 Tournament #${notification.tournamentId}\n🔄 Round ${notification.round}\n⚔️ Opponent: ${notification.opponentUsername}\n\nYour match is ready! Good luck! 🍀`,
+      text: `Tournament id=${notification.tournamentId} is ready!`,
       isMine: false,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       reactions: [],
       isSystemMessage: true,
-      matchLink: `/match/${notification.matchKey}`,
-      tournamentLink: `/tournament/${notification.tournamentId}`
+      matchLink: `/match/${notification.matchKey}`
     };
     
     // Add to tournament conversation
@@ -508,7 +516,7 @@ export class chat extends Component {
     this.conversations[systemUserId].push(message);
     
     // Update last message for the user list - include tournament link info
-    this.users[systemUserId].lastMessage = `🎮 Match vs ${notification.opponentUsername} - Tournament #${notification.tournamentId}`;
+    this.users[systemUserId].lastMessage = `Tournament id=${notification.tournamentId} ready`;
     this.users[systemUserId].lastMessageTime = message.time;
     this.users[systemUserId].unread = (this.users[systemUserId].unread || 0) + 1;
     
@@ -703,7 +711,9 @@ export class chat extends Component {
       user.name.toLowerCase().includes(this.searchQuery.toLowerCase())
     );
 
-    return filtered.map(user => `
+    return filtered.map(user => {
+      const isSystemUser = user.id === chat.TOURNAMENT_SYSTEM_USER_ID;
+      return `
       <div class="user-item p-2 cursor-pointer transition-all hover:bg-neon-cyan/10 border-l-4 ${this.currentChatUserId === user.id
         ? 'bg-neon-cyan/10 border-neon-cyan'
         : 'border-transparent'
@@ -713,7 +723,7 @@ export class chat extends Component {
             <div class="w-8 h-8 bg-gradient-to-br from-neon-purple to-neon-cyan rounded-full flex items-center justify-center overflow-hidden">
               ${this.renderAvatar(user.avatar)}
             </div>
-            <div class="absolute bottom-0 right-0 w-2.5 h-2.5 ${this.getStatusColor(user.status)} rounded-full border-2 border-space-dark"></div>
+            ${!isSystemUser ? `<div class="absolute bottom-0 right-0 w-2.5 h-2.5 ${this.getStatusColor(user.status)} rounded-full border-2 border-space-dark"></div>` : ''}
           </div>
           <div class="flex-1 min-w-0">
             <div class="flex items-center justify-between">
@@ -731,7 +741,7 @@ export class chat extends Component {
           </div>
         </div>
       </div>
-    `).join('');
+    `}).join('');
   }
 
   renderMessages() {
@@ -775,11 +785,11 @@ export class chat extends Component {
           <div class="flex justify-center my-4">
             <div class="max-w-sm w-full bg-gradient-to-r from-neon-purple/20 to-neon-cyan/20 border border-neon-cyan/30 rounded-xl p-4 shadow-lg">
               <div class="text-center">
-                <p class="text-sm text-gray-200 whitespace-pre-line mb-3">${this.escapeHtml(msg.text)}</p>
-                ${msg.tournamentLink ? `
-                  <a href="${msg.tournamentLink}" class="inline-block bg-gradient-to-r from-neon-purple to-neon-cyan text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition shadow-md">
-                    🏆 View Tournament →
-                  </a>
+                <p class="text-lg font-bold text-neon-cyan mb-3">${this.escapeHtml(msg.text)}</p>
+                ${msg.matchLink ? `
+                  <button class="play-match-btn inline-flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-lg font-bold hover:opacity-90 transition shadow-md text-lg cursor-pointer" data-match-link="${msg.matchLink}">
+                    Play Now
+                  </button>
                 ` : ''}
               </div>
               <div class="text-center mt-3">
@@ -1106,6 +1116,16 @@ export class chat extends Component {
         this.sendMessage();
       });
     }
+
+    // Play Match buttons (tournament notifications)
+    this.el.querySelectorAll('.play-match-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const matchLink = (e.currentTarget as HTMLElement).dataset.matchLink;
+        if (matchLink) {
+          navigate(matchLink);
+        }
+      });
+    });
   }
 
   selectUser(userId: number) {
