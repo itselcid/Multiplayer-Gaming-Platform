@@ -27,7 +27,7 @@ export default async function buildServer() {
         }
     });
     await fastifyServer.register(import('@fastify/static'), {
-        root: path.join(process.cwd(), 'public/uploads'),
+        root: path.join(process.cwd(), 'public'),
         prefix: '/public/',
     });
     await fastifyServer.register(import('@fastify/multipart'), { limits: { fileSize: 1024 * 1024 * 2 } }); // 2MB

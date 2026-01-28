@@ -17,7 +17,7 @@ export async function createUser(input: CreateUserInput): Promise<UserSearchData
             username,
             email,
             password: hash,
-            avatar: '/public/default-avatar.png',
+            avatar: '/default-avatar.png',
         },
         select: {
             id: true,
