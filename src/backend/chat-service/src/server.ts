@@ -10,6 +10,9 @@ declare module 'fastify' {
       id: number;
     };
   }
+  interface FastifyInstance {
+    io: Server;
+  }
 }
 
 const fastify = Fastify({ logger: true });
@@ -37,10 +40,11 @@ fastify.addHook('preHandler', async (req, reply) => {
 const io = new Server(fastify.server, {
   cors: { origin: "*" }
 });
+fastify.decorate('io', io);
 
 setupSocket(io);
 
-fastify.register(chatRoutes);
+fastify.register(chatRoutes, { prefix: '/api/chat' });
 
 // Health check endpoint
 fastify.get('/health', async () => ({ status: 'ok', service: 'chat-service' }));

@@ -56,10 +56,15 @@ class SocketService {
             // 4. Notify Friends "I am Online"
             await this.notifyFriendsStatus(user.userId, 'online');
 
+            // 5. Handle request for online friends (for components that load after socket connects)
+            socket.on('get_online_friends', async () => {
+                await this.syncInitialOnlineFriends(socket, user.userId);
+            });
+
             socket.on('disconnect', async () => {
-                // 5. Mark as Offline
+                // 6. Mark as Offline
                 this.onlineUsers.delete(user.userId);
-                // 6. Notify Friends "I am Offline"
+                // 7. Notify Friends "I am Offline"
                 await this.notifyFriendsStatus(user.userId, 'offline');
             });
         });

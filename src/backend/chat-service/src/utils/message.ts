@@ -50,4 +50,38 @@ export function register_message(io: any, socket: any)
             console.error("Error processing send_message:", error);
         }
     })
+    
+    // Handle tournament match notifications
+    socket.on("match_notification", async (data: {
+        tournamentId: number,
+        round: number,
+        matchId: number,
+        opponentAddress: string,
+        opponentUsername: string,
+        message: string
+    }) => {
+        try {
+            const userId = socket.userId;
+            if (!userId) {
+                console.error("User ID not found on socket for match notification");
+                return;
+            }
+            
+            console.log(`Match notification for user ${userId}:`, data);
+            
+            // Emit notification back to the user (system notification style)
+            socket.emit("tournament_match_started", {
+                type: 'tournament_match',
+                tournamentId: data.tournamentId,
+                round: data.round,
+                matchId: data.matchId,
+                opponentUsername: data.opponentUsername,
+                message: data.message,
+                createdAt: new Date().toISOString()
+            });
+            
+        } catch (error) {
+            console.error("Error processing match_notification:", error);
+        }
+    })
 }
