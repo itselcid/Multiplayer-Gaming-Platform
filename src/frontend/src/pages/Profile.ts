@@ -16,15 +16,28 @@ import { Tournament_history } from "../components/Tournament_history";
 import { Match_history } from "../components/match_history";
 import { addElement, Component } from "../core/Component";
 import { userState } from "../core/appStore";
+import { navigate } from "../core/router";
 
 // Use relative URL to go through nginx proxy
 const API_URL = '/api';
+
+interface UserAchievement {
+	unlockedAt: Date;
+	achievement: {
+		id: number;
+		key: string;
+		name: string;
+		description: string;
+		icon: string;
+	};
+}
 
 interface UserProfile {
 	id: number;
 	username: string;
 	email: string;
 	avatar?: string;
+	achievements?: UserAchievement[];
 }
 
 export class ProfileView extends Component {
@@ -63,12 +76,22 @@ export class ProfileView extends Component {
 				const data = await response.json();
 				this.otherUser = data.user;
 			} else {
-				this.otherUser = null;
+				// User not found - redirect to 404
+				navigate('/404');
+				return;
 			}
 		} catch (error) {
 			console.error('Failed to fetch user profile:', error);
-			this.otherUser = null;
+			navigate('/404');
+			return;
 		}
+
+		// If user data is null/undefined after successful response, also redirect
+		if (!this.otherUser) {
+			navigate('/404');
+			return;
+		}
+
 		this.isLoading = false;
 		this.render();
 	}
@@ -80,25 +103,17 @@ export class ProfileView extends Component {
 
 		const user = this.otherUser;
 		const displayName = user ? user.username : 'User not found';
-		const displayEmail = user ? user.email : '';
-		const displayAvatar = user ? user.username.charAt(0).toUpperCase() : '?';
+		const displayInitial = user ? user.username.charAt(0).toUpperCase() : '?';
+		// Build avatar URL - prepend /public if avatar path doesn't start with http
+		const avatarPath = user?.avatar || '/default-avatar.png';
+		const avatarUrl = avatarPath.startsWith('http') ? avatarPath : `/public${avatarPath}`;
 
 		return `
 			<div class="bg-gradient-to-br from-space-blue to-space-dark border border-neon-cyan/30 rounded-xl p-6">
-				<div class="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-neon-cyan to-neon-purple flex items-center justify-center text-4xl">
-					${displayAvatar}
+				<div class="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-neon-cyan to-neon-purple flex items-center justify-center text-4xl overflow-hidden">
+					<img src="${avatarUrl}" alt="${displayName}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.innerHTML='${displayInitial}';" />
 				</div>
 				<h2 class="text-2xl font-bold text-center mb-6 text-neon-cyan">${displayName}</h2>
-				<div class="space-y-4">
-					<div class="flex items-center space-x-3 p-3 bg-space-dark/50 rounded-lg">
-						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mail w-5 h-5 text-neon-cyan"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"></path><rect x="2" y="4" width="20" height="16" rx="2"></rect></svg>
-						<span class="text-gray-300 text-sm">${displayEmail}</span>
-					</div>
-					<div class="flex items-center space-x-3 p-3 bg-space-dark/50 rounded-lg">
-						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wallet w-5 h-5 text-neon-cyan"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"></path><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"></path></svg>
-						<span class="text-gray-300 text-sm font-mono">0X26A2BF1978...71A973CF</span>
-					</div>
-				</div>
 			</div>
 		`;
 	}
@@ -124,13 +139,77 @@ export class ProfileView extends Component {
 			player_card.mount(profile_achievement);
 		}
 
-		const achievements = new Achievements();
+		const currentUser = userState.get();
+
+		// Check if user is a guest (not logged in)
+		if (!currentUser) {
+			// Guest user - show creative call-to-action instead of achievements/match history
+			profile_achievement.insertAdjacentHTML('beforeend', `
+				<div class="bg-gradient-to-br from-space-blue to-space-dark border border-neon-purple/30 rounded-xl p-6 text-center">
+					<div class="text-6xl mb-4">🎮</div>
+					<h3 class="text-xl font-bold text-neon-purple mb-2">Ready to Play?</h3>
+					<p class="text-gray-400 text-sm">Log in to track your achievements!</p>
+				</div>
+			`);
+
+			const rightPanel = addElement('div', 'lg:col-span-2', container);
+			rightPanel.innerHTML = `
+				<div class="bg-gradient-to-br from-space-blue to-space-dark border border-neon-cyan/30 rounded-xl p-8 h-full flex flex-col items-center justify-center text-center">
+					<div class="relative mb-8">
+						<div class="w-32 h-32 rounded-full bg-gradient-to-br from-neon-cyan/20 to-neon-purple/20 flex items-center justify-center animate-pulse">
+							<span class="text-7xl">🏓</span>
+						</div>
+						<div class="absolute -top-2 -right-2 w-8 h-8 bg-neon-gold rounded-full flex items-center justify-center text-lg animate-bounce">
+							✨
+						</div>
+					</div>
+					<h2 class="text-3xl font-bold mb-4 bg-gradient-to-r from-neon-cyan to-neon-purple bg-clip-text text-transparent">
+						Join the Arena
+					</h2>
+					<p class="text-gray-400 mb-8 max-w-md">
+						Create an account to compete against players worldwide, unlock achievements, and climb the leaderboards!
+					</p>
+					<div class="flex flex-wrap gap-4 justify-center">
+						<a href="/register" class="px-8 py-3 bg-gradient-to-r from-neon-cyan to-neon-purple rounded-lg font-bold text-white hover:shadow-lg hover:shadow-neon-cyan/30 transition-all transform hover:scale-105">
+							🚀 Get Started
+						</a>
+						<a href="/login" class="px-8 py-3 bg-space-dark border border-neon-cyan/50 rounded-lg font-bold text-neon-cyan hover:border-neon-cyan hover:bg-neon-cyan/10 transition-all">
+							Sign In
+						</a>
+					</div>
+					<div class="mt-8 flex items-center gap-8 text-gray-500 text-sm">
+						<div class="flex items-center gap-2">
+							<span class="text-neon-cyan">🏆</span> Earn Trophies
+						</div>
+						<div class="flex items-center gap-2">
+							<span class="text-neon-purple">⚡</span> Real-time Matches
+						</div>
+						<div class="flex items-center gap-2">
+							<span class="text-neon-gold">🔥</span> Streak Rewards
+						</div>
+					</div>
+				</div>
+			`;
+			return;
+		}
+
+		const achievements = new Achievements(
+			!this.isOwnProfile ? this.otherUser?.achievements : undefined
+		);
 		achievements.mount(profile_achievement);
 
 		// const tournament_history = new Tournament_history();
 		// tournament_history.mount(container);
 
-		const match_history = new Match_history();
+		// Determine the target user ID for match history
+		const targetUserId = this.isOwnProfile
+			? currentUser?.id
+			: this.userId;
+
+		const match_history = new Match_history(
+			targetUserId?.toString() || 'me',
+			targetUserId ?? undefined
+		);
 		match_history.mount(container);
 	}
 }

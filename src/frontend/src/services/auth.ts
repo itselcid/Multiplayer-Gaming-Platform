@@ -21,10 +21,21 @@ export interface User {
     username: string;
     email: string;
     avatar: string;
+    xp: number;
     twoFactor?: {
         method: string | null;
         enabled?: boolean;
     } | null;
+    achievements?: {
+        unlockedAt: Date;
+        achievement: {
+            id: number;
+            key: string;
+            name: string;
+            description: string;
+            icon: string;
+        };
+    }[];
     createdAt: Date;
     updatedAt: Date;
 }
