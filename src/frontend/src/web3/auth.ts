@@ -23,20 +23,20 @@ export class Web3Auth {
 		setInterval(async () => {
 			const eth = window.ethereum;
 
-			if (typeof (eth) === 'undefined')
-				return;
+			if (typeof(eth) === 'undefined')
+				return ;
 
 			if (!await web3auth.isLoggedIn() && login_state.get() !== 'not connected') {
 				login_state.set('not connected');
 				currentWeb3Account.set('');
-				return;
+				return ;
 			}
 
-			const accounts = await eth.request({
+			const	accounts = await eth.request({
 				method: 'eth_accounts'
 			}) as string[];
-
-			const chainId = await eth.request({
+			
+			const	chainId = await eth.request({
 				method: 'eth_chainId'
 			}) as string;
 
@@ -46,12 +46,12 @@ export class Web3Auth {
 
 			// keep displaying metamask warning in case of being on wrong network
 			const VITE_FUJI_CHAIN_ID = import.meta.env.VITE_FUJI_CHAIN_ID;
-			const fuji_chain_id = String(VITE_FUJI_CHAIN_ID).toLowerCase();
-			if (chainId.toLowerCase() !== fuji_chain_id) {
-				const metamask_warning = document.getElementById('metamask-network-warning');
-				const metamask_error = document.getElementById('metamask-error');
+			console.log(chainId);
+			if (chainId !== VITE_FUJI_CHAIN_ID) {
+				const	metamask_warning = document.getElementById('metamask-network-warning');
+				const	metamask_error = document.getElementById('metamask-error');
 				if (!metamask_warning && !metamask_error) {
-					const root = document.getElementById('app');
+					const	root = document.getElementById('app');
 					if (root) {
 						const warning_page = new Metamask_network_warning(chainId);
 						warning_page.mount(root);

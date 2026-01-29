@@ -7,14 +7,14 @@ import { env } from '../config/env';
 class RabbitMQService {
     private connection: any = null;
     private channel: Channel | null = null;
-    private readonly QUEUE_NAME = 'match_finished';
+    private readonly QUEUE_NAME = 'game_finished';
 
     //  --------- -------------- -------------- ------------- ------------- ------------- ------------- ----------- //
     async initialize() {
         try {
             // Connect to RabbitMQ
             const rabbitUrl = env.RABBITMQ_URL || 'amqp://localhost';  // add RABBITMQ_URL to your env vars later
-            this.connection = await amqp.connect(rabbitUrl);
+            this.connection = await amqp.connect(rabbitUrl, {rejectUnauthorized: false});
             this.channel = await this.connection.createChannel();
 
             // Assert Queue (make sure it exists)

@@ -5,7 +5,7 @@ services:
     command: #prometheus works with cli not env like grafana
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
-      - '--web.external-url=http://localhost/prometheus/'
+      - '--web.external-url=http://localhost:9090/'
       - '--web.route-prefix=/'
     ports:
       - "9090:9090"
@@ -78,10 +78,14 @@ services:
       - "9000:9000"
       - "9443:9443"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - portainer-data:/data
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    ports:
+      - "8080:8080"
     networks:
-      - monitoring  
+      - monitoring
     restart: unless-stopped
     mem_limit: 256m
     cpus: 0.5
@@ -91,8 +95,6 @@ volumes:
   grafana-data:
     driver: local 
   prometheus-data:
-    driver: local
-  portainer-data:
     driver: local
 
 networks:

@@ -36,19 +36,17 @@ shouting_stars.mount(container1);
 const	navBar = new Navbar();
 navBar.mount(container2);
 
-
 const	bg = addElement("main", "flex-1 flex flex-col", container2);
 bg.id = "bg";
 document.getElementById('app')?.append(container1);
-renderRoute();
 // const page = new ConnectWallet();
 // page.mount(document.getElementById('app'));
 
 subs();
+// renderRoute();
+
 
 initAuth().then(() => {
-  // Render the initial route after checking auth
-  // console.error("wooooooooooooooooooooh");
   renderRoute();
 });
 

@@ -1,16 +1,23 @@
 
-
 services:
 
   rabbitmq:
-    image: "rabbitmq:3-management"
-    container_name: "rabbitmq"
+    build:
+      context: .
+      dockerfile: infra/rabbitmq/Dockerfile
+    container_name: rabbitmq-service
+    env_file:
+      - .env
+    ports:
+      - "5671:5671"
+    environment:
+      RABBITMQ_DEFAULT_USER: "${RABBITMQ_DEFAULT_USER}"
+      RABBITMQ_DEFAULT_PASS: "${RABBITMQ_DEFAULT_PASS}"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
     networks:
       - app-network
-    ports:
-      - "5672:5672"   # RabbitMQ's default AMQP port
-      - "15672:15672"
-
+    restart: unless-stopped
 
   nginx:
     build:
@@ -46,7 +53,7 @@ services:
       npm run dev"
     # command: sh -c "rm -rf /app/node_modules/.prisma 2>/dev/null; npm install && npx prisma generate && npx prisma migrate deploy && npx prisma db seed && npm run dev"
     env_file:
-      - ./src/backend/user-service/.env
+      - .env
     volumes:
       - ./src/backend/user-service:/app
       - user-service-modules:/app/node_modules
@@ -54,8 +61,8 @@ services:
       - user-uploads:/app/public/uploads
     networks:
       - app-network
-    # depends_on:
-    #   - rabbitmq
+    depends_on:
+      - rabbitmq
     restart: unless-stopped
 
   game-service:
@@ -64,14 +71,14 @@ services:
     working_dir: /app
     command: sh -c "npm install && npm run dev"
     env_file:
-      - ./src/backend/game-service/.env
+      - .env
     volumes:
       - ./src/backend/game-service:/app
       - game-service-modules:/app/node_modules
     networks:
       - app-network
-    # depends_on:
-    #   - rabbitmq
+    depends_on:
+      - rabbitmq
     restart: unless-stopped
 
   chat-service:
@@ -80,7 +87,7 @@ services:
     working_dir: /app
     command: sh -c "npm install && npx prisma generate && npx prisma migrate deploy && npm run dev"
     env_file:
-      - ./src/backend/chat-service/.env
+      - .env
     volumes:
       - ./src/backend/chat-service:/app
       - chat-service-modules:/app/node_modules
@@ -95,13 +102,29 @@ services:
     working_dir: /app
     command: sh -c "npm install && npm run dev"
     env_file:
-      - ./src/backend/blockchain-service/.env
+      - .env
     volumes:
       - ./src/backend/blockchain-service:/app
       - blockchain-service-modules:/app/node_modules
     networks:
       - app-network
+    depends_on:
+      - rabbitmq
     restart: unless-stopped
+
+  # frontend:
+  #   image: node:20-alpine
+  #   container_name: frontend
+  #   working_dir: /app
+  #   command: sh -c "npm install && npm run dev"
+  #   env_file:
+  #     - .env
+  #   volumes:
+  #     - ./src/backend/blockchain-service:/app
+  #     - blockchain-service-modules:/app/node_modules
+  #   networks:
+  #     - app-network
+  #   restart: unless-stopped
 
   # frontend:
   #   image: node:20-alpine
@@ -127,6 +150,7 @@ volumes:
   chat-service-modules:
   blockchain-service-modules:
   frontend-modules:
+  rabbitmq_data:
 
 networks:
   app-network:

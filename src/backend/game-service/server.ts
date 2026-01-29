@@ -6,12 +6,11 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 17:15:36 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/23 05:40:18 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/25 22:41:45 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-import { Room, MatchResult, PongGame } from './game_logique';
-import amqp, { Channel } from 'amqplib';
+import { Room, MatchResult, PongGame, rabbitmq, Match, Player,} from './game_utils';
 import { Server } from 'socket.io'
 import Fastify from 'fastify'
 import http from 'http'
@@ -21,8 +20,8 @@ import http from 'http'
 const rooms:Map<string,Room> = new Map();
 const games:Map<string,PongGame> = new Map;
 const logames:Map<string,PongGame> = new Map;
-const tour:Map<string,Room> = new Map();
-
+const tour:Map<string,PongGame> = new Map();
+const service = new rabbitmq();
 
 
 const fastify = Fastify()
@@ -37,81 +36,100 @@ cors: {
 fastify.get('/health', async () => ({ status: 'ok', service: 'game-service' }))
 
 
-
+export function setroom(room: Room){
+  rooms.set(room.id,room);
+  tour.set(room.id,new PongGame);
+}
 
 
 function generateroom(): string{
   const crypto = require("crypto");
   const byteLength = Math.floor(Math.random() * (8 - 4 + 1)) + 4;
   const id = crypto.randomBytes(Math.ceil(byteLength/2)).toString("hex");
-  console.log(`in generate room ${id}`);
+  // console.log(`in generate room ${id}`);
   return id;
 }
 
-async function publishMatch(data: MatchResult) {
-  const jsonresult = JSON.stringify(data,null,2);
-  try{
-    const rabbitUrl = process.env.RABBITMQ_URL || 'amqp://localhost'; 
-    const connection = await amqp.connect(rabbitUrl);
-    const channel = await connection.createChannel();
-    channel.sendToQueue("match_finished",  Buffer.from(jsonresult)), {persistent: true};
-      console.log(`📤 Published match result to match_finished`, data);
-  }
-  catch(error){
-    console.error('RabbitMQ Connection Failed:', error);
-    setTimeout(() => publishMatch(data), 5000);
-  }
-  
-}
 
 
-
-    function sendMAtch(id: string){
-      const room = rooms.get(id);
-      const game = games.get(id);
-      if(room && game){
-        const result: MatchResult = { player1Id: room.pid1, player2Id: room.pid2, score1: game.right,
-          score2: game.left,startedAt: room.startedAt};
-        publishMatch(result);
-        } 
+  function sendMAtch(id: string){
+    const room = rooms.get(id);
+    const game = games.get(id);
+    const match = tour.get(id);
+    if(room && game){
+      const result: MatchResult = { player1Id: room.pid1, player2Id: room.pid2, score1: game.right,
+        score2: game.left,startedAt: room.startedAt};
+      service.publishGame(result);
+    } 
+    if(room && match){
+      const Player1 :Player = {addr: room.wallet1, username:room.player1};
+      const player2:Player = {addr: room.wallet2, username:room.player2};
+      const result: Match = {id:room.id,player1:Player1, player1Score: match.right, player2:player2,
+        player2Score:match.left};
+      service.publishMatch(result);
     }
+  }
 
-
-
-    // setInterval(()=>{
-//   for (const [roomId, room] of rooms) {
-//     if (Date.now() - room.timeout > ) 
-//   }
-// },60000*3)
-
+  setInterval(()=>{
+    rooms.forEach(room => {
+      if (Date.now() - room.created > 1000*10*60){
+        const id  = room.id;
+        const game = games.get(id);
+        const match = tour.get(id);
+        if(game && !game.updt){
+          games.delete(id);
+          rooms.delete(id);
+        }
+        if(match && !match.updt){
+          if(rooms.get(id)?.join1 && !rooms.get(id)?.join2 )
+              match.left = 3;
+          else if (rooms.get(id)?.join2 && !rooms.get(id)?.join1)
+              match.right = 3;
+          sendMAtch(id);
+          tour.delete(id);
+          rooms.delete(id);
+        }
+      }
+    });
+  },10000*120);
 
 io.on('connection', (socket) => {
   console.log(`client connected ${socket.id}`);
   
-  
-  socket.once('joinroom',(id, pid)=>{
+  socket.once('joinroom',(wallet,id, pid)=>{
     socket.join(id);
     socket.data.roomId = id;
-    const game = games.get(id);
-
     const room = rooms.get(id);
-    if (room){
-      if(room.pid1 == pid){
-        room.join1 += 1;
-      } 
-      if(room.pid2 == pid){
-        room.join2 += 1;
+    if(!wallet){
+      if (room){
+        if(room.pid1 == pid){
+          room.join1 += 1;
+        } 
+        if(room.pid2 == pid){
+          room.join2 += 1;
+        }
       }
-      // if(room.join1 && room.join2 && game){
-      //     game.start = true;
-      // }
+    }
+    else{
+      if(room){
+        // console.log(wallet);
+        // console.log(`room== `,room);
+        if(room.wallet1?.toLowerCase() === wallet){
+          room.join1 += 1;
+        } 
+        if(room.wallet2?.toLowerCase() === wallet){
+          room.join2 += 1;
+        }
+      }  
     }
   });
+  
   
   socket.on('setroom',(room,fct)=>{
     room.id = generateroom();
     room.join1 = 0;
     room.join2 = 0;
+    room.created = Date.now();
     rooms.set(room.id, room);
     const game = new PongGame;
     games.set(room.id,game);
@@ -130,7 +148,20 @@ const id = socket.data.roomId;
     const game = games.get(id);
     const room = rooms.get(id);
     const logame = logames.get(id);
+    const match = tour.get(id);
+    if(match){
+      match.updt++;
+      Object.assign(match.input, input);
+       if(room && room.join1 && room.join2 && !match.move){
+        io.to(id).emit('resume');
+        match.move = true;
+        match.start = true;
+      }
+      match.update();
+      fct(match.getState());
+    }
     if (game){
+      game.updt++;
       Object.assign(game.input, input);
       if(room && room.join1 && room.join2 && !game.move){
         io.to(id).emit('resume');
@@ -156,11 +187,16 @@ const id = socket.data.roomId;
     socket.on('start',()=>{
     const id = socket.data.roomId;
     if (!id) return;
+    const match = tour.get(id);
     const game = games.get(id);
     const room = rooms.get(id);
     const logame = logames.get(id);
-    // console.log(`is it here ${room?.id}`);
-    if(game && room && game.stop){
+    if(match && room  && match.stop){
+      match.starTime = Date.now();
+      room.startedAt = new Date().toISOString();
+      match.stop = false;
+    }
+    else if(game && room && game.stop){
       game.starTime = Date.now();
       room.startedAt = new Date().toISOString();
       game.stop = false;
@@ -175,34 +211,51 @@ const id = socket.data.roomId;
   socket.on('getroom', (id, fct) => {fct(rooms.get(id));});
   
 
-  socket.on('verifyroom',(id,fct)=>{fct(rooms.has(id));});
+  socket.on('verifyroom',(mode,id,fct)=>{
+    if(mode === "match"){
+      fct(tour.has(id));
+    }
+    else
+      fct(rooms.has(id));
+  });
   
 socket.on('gameOver',()=>{
      const id = socket.data.roomId;
      const game = games.get(id);
-     const logame = logames.get(id);
+     const match = tour.get(id);
      socket.leave(id);
-     if(game && game.input.mode === "remote"){
-      game.delet++;
-      if(game.delet == 2){
+     if(game){
+       game.delet++;
+       if(game.delet == 2){
+         sendMAtch(id);
+         rooms.delete(id);
+         games.delete(id);
+        }
+      }
+      else if (match){
+        match.delet++;
+        if(match.delet == 2){
           sendMAtch(id);
           rooms.delete(id);
-          games.delete(id);
-        
-       }
-     }
-     else if (logame ){
-       logames.delete(id);
+          tour.delete(id);
+        }
       }
-  });
-  
-  socket.on('disconnect', () => {
-   
-    console.log(`Client disconnected ${socket.id}`)
+    });
+    
+    socket.on('disconnect', () => {
+      console.log(`Client disconnected ${socket.id}`)
+      const id = socket.data.roomId;
+      const logame = logames.get(id);
+      if(logame){
+        logames.delete(id);
+      }
   });
 })
 
-const PORT = Number(process.env.PORT) || 3500
+const PORT = Number(process.env.GAME_PORT) || 3500
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`Game service running on http://0.0.0.0:${PORT}`)
 })
+
+service.start();
+

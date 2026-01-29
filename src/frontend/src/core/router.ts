@@ -6,13 +6,13 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/13 22:19:50 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/14 07:29:54 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/24 15:40:41 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { Home } from "../components/Home";
 import { Page404 } from "../components/Page404";
-import { MatchView } from "../pages/Match";
+// import { MatchView } from "../pages/Match";
 import { ProfileView } from "../pages/Profile";
 import { TournamentView } from "../pages/Tournament";
 import { TournamentsView } from "../pages/Tournaments";
@@ -33,7 +33,7 @@ const routes: Record<string, any> = {
   "/profile/:id": ProfileView,
   "/tournaments": TournamentsView,
   "/tournaments/:id": TournamentView,
-  "/match/:key": MatchView,
+  "/match/:key": Game,
   "/login": Login,
   "/login/verify": TwoFactorVerify,
   "/register": Register,
@@ -100,19 +100,19 @@ export function matchRoute(path: string): { view: any; params: Record<string, st
 export async function renderRoute() {
   const user = userState.get();
   const root = document.getElementById("bg")!;
+  root.innerHTML = ``;
 
   const match = matchRoute(location.pathname);
   if (!match) {
-    root.innerHTML = "";
     const page = new Page404();
     page.mount(root);
     return;
   }
 
   // Guard Logic
-  const currentPath = location.pathname.replace(/\/+$/, "") || "/";
+  // const currentPath = location.pathname.replace(/\/+$/, "") || "/";
   // Define route types
-  const protectedRoutes = ["/chat", "/friends", "/game?mode=remote"];
+  // const protectedRoutes = ["/chat", "/friends", "/game?mode=remote"];
 
   // 1. Loading State
   if (authLoading.get()) {
@@ -126,29 +126,29 @@ export async function renderRoute() {
   }
 
   // 2. Auth Guards
-  const isProtectedRoute = protectedRoutes.includes(currentPath);
-  const guestOnlyRoutes = ["/login", "/register", "/forgot-password", "/reset-password", "/login/verify"];
-  const isGuestOnlyRoute = guestOnlyRoutes.includes(currentPath);
+  // const isProtectedRoute = protectedRoutes.includes(currentPath);
+  // const guestOnlyRoutes = ["/login", "/register", "/forgot-password", "/reset-password", "/login/verify"];
+  // const isGuestOnlyRoute = guestOnlyRoutes.includes(currentPath);
 
-  if (!user) {
-    // User is NOT logged in
+  // if (!user) {
+  //   // User is NOT logged in
 
-    // If trying to access a protected route, redirect to login
-    if (isProtectedRoute) {
-      console.log("🔒 Unauthorized access to protected route. Redirecting to /login");
-      navigate("/login");
-      return;
-    }
-  } else {
-    // User IS logged in
+  //   // If trying to access a protected route, redirect to login
+  //   if (isProtectedRoute) {
+  //     console.log("🔒 Unauthorized access to protected route. Redirecting to /login");
+  //     navigate("/login");
+  //     return;
+  //   }
+  // } else {
+  //   // User IS logged in
 
-    // If trying to access guest-only routes (Login/Register), redirect to profile
-    if (isGuestOnlyRoute) {
-      console.log("👤 User already logged in. Redirecting to /profile");
-      navigate("/profile");
-      return;
-    }
-  }
+  //   // If trying to access guest-only routes (Login/Register), redirect to profile
+  //   if (isGuestOnlyRoute) {
+  //     console.log("👤 User already logged in. Redirecting to /profile");
+  //     navigate("/profile");
+  //     return;
+  //   }
+  // }
 
   const { view: View, params } = match;
 
@@ -156,7 +156,7 @@ export async function renderRoute() {
   // Note: With the guards above, a logged-in user won't reach here for Login/Register,
   // and a logged-out user won't reach here for Protected routes.
   const isOverlay = (View === Login || View === Register || View === TwoFactorVerify);
-
+  
   // Remove any existing overlay if we are navigating
   const existingAuthOverlay = document.getElementById('auth-overlay');
   if (existingAuthOverlay) {
@@ -166,7 +166,7 @@ export async function renderRoute() {
   if (existingTwofaOverlay) {
     existingTwofaOverlay.remove();
   }
-
+  
   if (isOverlay) {
     // If we are opening an overlay, ensure there is a background page.
     // If the root is empty (e.g. direct load of /login), render Home as background.
@@ -178,34 +178,74 @@ export async function renderRoute() {
     // Mount the overlay
     const page = new View(params);
     page.mount(root);
-  } else {
-    // Normal navigation: Clear everything and mount the new page
-    root.innerHTML = "";
-
-    if (View === Game) {
-      if (user) {
-        const urlParams = new URLSearchParams(window.location.search);
-        let mode = urlParams.get("mode") || "bot";
-        const id = urlParams.get("id") || "";
-        if (!mode || (mode !== "bot" && mode !== "local" && mode !== "remote")) {
-          mode = "bot";
+  }
+  else if(View === Game ||(!user && (View === chat || View === Friends)) ){
+        const key = match.params;
+        if(View === Game && key && key.key){
+          const gameobj  = new Game(key.key);
+          // console.log("wikwik");
+          if(!(await gameobj.verify())){
+            const page = new Page404();
+            page.mount(root);
+            return;
+          }
+          gameobj.mount(root);
         }
-        const gameobj = new Game(mode, id);
-        if (mode == "remote" && (!id || !(await gameobj.verify()))) {
-          const page = new Page404();
+        else if(!user){
+          const page = new Login();
           page.mount(root);
           return;
         }
-        gameobj.mount(root);
-      } else {
-        const page = new Login();
-        page.mount(root);
-      }
-    } else {
+        else if(View === Game) {
+          // console.log("waaayli");
+          const urlParams = new URLSearchParams(window.location.search);
+          let mode = urlParams.get("mode") || "bot";
+          const id = urlParams.get("id") || "";
+          const gameobj = new Game(id,mode);
+          if(!mode || (mode !== "bot" && mode !== "local" && mode != "remote")){
+            mode = "bot"; 
+          }
+          if(mode == "remote" && (!id || !(await gameobj.verify()))){
+            const page = new Page404();
+            page.mount(root);
+            return;
+          }
+          gameobj.mount(root);
+        }
+  }
+  else {
       const page = new View(params);
       page.mount(root);
     }
-  }
+
+//  else {
+//     // Normal navigation: Clear everything and mount the new page
+//     root.innerHTML = "";
+
+//     if (View === Game) {
+//       if (user) {
+//         const urlParams = new URLSearchParams(window.location.search);
+//         let mode = urlParams.get("mode") || "bot";
+//         const id = urlParams.get("id") || "";
+//         if (!mode || (mode !== "bot" && mode !== "local" && mode !== "remote")) {
+//           mode = "bot";
+//         }
+//         const gameobj = new Game(mode, id);
+//         if (mode == "remote" && (!id || !(await gameobj.verify()))) {
+//           const page = new Page404();
+//           page.mount(root);
+//           return;
+//         }
+//         gameobj.mount(root);
+//       } else {
+//         const page = new Login();
+//         page.mount(root);
+//       }
+//     } else {
+//       const page = new View(params);
+//       page.mount(root);
+//     }
+//   }
 }
 
 

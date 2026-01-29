@@ -18,6 +18,7 @@ import TRIZcoinData from './TRIZcoin/TRIZcoin.json';
 
 // const FUJI_PRIVATE_KEY = process.env.FUJI_PRIVATE_KEY;
 const VITE_FUJI_RPC_URL = import.meta.env.VITE_FUJI_RPC_URL;
+// const VITE_FUJI_RPC_URL = process.env.VITE_FUJI_RPC_URL;
 
 export const	publicClient = createPublicClient(
 	{
