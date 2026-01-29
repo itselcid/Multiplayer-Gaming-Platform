@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   getters.ts                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: voussama <voussama@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 20:42:15 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/26 01:47:16 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/26 14:18:25 by voussama         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -245,7 +245,89 @@ export const	watchCreatedRounds = () => {
 		}
 	)
 }
+// Match notification state - will be used to show notifications when a match starts
+export interface MatchNotification {
+	tournamentId: bigint;
+	round: bigint;
+	matchId: bigint;
+	opponentUsername: string;
+	opponentAddress: string;
+	matchKey: string;
+}
 
+let matchNotificationCallback: ((notification: MatchNotification) => void) | null = null;
+
+export const setMatchNotificationCallback = (callback: (notification: MatchNotification) => void) => {
+	console.log('setMatchNotificationCallback: Callback registered');
+	matchNotificationCallback = callback;
+};
+
+export const watchMatchCreated = (
+	getMyWalletAddress: () => Promise<string> = async () => ''
+) => {
+	console.log('watchMatchCreated: Setting up event listener');
+	publicClient.watchContractEvent(
+		{
+			address: TournamentFactoryAddress,
+			abi: TournamentFactoryAbi,
+			eventName: 'MatchCreated',
+			onLogs: (logs) => {
+				console.log('watchMatchCreated: Received logs', logs.length);
+				logs.forEach(async (log) => {
+					// fix type problem
+					const typedLog = log as typeof log & {
+						args: {
+							_id: bigint;
+							_round: bigint;
+							_matchId: bigint;
+						}
+					};
+					const match = await getMatch(typedLog.args._id, typedLog.args._round, typedLog.args._matchId);
+					
+					console.log('match started', typedLog.args);
+					console.log('match players:', match.player1.addr, match.player2.addr);
+					
+					// Get current user's wallet address
+					const myWalletAddress = await getMyWalletAddress();
+					
+					if (!myWalletAddress) {
+						console.log('No wallet address found, skipping match notification');
+						return;
+					}
+					
+					// Check if current user is one of the players (case insensitive comparison)
+					const isPlayer1 = match.player1.addr.toLowerCase() === myWalletAddress.toLowerCase();
+					const isPlayer2 = match.player2.addr.toLowerCase() === myWalletAddress.toLowerCase();
+					
+					if (isPlayer1 || isPlayer2) {
+						console.log('Current user is a player in this match!');
+						
+						const opponent = isPlayer1 ? match.player2 : match.player1;
+						const matchKey = getMatchKey(typedLog.args._id, typedLog.args._round, typedLog.args._matchId);
+						
+						const notification: MatchNotification = {
+							tournamentId: typedLog.args._id,
+							round: typedLog.args._round,
+							matchId: typedLog.args._matchId,
+							opponentUsername: opponent.username,
+							opponentAddress: opponent.addr,
+							matchKey: matchKey
+						};
+						
+						// Call the notification callback if set
+						console.log('watchMatchCreated: About to call callback, callback exists:', !!matchNotificationCallback);
+						if (matchNotificationCallback) {
+							console.log('watchMatchCreated: Calling notification callback with:', notification);
+							matchNotificationCallback(notification);
+						} else {
+							console.log('watchMatchCreated: No callback registered!');
+						}
+					}
+				})
+			}
+		}
+	)
+}
 // erc20 functions
 export const	getAllowance = async (address: string) : Promise<bigint> => {
 	const	allowance: bigint = await publicClient.readContract(

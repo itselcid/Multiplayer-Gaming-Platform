@@ -16,7 +16,10 @@ const envSchema = z.object({  // the following schema is to require certain vars
 
     // Frontend
     FRONTEND_URL: z.url(),
+    // Backend
     BACKEND_URL: z.url(),
+    // RabbitMQ (Optional - only needed if using message queue)
+    RABBITMQ_URL: z.url().optional(),
 
     // Uploads
     UPLOADS_DIR: z.string(),

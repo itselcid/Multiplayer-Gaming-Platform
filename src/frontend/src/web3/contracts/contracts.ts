@@ -18,8 +18,9 @@ import TRIZcoinData from './TRIZcoin/TRIZcoin.json';
 
 // const FUJI_PRIVATE_KEY = process.env.FUJI_PRIVATE_KEY;
 const VITE_FUJI_RPC_URL = import.meta.env.VITE_FUJI_RPC_URL;
+// const VITE_FUJI_RPC_URL = process.env.VITE_FUJI_RPC_URL;
 
-export const	publicClient = createPublicClient(
+export const publicClient = createPublicClient(
 	{
 		chain: avalancheFuji,
 		transport: webSocket(VITE_FUJI_RPC_URL)
@@ -28,26 +29,26 @@ export const	publicClient = createPublicClient(
 
 // export const	TournamentFactoryAddress = TournamentFactoryData.address as string as `0x${string}`;;
 export const TournamentFactoryAddress: Address = getAddress(TournamentFactoryData.address);
-export const	TournamentFactoryAbi = TournamentFactoryData.abi;
+export const TournamentFactoryAbi = TournamentFactoryData.abi;
 
 // sign using script
 export const walletClient = createWalletClient({
-  chain: avalancheFuji,
-  transport: webSocket(VITE_FUJI_RPC_URL)
+	chain: avalancheFuji,
+	transport: webSocket(VITE_FUJI_RPC_URL)
 })
- 
+
 // sign with metamask
 export const walletClientMetamask =
-	typeof(window) !== 'undefined' && window.ethereum ?
-	createWalletClient({
-		chain: avalancheFuji,
-		transport: custom(window.ethereum)
-	}): null;
+	typeof (window) !== 'undefined' && window.ethereum ?
+		createWalletClient({
+			chain: avalancheFuji,
+			transport: custom(window.ethereum)
+		}) : null;
 
 
 // token
 export const TRIZcoinAddress: Address = getAddress(TRIZcoinData.address);
-export const	TRIZcoinAbi = TRIZcoinData.abi;
+export const TRIZcoinAbi = TRIZcoinData.abi;
 
 // contract data types
 export interface Tournament {

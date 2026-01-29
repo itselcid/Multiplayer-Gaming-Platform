@@ -2,7 +2,7 @@
 import { prisma } from "./config/db";
 import { TwoFactorCode, UserTwoFactor } from "@prisma/client";
 import bcrypt from "bcrypt";
-import { UserData, CreateUserInput, UpdateUserInput, PasswordResetToken, UserSearchData } from "./types";
+import { UserData, CreateUserInput, UpdateUserInput, PasswordResetToken, UserSearchData, MatchResult } from "./types";
 import type { GithubProfile, UserAuthData } from "./types/auth.types.js";
 import crypto from 'crypto';
 import createHttpError from "http-errors";
@@ -17,7 +17,7 @@ export async function createUser(input: CreateUserInput): Promise<UserSearchData
             username,
             email,
             password: hash,
-            avatar: '/public/default-avatar.png',
+            avatar: '/default-avatar.png',
         },
         select: {
             id: true,
@@ -37,6 +37,7 @@ export async function getAllUsers(): Promise<UserData[]> {
             username: true,
             email: true,
             avatar: true,
+            xp: true,
             twoFactor: {
                 select: {
                     method: true
@@ -59,10 +60,25 @@ export async function getUserById(id: number): Promise<UserData | null> {
             username: true,
             email: true,
             avatar: true,
+            xp: true,
             twoFactor: {
                 select: {
                     method: true,
                     enabled: true
+                }
+            },
+            achievements: {
+                select: {
+                    unlockedAt: true,
+                    achievement: {
+                        select: {
+                            id: true,
+                            key: true,
+                            name: true,
+                            description: true,
+                            icon: true
+                        }
+                    }
                 }
             },
             githubId: true,
@@ -96,6 +112,7 @@ export async function getUserByUsername(usernameOrEmail: string, email?: string)
             username: true,
             email: true,
             avatar: true,
+            xp: true,
             twoFactor: {
                 select: {
                     method: true,
@@ -203,6 +220,7 @@ export async function updateUser(id: number, updates: UpdateUserInput): Promise<
             username: true,
             email: true,
             avatar: true,
+            xp: true,
             twoFactor: {
                 select: {
                     method: true
@@ -579,7 +597,7 @@ export async function getReceivedFriendRequests(addresseeId: number) {
         }
     });
 
-    return friendRequests;
+    return friendRequests.map(r => r.requester);
 }
 
 export async function getBlockedFriends(userId: number) {
@@ -600,7 +618,54 @@ export async function getBlockedFriends(userId: number) {
         }
     });
 
-    return blockedFriends;
+    return blockedFriends.map(b => b.addressee);
+}
+
+export async function getMatchHistory(userId: number, skip: number, take: number) {
+    const rawHistory = await prisma.match.findMany({
+        where: {
+            OR: [
+                { player1Id: userId },
+                { player2Id: userId }
+            ]
+        },
+        skip,
+        take,
+        orderBy: {
+            startedAt: 'desc'
+        },
+        select: {
+            player1Id: true,
+            player1: {
+                select: {
+                    id: true,
+                    username: true,
+                    avatar: true
+                }
+            },
+            player2Id: true,
+            player2: {
+                select: {
+                    id: true,
+                    username: true,
+                    avatar: true
+                }
+            },
+            score1: true,
+            score2: true,
+            startedAt: true
+        }
+    });
+
+    return rawHistory.map(match => ({
+        player1Id: match.player1Id,
+        player1: match.player1,
+        player2Id: match.player2Id,
+        player2: match.player2,
+        player1Score: match.score1,
+        player2Score: match.score2,
+        playedAt: match.startedAt
+    }));
 }
 
 export async function getSentFriendRequests(requesterId: number) {
@@ -620,14 +685,234 @@ export async function getSentFriendRequests(requesterId: number) {
         }
     });
 
-    return friendRequestsSent;
+    return friendRequestsSent.map(r => r.addressee);
+}
+
+// calculateXps
+async function UpdateXps(player1: any, player2: any, score1: number, score2: number) {
+    let player1Rank = (player1.xp > 1000) ? 4 : (player1.xp > 500) ? 3 : (player1.xp > 150) ? 2 : 1;
+    let player2Rank = (player2.xp > 1000) ? 4 : (player2.xp > 500) ? 3 : (player2.xp > 150) ? 2 : 1;
+
+    let multiplier = 1;
+    if (score1 > score2) {
+        multiplier = player2Rank;
+    } else if (score1 < score2) {
+        multiplier = player1Rank;
+    }
+
+    let player1AddedXp = (score1 - score2) * multiplier;
+    let player2AddedXp = (score2 - score1) * multiplier;
+
+    let player1NewXp = player1.xp + player1AddedXp;
+    let player2NewXp = player2.xp + player2AddedXp;
+
+    if (player1NewXp < 0) player1NewXp = 0;
+    if (player2NewXp < 0) player2NewXp = 0;
+
+    await prisma.user.update({
+        where: { id: player1.id },
+        data: { xp: player1NewXp }
+    });
+    await prisma.user.update({
+        where: { id: player2.id },
+        data: { xp: player2NewXp }
+    });
+}
+
+async function UpdateAchievements(player1: any, player2: any) {
+    // Helper function to check and unlock achievements for a single player
+    async function checkPlayerAchievements(player: any, playerId: number) {
+        const achievementKeys = ['FIRST_WIN', 'CONSISTENT', 'ON_FIRE', 'FLAWLESS', 'FAMILY', 'LEVEL_UP'];
+        // Fetch all match-related achievements and which ones this player has already unlocked in a single query
+        const [allAchievements, unlockedAchievements, allMatches, friendships] = await Promise.all([
+            prisma.achievement.findMany({
+                where: {
+                    key: {
+                        in: achievementKeys
+                    }
+                }
+            }),
+            prisma.userAchievement.findMany({
+                where: { userId: playerId },
+                include: { achievement: true }
+            }),
+            // Fetch all player matches once and reuse for all checks
+            prisma.match.findMany({
+                where: {
+                    OR: [
+                        { player1Id: playerId },
+                        { player2Id: playerId }
+                    ]
+                },
+                orderBy: { startedAt: 'desc' },
+                select: {
+                    player1Id: true,
+                    player2Id: true,
+                    score1: true,
+                    score2: true
+                }
+            }),
+            prisma.friendship.findFirst({
+                where: {
+                    OR: [
+                        { requesterId: playerId },
+                        { addresseeId: playerId }
+                    ],
+                    status: 'ACCEPTED'
+                }
+            })
+        ]);
+
+        // Create a set of already unlocked achievement keys for quick lookup
+        const unlockedKeys = new Set(unlockedAchievements.map(ua => ua.achievement.key));
+
+        // Create a map of achievement key to achievement ID
+        const achievementMap = new Map(allAchievements.map(a => [a.key, a.id]));
+
+        // Track which achievements to unlock
+        const achievementsToUnlock: number[] = [];
+
+        // Helper to determine if player won a match
+        const playerWon = (match: typeof allMatches[0]) => {
+            if (match.player1Id === playerId) {
+                return match.score1 > match.score2;
+            } else if (match.player2Id === playerId) {
+                return match.score2 > match.score1;
+            }
+            return false;
+        };
+
+        // Check CONSISTENT - Play 10 matches
+        if (!unlockedKeys.has('CONSISTENT') && achievementMap.has('CONSISTENT')) {
+            if (allMatches.length >= 10) {
+                achievementsToUnlock.push(achievementMap.get('CONSISTENT')! as number);
+            }
+        }
+
+        // Check FIRST_WIN - Win your first match
+        if (!unlockedKeys.has('FIRST_WIN') && achievementMap.has('FIRST_WIN')) {
+            if (allMatches.find(playerWon)) {
+                achievementsToUnlock.push(achievementMap.get('FIRST_WIN')! as number);
+            }
+        }
+
+        // Check ON_FIRE - Win 3 matches in a row (check most recent 3)
+        if (!unlockedKeys.has('ON_FIRE') && achievementMap.has('ON_FIRE')) {
+            const recentMatches = allMatches.slice(0, 3);
+            if (recentMatches.length >= 3) {
+                if (recentMatches.every(playerWon)) {
+                    achievementsToUnlock.push(achievementMap.get('ON_FIRE')! as number);
+                }
+            }
+        }
+
+        // Check FLAWLESS - Win with 0 points conceded
+        if (!unlockedKeys.has('FLAWLESS') && achievementMap.has('FLAWLESS')) {
+            const flawlessMatch = allMatches.find(match => {
+                if (match.player1Id === playerId) {
+                    return match.score1 > 0 && match.score2 === 0;
+                } else if (match.player2Id === playerId) {
+                    return match.score2 > 0 && match.score1 === 0;
+                }
+                return false;
+            });
+
+            if (flawlessMatch) {
+                achievementsToUnlock.push(achievementMap.get('FLAWLESS')! as number);
+            }
+        }
+
+        if (!unlockedKeys.has('FAMILY') && achievementMap.has('FAMILY')) {
+            if (friendships) {
+                achievementsToUnlock.push(achievementMap.get('FAMILY')! as number);
+            }
+        }
+
+        if (!unlockedKeys.has('LEVEL_UP') && achievementMap.has('LEVEL_UP')) {
+            if (player.xp > 150) {
+                achievementsToUnlock.push(achievementMap.get('LEVEL_UP')! as number);
+            }
+        }
+
+        // Unlock all new achievements in a single transaction
+        if (achievementsToUnlock.length > 0) {
+            console.log("\n -- achievementsToUnlock", achievementsToUnlock, "\n");
+            await prisma.userAchievement.createMany({
+                data: achievementsToUnlock.map(achievementId => ({
+                    userId: playerId,
+                    achievementId
+                }))
+            });
+        }
+
+        return achievementsToUnlock.length;
+    }
+
+    // Check achievements for both players in parallel
+    await Promise.all([
+        checkPlayerAchievements(player1, player1.id),
+        checkPlayerAchievements(player2, player2.id)
+    ]);
+}
+
+export async function saveMatch(matchData: MatchResult) {
+    try {
+        // Verifying player 1 exists
+        const player1 = await prisma.user.findUnique({
+            where: {
+                id: matchData.player1Id
+            },
+            select: {
+                id: true,
+                xp: true
+            }
+        });
+        if (!player1) {
+            console.warn(`User ${matchData.player1Id} not found, skipping match save.`);
+            return;
+        }
+
+        // Verifying player 2 if provided (it can no longer be a player vs guest situation)
+        const player2 = await prisma.user.findUnique({
+            where: {
+                id: matchData.player2Id
+            },
+            select: {
+                id: true,
+                xp: true
+            }
+        });
+        if (!player2) {
+            console.warn(`User ${matchData.player2Id} not found, skipping match save.`);
+            return;
+        }
+
+        // calculating xps
+        await UpdateXps(player1, player2, matchData.score1, matchData.score2);
+
+        await prisma.match.create({
+            data: {
+                player1Id: matchData.player1Id,
+                player2Id: matchData.player2Id,
+                score1: matchData.score1,
+                score2: matchData.score2,
+                startedAt: new Date(matchData.startedAt)
+            }
+        });
+        console.log(`Match saved to DB`, matchData); //! logs
+
+        await UpdateAchievements(player1, player2);
+    } catch (error) {
+        console.error('Error saving match to DB:', error);
+        throw error;
+    }
 }
 
 
 
 /////// Temporary ///////
 export async function createTestUserIfNeeded() {
-    const user = await getUserByUsername('test')
+    let user = await getUserByUsername('test')
 
     if (!user) {
         const testUser = await createUser({
@@ -638,5 +923,17 @@ export async function createTestUserIfNeeded() {
         if (testUser)
             console.log("\x1b[32m%s\x1b[0m", 'Test user created: username=test, password=test')
     }
+
+    user = await getUserByUsername('messi')
+    if (!user) {
+        const messiUser = await createUser({
+            username: 'messi',
+            email: 'messi@messi.com',
+            password: 'messi'
+        })
+        if (messiUser)
+            console.log("\x1b[32m%s\x1b[0m", 'Messi user created: username=messi, password=messi')
+    }
+
 }
 

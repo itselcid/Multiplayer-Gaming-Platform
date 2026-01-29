@@ -19,9 +19,9 @@ import { currentWeb3Account, login_state, web3auth } from "../core/appStore";
 export class Web3Auth {
 	private _storageKey = 'wallet_address';
 
-	private	polling(): void {
+	private polling(): void {
 		setInterval(async () => {
-			const	eth = window.ethereum;
+			const eth = window.ethereum;
 
 			if (typeof(eth) === 'undefined')
 				return ;
@@ -46,13 +46,14 @@ export class Web3Auth {
 
 			// keep displaying metamask warning in case of being on wrong network
 			const VITE_FUJI_CHAIN_ID = import.meta.env.VITE_FUJI_CHAIN_ID;
+			console.log(chainId);
 			if (chainId !== VITE_FUJI_CHAIN_ID) {
 				const	metamask_warning = document.getElementById('metamask-network-warning');
 				const	metamask_error = document.getElementById('metamask-error');
 				if (!metamask_warning && !metamask_error) {
 					const	root = document.getElementById('app');
 					if (root) {
-						const	warning_page = new Metamask_network_warning(chainId);
+						const warning_page = new Metamask_network_warning(chainId);
 						warning_page.mount(root);
 					}
 				}
@@ -70,9 +71,9 @@ export class Web3Auth {
 		return (typeof window.ethereum !== 'undefined');
 	};
 
-	login = async() : Promise<string | null> => {
-		const	pend = new Pending_wallet_connection();
-		const	root = document.getElementById('app');
+	login = async (): Promise<string | null> => {
+		const pend = new Pending_wallet_connection();
+		const root = document.getElementById('app');
 		if (root)
 			pend.mount(root);
 		else {
@@ -81,7 +82,7 @@ export class Web3Auth {
 		}
 
 		if (typeof window.ethereum === 'undefined') {
-			const	metamask_error = new Metamask_error(
+			const metamask_error = new Metamask_error(
 				"MetaMask Not Detected",
 				"It looks like MetaMask isn’t installed on your browser. Please install MetaMask to connect your wallet and continue.",
 				false
@@ -103,12 +104,12 @@ export class Web3Auth {
 			const address = accounts[0];
 			login_state.set('connected');
 			pend.unmount();
-			const	succ = new Success_wallet_connection();
+			const succ = new Success_wallet_connection();
 			succ.mount(root);
 			return (address);
 		} catch (err) {
 			pend.unmount();
-			const	error_page = new Metamask_error(
+			const error_page = new Metamask_error(
 				'Connection Rejected',
 				'You rejected the MetaMask connection request. To access game features, please approve the connection.',
 				true
@@ -153,7 +154,7 @@ export class Web3Auth {
 
 	// get current connected address or empty string if metamask ins
 	async getEthAddress(): Promise<string> {
-	// Make sure MetaMask (or another wallet) is installed
+		// Make sure MetaMask (or another wallet) is installed
 		if (typeof window.ethereum === 'undefined') {
 			return ('');
 		}
@@ -161,7 +162,7 @@ export class Web3Auth {
 		try {
 			// Request the list of connected accounts
 			const accounts = await window.ethereum.request({
-			method: 'eth_accounts'
+				method: 'eth_accounts'
 			}) as string[];
 
 			// Return the first connected address (if any)

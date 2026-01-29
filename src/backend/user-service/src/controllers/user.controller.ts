@@ -1,8 +1,10 @@
 import createHttpError from "http-errors";
-import { deleteUser, getAllUsers, getUserById, getUserByUsername, searchUsers, updateUser } from "../db";
+import { deleteUser, getAllUsers, getMatchHistory, getUserById, getUserByUsername, getUserForAuth, searchUsers, updateUser } from "../db";
 import path from "node:path";
 import fs from "node:fs";
 import { pipeline } from "node:stream/promises";
+import { MatchHistory } from "../types";
+import bcrypt from "bcrypt";
 
 
 export const userController = {
@@ -35,6 +37,20 @@ export const userController = {
     },
 
     deleteLoggedInUser: async (request: any, reply: any) => {
+        const { password } = request.body;
+
+        if (!password)
+            throw createHttpError(400, 'Provide password');
+
+        const user = await getUserForAuth(request.user!.username, request.user!.userId);
+
+        if (!user)
+            throw createHttpError(404, 'User not found');
+
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid)
+            throw createHttpError(401, 'Invalid password');
+
         await deleteUser(request.user!.userId);
         return reply.send({ message: 'Account deleted successfully' });
     },
@@ -124,5 +140,23 @@ export const userController = {
             return reply.code(409).send({ message: 'Username is already taken' });
 
         return reply.code(200).send({ message: 'Username is available' });
-    }   // /istaken?username=
+    },
+
+    getMatchHistory: async (request: any, reply: any) => {
+        const userId = parseInt(request.params.id, 10) || request.user!.userId;
+        const page = parseInt(request.query.page, 10) || 1;
+        const limit = parseInt(request.query.limit, 10) || 10;
+        const offset = (page - 1) * limit;
+
+        if (isNaN(userId))
+            throw createHttpError(400, 'Invalid user ID');
+
+        const user = await getUserById(userId);
+        if (!user)
+            throw createHttpError(404, 'User not found');
+        const historyData: MatchHistory[] = await getMatchHistory(userId, offset, limit);
+
+        return reply.send({ historyData });
+    }
+
 }

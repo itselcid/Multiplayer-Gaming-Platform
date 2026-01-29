@@ -6,13 +6,14 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/13 19:43:15 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/12 04:25:59 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/24 15:47:34 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { Component } from "../core/Component";
 import { navigate } from "../core/router";
 import { userState } from "../core/appStore";
+import { Game } from "../pages/Game";
 
 interface Friend {
   id: number;
@@ -22,24 +23,32 @@ interface Friend {
 
 export class Home extends Component {
 	private friends: Friend[] = [];
+	private online: Friend[] = [];
 	
   constructor() {
     super("div", 'pl-5 pr-5 pt-3');
   }
 
   private async getfriends() : Promise<Friend[]>{
-	const response = await this.fetchApi();
+	const user = userState.get();
+	const response = await this.fetchApi(`api/friends?id=${user?.id}`);
     const data = await response.json();
     return data.friends;
 	
   }
-  private async fetchApi(options: RequestInit = {}){
+  
+  private async getonline() : Promise<Friend[]>{
+	const response = await this.fetchApi("api/friends/online");
+    const data = await response.json();
+    return data.friends;
+  }
+  
+  private async fetchApi(api:string,options: RequestInit = {}){
 	 const headers: Record<string, string> = {};
     if (options.body) {
       headers['Content-Type'] = 'application/json';
     }
-	const user = userState.get();
-    const response = await fetch(`http://localhost:3000/api/friends?id=${user?.id}`, {
+    const response = await fetch(`${api}`, {
       ...options,
       headers: {
         ...headers,
@@ -102,6 +111,7 @@ export class Home extends Component {
 
   async handleRemote(){
 	this.friends = await this.getfriends();
+	this.online = await this.getonline();
 	const container = document.createElement("div");
 	container.className =`fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm z-50`;
 	if(!this.friends.length){
@@ -112,6 +122,12 @@ export class Home extends Component {
 		</div>`;
 		
 	}
+	else if (!this.online.length){
+		container.innerHTML = `<div class="backdrop-blur-xl rounded-xl shadow-xl flex flex-col gap-4 p-6">
+		<h2 class="text-3xl text-center text-ctex mb-4">No online playmates around</h2>
+		<button id="cancel" class="btn px-6  py-3 rounded-sm text-white/75 hover:bg-neon-cyan/75  transition mt-2">Cancel</button>
+		</div>`;
+	}
 	else{
 		container.innerHTML = `<div class="backdrop-blur-xl rounded-xl shadow-xl flex flex-col gap-4 p-6">
 		<h2 class="text-3xl text-center text-ctex mb-4">Select a playmate</h2>
@@ -121,7 +137,7 @@ export class Home extends Component {
 		
 		const list = container.querySelector("#friendsList");
 
-  		this.friends.forEach(friend => {
+  		this.online.forEach(friend => {
     		const btn = document.createElement("button");
     		btn.className =
     		  "btn flex items-center gap-3 px-4 py-2 rounded-sm text-white/80 hover:bg-neon-cyan/75 transition text-left";
@@ -130,9 +146,11 @@ export class Home extends Component {
     		avatar.alt = friend.username;
     		avatar.className = "w-8 h-8 rounded-full object-cover"; 
 			
-			// console.log(friend.avatar);
    		 	btn.innerHTML = `${this.renderAvatar(friend.avatar)}<span>${friend.username}</span>`;
-    		btn.addEventListener("click", () => {});
+    		btn.addEventListener("click", async () => {
+				const room = new Game("remote","");
+				const url = await room.createroom(friend);
+				navigate(url)});
 			list?.appendChild(btn);});
 		}
 		

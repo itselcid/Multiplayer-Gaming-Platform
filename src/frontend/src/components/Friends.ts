@@ -88,7 +88,7 @@ export class Friends extends Component {
 
   private async fetchApi(endpoint: string, options: RequestInit = {}) {
     const headers: Record<string, string> = {};
-    
+
     // Only set Content-Type if there's a body
     if (options.body) {
       headers['Content-Type'] = 'application/json';
@@ -278,12 +278,12 @@ export class Friends extends Component {
 
   private renderSearchResults() {
     const query = this.searchQuery.toLowerCase().trim();
-    
+
     // Get IDs for comparison (convert to numbers for consistent comparison)
     const friendIds = new Set(this.friends.map(f => Number(f.id)));
     const sentRequestIds = new Set(this.sentRequests.map(r => Number(r.id)));
     const receivedRequestIds = new Set(this.receivedRequests.map(r => Number(r.id)));
-    
+
     // Filter users: exclude self, exclude friends, filter by search query
     const filteredUsers = this.allUsers.filter(user => {
       if (Number(user.id) === Number(this.myUserId)) return false; // Exclude self
@@ -335,12 +335,8 @@ export class Friends extends Component {
     const loggedInUser = userState.get();
 
     if (!loggedInUser) {
-      this.el.innerHTML = `
-        <div class="bg-space-blue/80 border border-neon-cyan/20 rounded-2xl shadow-xl p-8 text-center backdrop-blur-md">
-          <div class="text-4xl mb-4">🔒</div>
-          <p class="text-gray-400">Please login</p>
-        </div>
-      `;
+      window.history.pushState({}, '', '/login');
+      window.dispatchEvent(new PopStateEvent('popstate'));
       return;
     }
 
@@ -350,7 +346,7 @@ export class Friends extends Component {
         <div class="p-4 bg-space-dark/50 border-b border-neon-cyan/10">
           <div class="flex justify-between items-center mb-3">
             <h1 class="text-xl font-bold text-neon-cyan">👥 Friends</h1>
-            <span class="text-xs text-gray-400 font-mono">#${loggedInUser.id} ${this.escapeHtml(loggedInUser.username)}</span>
+            <span class="text-xs text-gray-400 font-mono"></span>
           </div>
           
           <!-- Tabs -->
@@ -396,8 +392,8 @@ export class Friends extends Component {
               <button id="retry-btn" class="mt-2 text-neon-cyan hover:underline">Retry</button>
             </div>
           ` : this.activeTab === 'friends' ? this.renderFriendsList()
-            : this.activeTab === 'requests' ? this.renderRequestsList()
-            : this.renderSearchResults()}
+        : this.activeTab === 'requests' ? this.renderRequestsList()
+          : this.renderSearchResults()}
         </div>
       </div>
     `;

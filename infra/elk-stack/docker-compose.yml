@@ -43,9 +43,10 @@ services:
     container_name: filebeat
     user: root
     volumes:
-      - nginx-logs:/var/log/nginx:ro
       - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
       - filebeat-data:/usr/share/filebeat/data
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - logging
     depends_on:
@@ -60,8 +61,6 @@ services:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
       - ELASTICSEARCH_USERNAME=elastic
       - ELASTICSEARCH_PASSWORD=${ELASTIC_PASSWORD}
-      - SERVER_BASEPATH=/kibana
-      - SERVER_REWRITEBASEPATH=true
     ports:
       - "5601:5601"
     volumes:
@@ -69,7 +68,6 @@ services:
     depends_on:
       - elasticsearch
     networks:
-      - gateway
       - logging      
     mem_limit: 1g
     cpus: 1.0
@@ -78,8 +76,8 @@ services:
     image: curlimages/curl:latest
     container_name: elk-setup
     volumes:
-      - ./elasticsearsh/ilm-policy.json:/ilm-policy.json:ro
-      - ./elasticsearsh/setup-ilm.sh:/setup-ilm.sh:ro
+      - ./elasticsearch/ilm-policy.json:/ilm-policy.json:ro
+      - ./elasticsearch/setup-ilm.sh:/setup-ilm.sh:ro
     environment:
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
     command: sh /setup-ilm.sh
@@ -102,9 +100,6 @@ volumes:
     name: nginx-logs
 
 networks:
-  gateway:
-    external: true
-    name: gateway
   logging:
     external: true
     name: logging

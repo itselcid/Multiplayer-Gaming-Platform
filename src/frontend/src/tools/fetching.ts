@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   fetching.ts                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/08 15:57:04 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/08 17:14:12 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/23 22:42:44 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,7 @@ export const	isUsernameTaken = async (username: string): Promise<boolean> => {
 	const	data = {
 		"username": username
 	}
-	const	response = await fetch(VITE_USER_BACKEND_URL + '/api/users/istaken', {
+	const	response = await fetch('/api/users/istaken', {
 		method: "POST",
 		headers: {
 		"Content-Type": "application/json",

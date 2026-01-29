@@ -1,23 +1,12 @@
+# Collect logs from all Docker containers
 filebeat.inputs:
-- type: log
-  enabled: true
-  paths:
-    - /var/log/nginx/access.log
-  json.keys_under_root: true
-  json.add_error_key: true
-  fields:
-    service: nginx
-    log_type: access
-  fields_under_root: true
-
-- type: log
-  enabled: true
-  paths:
-    - /var/log/nginx/error.log
-  fields:
-    service: nginx
-    log_type: error
-  fields_under_root: true
+  - type: container
+    paths:
+      - /var/lib/docker/containers/*/*.log
+    processors:
+      - add_docker_metadata:
+          host: "unix:///var/run/docker.sock"
+          match_source_index: 4
 
 output.logstash:
   hosts: ["logstash:5044"]
