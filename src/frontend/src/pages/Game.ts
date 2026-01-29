@@ -90,19 +90,19 @@ export class Game extends Component {
 			this.socket.emit('getroom', this.id, resolve);
 		});
 		const wallet = await web3auth.getEthAddress();
+		this.user1 = this.room.player1;
+		this.user2 = this.room.player2;
 		if(wallet === this.room.wallet1.toLowerCase() ){
-			this.user1 = this.room.player1;
-			this.user2 = this.room.player2;
 			this.role = "playerR";
 		}
 		else if (wallet === this.room.wallet2.toLowerCase() ){
-			this.user1 = this.room.player2;
-			this.user2 = this.room.player1;
+			// this.user1 = this.room.player;
+			// this.user2 = this.room.player1;
 			this.role = "playerL";
 		}
 		else{
-			this.user1 = this.room.player1;
-			this.user2 = this.room.player2;
+			// this.user1 = this.room.player1;
+			// this.user2 = this.room.player2;
 			this.role = "viewer";
 		}
 		this.socket.emit('joinroom',wallet,this.id,0);
@@ -270,6 +270,7 @@ export class Game extends Component {
 			const key = event.key.toLowerCase();
 			if( key !== "v") return;
 			
+			console.log(key);
 			this.vision = (this.vision + 1 ) %3;
 			if (this.vision  == 0){
 				this.camera.position = new Vector3(0,0,-30);
