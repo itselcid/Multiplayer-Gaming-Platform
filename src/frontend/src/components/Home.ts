@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/13 19:43:15 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/24 15:47:34 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/30 03:54:22 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -150,6 +150,9 @@ export class Home extends Component {
     		btn.addEventListener("click", async () => {
 				const room = new Game("remote","");
 				const url = await room.createroom(friend);
+				const fullUrl = new URL(String(url), window.location.origin).href;
+				await	this.sendInvite(friend.id, fullUrl);
+				console.log("Invitation sent to " + friend.username);
 				navigate(url)});
 			list?.appendChild(btn);});
 		}
@@ -157,6 +160,35 @@ export class Home extends Component {
 		this.el.append(container);
 		container.querySelector("#make")?.addEventListener("click",()=>navigate("/friends"));
 		container.querySelector("#cancel")?.addEventListener("click",() => container.remove());
+	}
+
+	async sendInvite(friendId: number, url: string) {
+		try {
+			const user = userState.get();
+			if (!user) {throw new Error("User not logged in");}
+			console.log("Sending game invite to user ID:", friendId);
+		      const response = await fetch(`api/chat/messages`, {
+      		  method: 'POST',
+      		  headers: {
+      		    'Content-Type': 'application/json',
+      		    'x-user-id': user.id.toString()
+      		  },
+      		  body: JSON.stringify({
+      		    receiverId: friendId,
+      		    content: `🎮 Game Invite: Join me in Galactik Pingpong! Click here to play: ${url}`
+      		  }),
+      		  credentials: 'include'
+      		});	
+			console.log(`status: ${response.status}`);
+			      if (response.ok) {
+        const message = await response.json();
+        console.log('✅ Message sent via HTTP:', message);
+      }
+		}
+		catch (error) {
+			console.error("Error sending game invite:", error);
+			 alert('Network error. Please check your connection and try again.');
+		}
 	}
 	renderAvatar(avatar: string | undefined, size: string = 'w-8 h-8') {
 		if (avatar && avatar.startsWith('/public')) {

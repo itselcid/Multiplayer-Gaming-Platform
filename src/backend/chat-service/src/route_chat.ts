@@ -85,15 +85,19 @@ export async function chatRoutes(fastify: FastifyInstance) {
 
   // Send a message
   fastify.post<{ Body: { receiverId: number; content: string } }>('/messages', async (req, reply) => {
-    const senderId = req.user.id;
+    console.log('Received message send request:', req.body);
+    const senderId = Number(req.user?.id);
+
     const { receiverId, content } = req.body;
 
-    if (!receiverId || !content) {
+  const receiverIdNum   = Number(receiverId);
+
+    if (!receiverIdNum || !content) {
       return reply.code(400).send({ error: 'Invalid data' });
     }
 
     // Check if sender is blocked by receiver
-    const blocked = await isBlocked(senderId, receiverId);
+    const blocked = await isBlocked(senderId, receiverIdNum);
     if (blocked) {
       return reply.code(403).send({ error: 'You are blocked by this user' });
     }
@@ -109,8 +113,8 @@ export async function chatRoutes(fastify: FastifyInstance) {
         },
         receiver: {
           connectOrCreate: {
-            where: { id: receiverId },
-            create: { id: receiverId, username: `user_${receiverId}` }
+            where: { id: receiverIdNum },
+            create: { id: receiverIdNum, username: `user_${receiverIdNum}` }
           }
         }
       }

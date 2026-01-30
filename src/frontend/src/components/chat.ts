@@ -697,6 +697,15 @@ export class chat extends Component {
     return div.innerHTML;
   }
 
+  linkify(text?: string) {
+    if (!text) return '';
+    const escaped = this.escapeHtml(text);
+    return escaped.replace(/(https?:\/\/[^\s"<]+)/g, (url) => {
+      const safe = encodeURI(url);
+      return `<a href="${safe}" target="_blank" rel="noopener noreferrer" class="text-neon-cyan underline">${url}</a>`;
+    });
+  }
+
   renderAvatar(avatar: string | undefined, size: string = 'w-8 h-8') {
     if (avatar && (avatar.startsWith('/') || avatar.startsWith('http'))) {
       return `<img src="${avatar}" alt="avatar" class="${size} rounded-full object-cover" />`;
@@ -731,7 +740,7 @@ export class chat extends Component {
               ${user.lastMessageTime ? `<span class="text-[10px] text-gray-500">${user.lastMessageTime}</span>` : ''}
             </div>
             <div class="flex justify-between items-center">
-              ${user.lastMessage ? `<p class="text-xs text-gray-500 truncate max-w-[120px]">${this.escapeHtml(user.lastMessage)}</p>` : '<p class="text-xs text-gray-500">&nbsp;</p>'}
+              ${user.lastMessage ? `<p class="text-xs text-gray-500 truncate max-w-[120px]">${this.linkify(user.lastMessage)}</p>` : '<p class="text-xs text-gray-500">&nbsp;</p>'}
               ${user.unread > 0 ? `
                 <span class="bg-neon-cyan text-space-dark text-xs rounded-full px-2 py-0.5 font-semibold">
                   ${user.unread}
@@ -786,7 +795,7 @@ export class chat extends Component {
           <div class="flex justify-center my-4">
             <div class="max-w-sm w-full bg-gradient-to-r from-neon-purple/20 to-neon-cyan/20 border border-neon-cyan/30 rounded-xl p-4 shadow-lg">
               <div class="text-center">
-                <p class="text-lg font-bold text-neon-cyan mb-3">${this.escapeHtml(msg.text)}</p>
+                <p class="text-lg font-bold text-neon-cyan mb-3">${this.linkify(msg.text)}</p>
                 <button class="play-match-btn inline-flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-lg font-bold hover:opacity-90 transition shadow-md text-lg cursor-pointer" data-match-link="${msg.matchLink || '/match/test'}">
                   Play Now
                 </button>
@@ -807,7 +816,7 @@ export class chat extends Component {
           ? 'bg-blue-600 text-white rounded-br-sm'
           : 'bg-space-blue/80 text-gray-200 rounded-bl-sm border border-neon-cyan/20'
         }">
-              <p class="text-sm leading-relaxed">${this.escapeHtml(msg.text)}</p>
+              <p class="text-sm leading-relaxed">${this.linkify(msg.text)}</p>
             </div>
             <div class="flex items-center gap-2 mt-1 px-2">
               <span class="text-xs text-gray-500">${this.escapeHtml(msg.time)}</span>

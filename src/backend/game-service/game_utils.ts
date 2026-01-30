@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/13 17:23:50 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/25 23:10:14 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/30 01:34:11 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -127,8 +127,8 @@ export class PongGame {
   paddleRightY = 0;
   ballx = 0;
   bally = 0;
-  ballVX = 0.20; 
-  ballVY = 0.10; 
+  ballVX = 0.25; 
+  ballVY = 0.14; 
   move = false;
   start = false;
   stop = true;
@@ -159,8 +159,8 @@ export class PongGame {
 
   private calculateBounce(paddleY: number, ballY: number) {
     const relativeIntersectY = (ballY - paddleY) / (this.PADDLE_HEIGHT / 2);
-    this.ballVX *= -1.02; 
-    this.ballVY = relativeIntersectY * 0.1; 
+    this.ballVX *= -1.04; 
+    this.ballVY = relativeIntersectY * 0.14; 
   }
 
   update() {
@@ -236,8 +236,8 @@ export class PongGame {
   resetPoint(direction: number) {
     this.ballx = 0;
     this.bally = 0;
-    this.ballVX = 0.20 * direction;
-    this.ballVY = (Math.random() - 0.5) * 0.1;
+    this.ballVX = 0.25 * direction;
+    this.ballVY = (Math.random() - 0.5) * 0.14;
   }
 
   reset(){
