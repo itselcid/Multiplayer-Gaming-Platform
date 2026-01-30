@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 21:57:12 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/12 03:58:34 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/27 01:56:02 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -129,7 +129,6 @@ export class TournamentsDisplay extends Component {
 				};
 			});
 		
-		// console.log(typeof(tournaments));
 	}
 }
 

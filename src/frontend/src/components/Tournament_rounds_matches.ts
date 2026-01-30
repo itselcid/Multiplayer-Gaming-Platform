@@ -6,10 +6,11 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/20 15:11:27 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/24 21:33:12 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/29 01:19:32 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
+import { zeroAddress } from "viem";
 import { addElement, Component } from "../core/Component";
 import { navigate } from "../core/router";
 import { get_match_status, get_round_name } from "../tools/tournament_tools";
@@ -245,6 +246,132 @@ class	FinishedMatch extends Component {
 	}
 }
 
+class ForfeitedMatch extends Component {
+	private	_tournament: Tournament;
+	private _match: Match;
+	private	_id:bigint;
+
+	constructor(tournament: Tournament, match: Match, id:bigint) {
+		super('div', 'relative group');
+		this._tournament = tournament;
+		this._match = match;
+		this._id = id
+	}
+
+	render(): void {
+		this.el.insertAdjacentHTML('beforeend', `
+				<div class="relative backdrop-blur-xl rounded-2xl border p-6 transition-all bg-gradient-to-br from-slate-700/30 to-slate-800/20 border-red-500/50 shadow-lg shadow-red-500/20">
+	
+					<div class="flex items-center justify-between mb-5">
+					<span class="text-cyan-300/70 text-sm font-bold tracking-wider">
+						MATCH #${this._id}
+					</span>
+					<span class="px-4 py-1.5 bg-gradient-to-r from-red-600/50 to-red-700/50 border border-red-400/50 rounded-full text-red-200 text-xs font-black flex items-center gap-2 shadow-lg shadow-red-500/30">
+						<svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+						<path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+						</svg>
+						FORFEITED
+					</span>
+					</div>
+
+					<div class="grid grid-cols-3 gap-6 items-center mb-6">
+					<div class="text-center space-y-3">
+						<div class="p-3 bg-gradient-to-br from-slate-600/10 to-slate-700/10 rounded-xl border border-slate-500/30 inline-block opacity-40">
+						<p class="text-white font-black text-base tracking-tight">
+							${this._match.player1.username}
+						</p>
+						</div>
+						<div class="text-5xl font-black transition-all text-slate-700">
+						0
+						</div>
+					</div>
+
+					<div class="text-center">
+						<div class="relative">
+						<div class="absolute inset-0 bg-red-500/20 blur-xl"></div>
+						<span class="relative text-slate-500 font-black text-xl tracking-widest">
+							VS
+						</span>
+						</div>
+					</div>
+
+					<div class="text-center space-y-3">
+						<div class="p-3 bg-gradient-to-br from-slate-600/10 to-slate-700/10 rounded-xl border border-slate-500/30 inline-block opacity-40">
+						<p class="text-white font-black text-base tracking-tight">
+							${this._match.player2.username}
+						</p>
+						</div>
+						<div class="text-5xl font-black transition-all text-slate-700">
+						0
+						</div>
+					</div>
+					</div>
+
+					<div class="relative">
+					<div class="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/10 to-red-500/0 blur-xl"></div>
+					<div class="relative bg-gradient-to-r from-red-950/30 via-red-900/40 to-red-950/30 rounded-xl border border-red-500/30 p-4">
+						<div class="flex items-center justify-center gap-3">
+						<svg class="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+						<p class="text-red-300 text-sm font-bold tracking-wide">
+							Match was not played - Both players forfeited
+						</p>
+						</div>
+					</div>
+					</div>
+				</div>
+			`);
+		// this.el.insertAdjacentHTML('beforeend', `
+		// 		<div class="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-2xl blur-xl group-hover:blur-2xl transition-all">
+		// 		</div>
+		// 	`);
+
+		// const	match_container = addElement('div', 'relative backdrop-blur-xl rounded-2xl border p-6 transition-all bg-gradient-to-br from-green-500/10 to-emerald-500/5 hover:border-green-400/50 border-green-700/50 shadow-lg shadow-green-500/20', this.el);
+		
+		// const	match_header = addElement('div', 'flex items-center justify-between mb-5', match_container);
+		// const	match_id = addElement('span', 'text-cyan-300/70 text-sm font-bold tracking-wider', match_header);
+		// match_id.textContent = 'MATCH #' + String(this._id);
+		// match_header.insertAdjacentHTML('beforeend', `
+		// 		<span class="px-4 py-1.5 bg-gradient-to-r from-green-500/30 to-emerald-500/30 border border-green-400/70 rounded-full text-green-400 text-xs font-black flex items-center gap-2 shadow-lg shadow-green-500/30">
+		// 			<span class="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400">
+		// 			</span>
+		// 			LIVE NOW
+		// 		</span>
+		// 	`);
+
+		// const	live_score = addElement('div', 'grid grid-cols-3 gap-6 items-center', match_container);
+
+		// const	first_score_container = addElement('div', 'text-center space-y-3', live_score);
+		// const	first_score_username_container = addElement('div', 'p-3 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 rounded-xl border border-cyan-400/30 inline-block', first_score_container);
+		// const	first_score_username = addElement('p', 'text-white font-black text-base tracking-tight', first_score_username_container);
+		// first_score_username.textContent = this._match.player1.username;
+		// const	first_score = addElement('div', 'text-5xl font-black transition-all text-transparent bg-clip-text bg-gradient-to-br from-cyan-400 to-blue-400', first_score_container);
+		// first_score.textContent = String(this._match.player1Score);
+
+		// live_score.insertAdjacentHTML('beforeend', `
+		// 		<div class="text-center">
+		// 			<div class="relative">
+		// 				<div class="absolute inset-0 bg-purple-500/20 blur-xl">
+		// 				</div>
+		// 				<span class="relative text-slate-400 font-black text-xl tracking-widest">
+		// 					VS
+		// 				</span>
+		// 			</div>
+		// 		</div>
+		// 	`);
+
+		// const	second_score_container = addElement('div', 'text-center space-y-3', live_score);
+		// const	second_score_username_container = addElement('div', 'p-3 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-xl border border-purple-400/30 inline-block', second_score_container);
+		// const	second_score_username = addElement('p', 'text-white font-black text-base tracking-tight', second_score_username_container);
+		// second_score_username.textContent = this._match.player2.username;
+		// const	second_score = addElement('div', 'text-5xl font-black transition-all text-transparent bg-clip-text bg-gradient-to-br from-purple-400 to-pink-400', second_score_container);
+		// second_score.textContent = String(this._match.player2Score);
+
+		this.el.onclick = () => {
+			navigate('/match/' + getMatchKey(this._tournament.id, this._tournament.currentRound, this._id));
+		}
+	}
+}
+
 export class Matches extends Component {
 	private _tournament: Tournament;
 
@@ -257,14 +384,20 @@ export class Matches extends Component {
 		for (let i = 0n; i < this._tournament.currentRound; i++) {
 			const	match = await getMatch(this._tournament.id, this._tournament.currentRound, i);
 			const	match_status = get_match_status(match);
-			console.log(match);
+			if (match.player1.addr === zeroAddress || match.player2.addr === zeroAddress) {
+				continue;
+			}
 			if (match_status === 'pending') {
-				// should be a cooldown period of 5 min before starting the match after its creation
 				const	live_match = new LiveMatch(this._tournament, match, i);
 				live_match.mount(this.el);
 			} else {
-				const	finished_match = new FinishedMatch(this._tournament, match, i);
-				finished_match.mount(this.el);
+				if (match.player1Score === 0n && match.player2Score === 0n) {
+					const	forfeited_match = new ForfeitedMatch(this._tournament, match, i);
+					forfeited_match.mount(this.el);
+				} else {
+					const	finished_match = new FinishedMatch(this._tournament, match, i);
+					finished_match.mount(this.el);
+				}
 			}
 			// ui for cooldown period
 			// const	pending_match = new PendingMatch(this._tournament, match, i);

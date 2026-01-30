@@ -1,3 +1,4 @@
+import { zeroAddress } from "viem";
 import { Match, publicClient, signingAccount, Tournament, TournamentFactoryAbi, TournamentFactoryAddress, walletClient } from "../contract/contracts";
 import { MatchMsg, rabbitmq } from "../rabbitmq";
 import { keccak256, encodePacked } from 'viem';
@@ -176,8 +177,8 @@ const checkFinishedRounds = async (tournament: Tournament): Promise<boolean> => 
 	let finished: boolean = true;
 	const currentRound = tournament.currentRound;
 	for (let matchId = 0n; matchId < currentRound; matchId++) {
-		const match = await getMatch(tournament.id, currentRound, matchId);
-		if (match.status === 0) {
+		const	match = await getMatch(tournament.id, currentRound, matchId);
+		if (match.status === 0 && match.player1.addr !== zeroAddress && match.player2.addr !== zeroAddress) {
 			finished = false;
 			break;
 		}
@@ -202,19 +203,37 @@ const watchFinishedMatches = () => {
 						}
 					};
 					// console.log('obj:', typedLog, '_id: ', typedLog.args._id, '_round', typedLog.args._round, '_matchId', typedLog.args._matchId);
-					const tournament = await getTournament(typedLog.args._id);
+					const	tournament = await getTournament(typedLog.args._id);
+					if (tournament.status === 2)
+						return;
 					if (await checkFinishedRounds(tournament)) {
-						// create next round or set tournament as finished in case current round is 1
-						if (tournament.currentRound === 1n) {
-							console.log('tournament finished, changing its status');
-							await transact('setTournamentStatus', [2, tournament.id]);
-						} else {
-							// create new round with the winners from the first round
-							// the winners are saved in (tournament id, current round(new round), index (0 to max players))
-							const order = get_shuffled_array(Number(tournament.currentRound)); // current round because its not changed yet so current round is also the remaining players in the tournament
-							await transact('createNextRound', [tournament.id, order]);
-						}
+						const	order = get_shuffled_array(Number(tournament.currentRound)); // current round because its not changed yet so current round is also the remaining players in the tournament
+						await transact('createNextRound', [tournament.id, order]);
 					}
+				})
+			}
+		}
+	)
+}
+
+const watchForfeitedRounds = () => {
+	publicClient.watchContractEvent(
+		{
+			address: TournamentFactoryAddress,
+			abi: TournamentFactoryAbi,
+			eventName: 'RoundForfeited',
+			onLogs: (logs) => {
+				logs.forEach(async (log) => {
+					// fix type problem
+					const typedLog = log as typeof log & {
+						args: {
+						_id: bigint;
+						}
+					};
+					console.log('round forfeited', typedLog.args, 'creating next round...');
+					const	tournament = await getTournament(typedLog.args._id);
+					const	order = get_shuffled_array(Number(tournament.currentRound));
+					await transact('createNextRound', [tournament.id, order]);
 				})
 			}
 		}
@@ -295,6 +314,7 @@ export const automationBot = async () => {
 	await initPendingTournaments();
 	watchTournamentCreated();
 	watchFinishedMatches();
+	watchForfeitedRounds();
 	watchMatchCreated();
 
 	// print_tournament_queue();

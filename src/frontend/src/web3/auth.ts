@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/04 12:18:56 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/17 22:09:07 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/30 18:11:37 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,8 +46,7 @@ export class Web3Auth {
 
 			// keep displaying metamask warning in case of being on wrong network
 			const VITE_FUJI_CHAIN_ID = import.meta.env.VITE_FUJI_CHAIN_ID;
-			console.log(chainId);
-			if (chainId !== VITE_FUJI_CHAIN_ID) {
+			if (chainId.toLowerCase() !== VITE_FUJI_CHAIN_ID) {
 				const	metamask_warning = document.getElementById('metamask-network-warning');
 				const	metamask_error = document.getElementById('metamask-error');
 				if (!metamask_warning && !metamask_error) {

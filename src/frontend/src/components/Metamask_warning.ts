@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 21:19:53 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/15 03:12:11 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/27 01:54:56 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -120,7 +120,6 @@ export class Metamask_network_warning extends Component {
 					method: "wallet_switchEthereumChain",
 					params: [{ chainId: VITE_FUJI_CHAIN_ID }],
 				});
-				console.log('chain added');
 			} catch (error: any) {
 				// If the chain is not already added to MetaMask
 				let	error_page: Metamask_error;

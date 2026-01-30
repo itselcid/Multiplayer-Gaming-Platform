@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/21 20:13:50 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/25 10:58:40 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/27 03:06:09 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@ import { nullAddress } from "../web3/tools";
 import { get_player_id } from "../tools/get_player_id";
 import { Metamask_error } from "./Metamask_error";
 import { claim_refunds } from "../web3/setters";
+import { getRevertReason } from "../tools/errors";
 
 export class	PendingButton extends Component {
 	constructor() {
@@ -90,14 +91,14 @@ class Tournament_refund_claim extends Component {
 					const claimed = new Tournament_refund_claimed();
 					claimed.mount(container);
 				}
-			} catch {
+			} catch (err) {
 				pend_button.unmount();
 				claim_button.hidden = false;
 				const	root = document.getElementById('app');
 				if (root) {
 					const	metamask_error = new Metamask_error(
-						"Action Canceled",
-						"The transaction was rejected. Please approve it in your wallet if you want to continue.",
+						"Transaction failed",
+						"The transaction failed for the following reason: " + getRevertReason(err),
 						false
 					);
 					metamask_error.mount(root);
@@ -165,6 +166,22 @@ export class Tournament_refund extends Component {
 	}
 
 	async render(): Promise<void> {
+		let reason = 'Not enough players registered in time';
+		let more_info = `Required: ${this._tournament.maxParticipants} players • Got: ${this._tournament.participants} players`;
+		let full_reason = `
+				This tournament failed to meet the minimum participant requirement of ${this._tournament.maxParticipants} players before the scheduled start time. 
+        	    All registered players are eligible for a full refund of their entry fee. If you participated, please claim your refund above.
+			`;
+		if (this._tournament.participants === this._tournament.maxParticipants) {
+			reason = 'No winner could be determined';
+			more_info = '';
+			full_reason = `
+					All remaining matches ended in forfeits, leaving no valid winner. As a result, the tournament has been automatically expired.
+
+					All registered players are eligible for a full refund of their entry fee.
+					If you participated, please claim your refund above.
+				`;	
+		}
 		this.el.innerHTML  = `
             <div class="relative group">
               <div class="absolute inset-0 bg-gradient-to-r from-red-500/20 to-slate-500/20 rounded-3xl blur-xl"></div>
@@ -178,8 +195,8 @@ export class Tournament_refund extends Component {
                     Tournament Cancelled
                   </h3>
                   
-                  <p class="text-slate-400 text-lg mb-2">Not enough players registered in time</p>
-                  <p class="text-slate-500 text-sm mb-8">Required: ${this._tournament.maxParticipants} players • Got: ${this._tournament.participants} players</p>
+                  <p class="text-slate-400 text-lg mb-2">${reason}</p>
+                  <p class="text-slate-500 text-sm mb-8">${more_info}</p>
 
                   
                     <div class="mt-8" id="tournament-refund"></div>
@@ -194,9 +211,8 @@ export class Tournament_refund extends Component {
                 What Happened?
               </h4>
               <p class="text-slate-400 leading-relaxed">
-                This tournament failed to meet the minimum participant requirement of ${this._tournament.maxParticipants} players before the scheduled start time. 
-                All registered players are eligible for a full refund of their entry fee. If you participated, please claim your refund above.
-              </p>
+              	${full_reason}  
+			  </p>
             </div>
 		`;
 		const	tournament_refund = this.el.querySelector('#tournament-refund') as HTMLElement | null;

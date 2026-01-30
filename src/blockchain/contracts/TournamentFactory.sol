@@ -148,12 +148,14 @@ contract TournamentFactory is Ownable {
     }
 
     function getTournament(uint id) external view returns (Tournament memory) {
+        require(id < tournaments.length, "Tournament does not exist");
         return (tournaments[id]);
     }
 
     event SetStatus(uint _id);
 
-    function setTournamentStatus(Status _statue, uint _id) external onlyOwner {
+    function setTournamentStatus(Status _statue, uint _id) public onlyOwner {
+        require(_id < tournaments.length, "Tournament does not exist");
         Tournament storage t = tournaments[_id];
         t.status = _statue;
         emit SetStatus(_id);
@@ -168,6 +170,7 @@ contract TournamentFactory is Ownable {
     }
 
     function joinTournament(uint _id, string memory _username) external {
+        require(_id < tournaments.length, "Tournament does not exist");
         Tournament storage t = tournaments[_id];
         require(t.status == Status.Pending, "tournament isn't pending");
         require(t.startTime > block.timestamp, "deadline reached");
@@ -198,7 +201,8 @@ contract TournamentFactory is Ownable {
     }
 
     function claimRefunds(uint _id, uint _index) external {
-        Tournament memory t = tournaments[_id];
+        require(_id < tournaments.length, "Tournament does not exist");
+        Tournament storage t = tournaments[_id];
         Player storage p = players[getPlayerKey(_id, t.currentRound, _index)];
         require(
             t.status == Status.Expired && t.startTime < block.timestamp,
@@ -207,45 +211,37 @@ contract TournamentFactory is Ownable {
         require(p.addr == msg.sender, "Trying to withdraw other user's funds");
         require(!p.claimed, "user already claimed refund");
         p.claimed = true;
-        token.transfer(msg.sender, t.entryFee);
+        require(token.transfer(msg.sender, t.entryFee), "Transfer failed");
     }
 
-    function claimPrize(uint _id, uint _index) external {
-        require(_index == 0 || _index == 1, "Player index out of range");
-        require(
-            _id >= 0 && _id < tournaments.length,
-            "Tournamnet id out of range"
-        );
-        Tournament memory t = tournaments[_id];
+    function claimPrize(uint _id) external {
+        require(_id < tournaments.length, "Tournament does not exist");
+        Tournament storage t = tournaments[_id];
         require(t.status == Status.Finished, "Tournament isn't finished");
-        Match storage last_match = matches[getMatchKey(_id, 1, 0)];
+        Player storage p = players[getPlayerKey(_id, 0, 0)];
+        require(p.addr == msg.sender, "Keep dreaming of winning");
+        require(!p.claimed, "Prize already claimed");
+        p.claimed = true;
         require(
-            last_match.status == Status.Finished,
-            "Last match isn't finished"
+            token.transfer(msg.sender, t.entryFee * t.maxParticipants),
+            "Transfer failed"
         );
-        if (last_match.player1Score > last_match.player2Score) {
-            require(
-                last_match.player1.addr == msg.sender,
-                "Keep dreaming of winning"
-            );
-            require(!last_match.player1.claimed, "Prize already claimed");
-            last_match.player1.claimed = true;
-        } else {
-            require(
-                last_match.player2.addr == msg.sender,
-                "Keep dreaming of winning"
-            );
-            require(!last_match.player2.claimed, "Prize already claimed");
-            last_match.player2.claimed = true;
-        }
-        token.transfer(msg.sender, t.entryFee * t.maxParticipants);
     }
 
     event RoundsCreated(uint _id);
+    event RoundForfeited(uint _id);
 
     function createRound(uint _id, uint[] calldata order) public onlyOwner {
-        Tournament memory t = tournaments[_id];
+        require(_id < tournaments.length, "Tournament does not exist");
+        Tournament storage t = tournaments[_id];
+        if (t.currentRound == 0) {
+            Player memory p = players[getPlayerKey(_id, 0, 0)];
+            if (p.addr != address(0)) setTournamentStatus(Status.Finished, _id);
+            else setTournamentStatus(Status.Expired, _id);
+            return;
+        }
         uint j = 0;
+        uint forfeitedMatches = 0;
         for (uint i = 0; i < order.length; i += 2) {
             Player memory p1 = players[
                 getPlayerKey(_id, t.currentRound, order[i])
@@ -253,17 +249,29 @@ contract TournamentFactory is Ownable {
             Player memory p2 = players[
                 getPlayerKey(_id, t.currentRound, order[i + 1])
             ];
-            createMatch(_id, t.currentRound, j, p1, p2);
+            if (p1.addr != address(0) && p2.addr != address(0))
+                createMatch(_id, t.currentRound, j, p1, p2);
+            else {
+                if (p1.addr != address(0)) {
+                    players[getPlayerKey(_id, t.currentRound / 2, j)] = p1;
+                } else if (p2.addr != address(0)) {
+                    players[getPlayerKey(_id, t.currentRound / 2, j)] = p2;
+                }
+                forfeitedMatches++;
+            }
             j++;
         }
-        emit RoundsCreated(_id);
+        if (forfeitedMatches != j) emit RoundsCreated(_id);
+        else emit RoundForfeited(_id);
     }
 
     function startTournament(
         uint _id,
         uint[] calldata order
     ) external onlyOwner {
+        require(_id < tournaments.length, "Tournament does not exist");
         Tournament storage t = tournaments[_id];
+        require(t.participants == t.maxParticipants, "Tournament not full");
         t.status = Status.OnGoing;
         createRound(_id, order);
         emit SetStatus(_id);
@@ -273,6 +281,7 @@ contract TournamentFactory is Ownable {
         uint _id,
         uint[] calldata order
     ) external onlyOwner {
+        require(_id < tournaments.length, "Tournament does not exist");
         Tournament storage t = tournaments[_id];
         t.currentRound /= 2;
         createRound(_id, order);
@@ -308,13 +317,14 @@ contract TournamentFactory is Ownable {
         uint _score_2
     ) external onlyOwner {
         Match storage the_match = matches[getMatchKey(_id, _round, _matchId)];
+        require(the_match.status != Status.Finished, "Match already finished");
         the_match.player1Score = _score_1;
         the_match.player2Score = _score_2;
         the_match.status = Status.Finished;
         Player memory winner;
         if (_score_1 > _score_2) winner = the_match.player1;
-        else winner = the_match.player2;
-        if (_round != 1) {
+        else if (_score_1 < _score_2) winner = the_match.player2;
+        if (_score_1 != _score_2) {
             players[getPlayerKey(_id, _round / 2, _matchId)] = winner;
         }
         emit MatchFinished(_id, _round, _matchId);

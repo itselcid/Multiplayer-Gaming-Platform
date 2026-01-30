@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   appStore.ts                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: voussama <voussama@student.42.fr>          +#+  +:+       +#+        */
+/*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/03 15:31:14 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/26 14:18:27 by voussama         ###   ########.fr       */
+/*   Updated: 2026/01/30 18:09:02 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,7 @@ import { TournamentView } from "../pages/Tournament";
 import { TournamentsDisplay, TournamentTab } from "../pages/Tournaments";
 import { get_tournament_status, tournament_id_to_index } from "../tools/tournament_tools";
 import { Web3Auth } from "../web3/auth";
-import { get_tournament_batch, getTournament, watchCreatedRounds, watchFinishedMatches, watchMatchCreated, watchTournamentCreation, watchTournamentStatus, setMatchNotificationCallback, type MatchNotification } from "../web3/getters";
+import { get_tournament_batch, getTournament, watchCreatedRounds, watchFinishedMatches, watchForfeitedRounds, watchMatchCreated, watchTournamentCreation, watchTournamentStatus, setMatchNotificationCallback, type MatchNotification } from "../web3/getters";
 import { shortenEthAddress } from "../web3/tools";
 import { matchRoute } from "./router";
 import { State } from "./state";
@@ -300,6 +300,7 @@ export const finishedMatchesState = new State(-1n);
 export const finishedMatchesStateSub = () => {
 	watchFinishedMatches();
 	watchCreatedRounds();
+	watchForfeitedRounds();
 	finishedMatchesState.subscribe(async (_id) => {
 		if (_id === -1n) {
 			return;

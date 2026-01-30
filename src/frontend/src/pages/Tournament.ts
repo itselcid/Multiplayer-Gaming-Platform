@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/19 17:54:21 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/24 21:25:49 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/28 19:38:44 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -124,6 +124,11 @@ export class TournamentView extends Component {
 			case 'expired':
 				const	claim_refund = new Tournament_refund(tournament);
 				claim_refund.mount(tournament_infos);
+				if (tournament.participants === tournament.maxParticipants) {
+					// matches history
+					const	tournament_matches_history_3 = new Tournament_matches_history(tournament);
+					tournament_matches_history_3.mount(this.el);
+				}
 				break;
 		}
 		

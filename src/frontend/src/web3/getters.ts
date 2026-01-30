@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   getters.ts                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: voussama <voussama@student.42.fr>          +#+  +:+       +#+        */
+/*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/17 20:42:15 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/26 14:18:25 by voussama         ###   ########.fr       */
+/*   Updated: 2026/01/30 18:29:26 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -245,6 +245,29 @@ export const	watchCreatedRounds = () => {
 		}
 	)
 }
+
+export const watchForfeitedRounds = () => {
+	publicClient.watchContractEvent(
+		{
+			address: TournamentFactoryAddress,
+			abi: TournamentFactoryAbi,
+			eventName: 'RoundForfeited',
+			onLogs: (logs) => {
+				logs.forEach(async (log) => {
+					// fix type problem
+					const typedLog = log as typeof log & {
+						args: {
+						_id: bigint;
+						}
+					};
+					// call back function
+					finishedMatchesState.set(typedLog.args._id);
+				})
+			}
+		}
+	)
+}
+
 // Match notification state - will be used to show notifications when a match starts
 export interface MatchNotification {
 	tournamentId: bigint;
