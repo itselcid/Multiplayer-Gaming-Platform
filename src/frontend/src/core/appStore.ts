@@ -30,7 +30,7 @@ import { matchRoute } from "./router";
 import { State } from "./state";
 
 import { AuthService } from "../services/auth";
-import type { User } from "../services/auth";
+import type { User } from "../types/user.types";
 import { socketService } from "../services/socket";
 
 // nav bar active tab state

@@ -90,7 +90,7 @@ export const userController = {
         await pipeline(data.file, fs.createWriteStream(savePath));
 
         // Public URL to store in DB
-        const avatarUrl = `/public/${filename}`;
+        const avatarUrl = `/uploads/${filename}`;
 
         const userTmp = await getUserById(request.user!.userId);
         if (!userTmp)

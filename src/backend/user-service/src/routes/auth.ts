@@ -21,7 +21,7 @@ const RegisterSchema = {
         properties: {
             username: { type: 'string', minLength: 3, maxLength: 16 },
             email: { type: 'string', format: 'email' },
-            password: { type: 'string', minLength: 3, maxLength: 16 }  // also change in production
+            password: { type: 'string', minLength: 3, maxLength: 16 }
         }
     }
 } as const;

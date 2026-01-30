@@ -10,11 +10,15 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-import { active_tab_sub, addTouranamentStateSub, currentWeb3AccountSub, finishedMatchesStateSub, matchNotificationStateSub, tournament_tab_sub, updateTournamentStateSub, user_state_sub, web3_login_sub } from "./appStore";
+import {
+	active_tab_sub, addTouranamentStateSub, currentWeb3AccountSub, finishedMatchesStateSub,
+	matchNotificationStateSub, tournament_tab_sub, updateTournamentStateSub, user_state_sub,
+	web3_login_sub
+} from "./appStore";
 
-	type Subscriber<T> = (value: T) => void;
+type Subscriber<T> = (value: T) => void;
 
-	export class State<T> {
+export class State<T> {
 	private value: T;
 	private subscribers = new Set<Subscriber<T>>();
 
@@ -64,6 +68,6 @@ export const subs = () => {
 	updateTournamentStateSub();
 	finishedMatchesStateSub();
 	matchNotificationStateSub();
-  	user_state_sub();
+	user_state_sub();
 }
 

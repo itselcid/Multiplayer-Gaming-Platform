@@ -17,13 +17,9 @@ import { Navbar } from './components/Navbar.ts';
 import { subs } from './core/state.ts';
 import { Shouting_stars } from './pages/Shouting_stars.ts';
 import { TestBG } from './pages/TestBG.ts';
-import { AuthService } from './services/auth';
-import { initAuth, web3auth } from './core/appStore.ts';
-(window as any).AuthService = AuthService;                    // delme !!!
-import { userState } from './core/appStore';
-(window as any).userState = userState;                           // delme !!!
+import { initAuth } from './core/appStore.ts';
 import { type Tournament } from './web3/getters.ts';
-//  TODO: get user address from database for auth
+
 export let logged: boolean = true;
 export	let cachedTournaments: Tournament[] = [];
 
@@ -49,8 +45,3 @@ subs();
 initAuth().then(() => {
   renderRoute();
 });
-
-// console.log(`the wallet== ${await web3auth.getEthAddress()}`);
-// const	canva = document.getElementById('starfield') as HTMLCanvasElement;
-// if (canva)
-// 	startShootingStars(canva);

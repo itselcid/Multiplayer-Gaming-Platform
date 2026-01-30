@@ -14,11 +14,11 @@ import { Achievements } from "../components/Achievements";
 import { Player_card } from "../components/Player_card";
 import { XPTracker } from "../components/xpStatus";
 import { Settings } from "../components/Settings";
-import { Tournament_history } from "../components/Tournament_history";
 import { Match_history } from "../components/match_history";
 import { addElement, Component } from "../core/Component";
 import { userState } from "../core/appStore";
 import { navigate } from "../core/router";
+import { AuthService } from "../services/auth";
 
 // Use relative URL to go through nginx proxy
 const API_URL = '/api';
@@ -64,6 +64,8 @@ export class ProfileView extends Component {
 
 	async mount(parent: HTMLElement): Promise<void> {
 		super.mount(parent);
+		// refresh user data by get current user
+		await AuthService.getCurrentUser();
 		if (!this.isOwnProfile && this.userId) {
 			await this.loadOtherUserProfile();
 		}
@@ -106,7 +108,7 @@ export class ProfileView extends Component {
 		const user = this.otherUser;
 		const displayName = user ? user.username : 'User not found';
 		const displayInitial = user ? user.username.charAt(0).toUpperCase() : '?';
-		// Build avatar URL - prepend /public if avatar path doesn't start with http
+		// Build avatar URL: zaydass /public if avatar path doesn't start with http
 		const avatarPath = user?.avatar || '/default-avatar.png';
 		const avatarUrl = avatarPath.startsWith('http') ? avatarPath : `/public${avatarPath}`;
 
@@ -210,9 +212,7 @@ export class ProfileView extends Component {
 		const user = this.isOwnProfile ? currentUser : this.otherUser;
 		if (user) {
 			const xpTracker = new XPTracker({
-				currentXP: (user as any).xp ?? 750,
-				maxXP: (user as any).maxXp ?? 1000,
-				level: (user as any).level ?? 1
+				totalXP: (user as any).xp ?? 0
 			});
 			xpTracker.mount(profile_achievement);
 		}
