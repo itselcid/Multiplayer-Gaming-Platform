@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/18 18:01:17 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/27 18:54:54 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/30 19:04:40 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -243,15 +243,15 @@ export class CreateTournament extends Component {
 				create_button.disabled = false;
 				return ;
 			}
-			// if (!userState.get()) {
-			// 	// console.log('user is not logged in, checking availability...');
-			// 	if (await username_availabality_checker(username_input.value)){
-			// 		// console.log('username not available');
-			// 		create_button.disabled = false;
-			// 		return;
-			// 	}
-			// 	// console.log('username available');
-			// }
+			if (!userState.get()) {
+				// console.log('user is not logged in, checking availability...');
+				if (await username_availabality_checker(username_input.value)){
+					// console.log('username not available');
+					create_button.disabled = false;
+					return;
+				}
+				// console.log('username available');
+			}
 			const	pend_button = new PendingButton();
 			try {
 				allowance = await getAllowance(account);	

@@ -6,14 +6,14 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/08 15:57:04 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/30 18:11:05 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/30 20:45:30 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { throwCustomError } from "./errors";
 
 export const isUsernameTaken = async (username: string): Promise<boolean> => {
-	const VITE_USER_BACKEND_URL = import.meta.env.VITE_USER_BACKEND_URL;
+	// const VITE_USER_BACKEND_URL = import.meta.env.VITE_USER_BACKEND_URL;
 	const controller = new AbortController();
 	const timeout = setTimeout(() => controller.abort(), 5000); // 5s
 
@@ -22,7 +22,7 @@ export const isUsernameTaken = async (username: string): Promise<boolean> => {
 
 	try {
 		const response = await fetch(
-			VITE_USER_BACKEND_URL + "/api/users/istaken",
+			"/api/users/istaken",
 			{
 				method: "POST",
 				headers: { "Content-Type": "application/json" },

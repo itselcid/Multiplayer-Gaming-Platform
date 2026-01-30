@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/21 15:12:27 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/27 18:55:41 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/30 21:05:13 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -146,10 +146,10 @@ class Tournament_recrute_register extends Component {
 		
 		register_button.mount(this.el);
 		register_button.el.onclick = async () => {
-			// if (!userState.get()) {
-			// 	if (await username_availabality_checker(username_input.value))
-			// 		return;
-			// }
+			if (!userState.get()) {
+				if (await username_availabality_checker(username_input.value))
+					return;
+			}
 			const	pend_button = new PendingButton();
 			try {
 				const	allowence = await getAllowance(await web3auth.getEthAddress());

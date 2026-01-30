@@ -6,14 +6,14 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/07 16:25:07 by laoubaid          #+#    #+#             */
-/*   Updated: 2026/01/15 21:47:35 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/30 20:51:38 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { userState } from "../core/appStore";
 
 // Use relative URL to go through nginx proxy
-const API_URL = 'http://localhost:3001/api';
+const API_URL = '/api';
 
 // the User type based on backend response
 export interface User {
