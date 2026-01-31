@@ -52,13 +52,13 @@ export class chat extends Component {
   private users: Record<number, User> = {};
   private conversations: Record<number, Message[]> = {};
   private blockedUsers: Set<number> = new Set();
-  
+
   // Tournament notification subscription
   private unsubscribeMatchNotification: (() => void) | null = null;
-  
+
   // System user ID for tournament notifications
   private static TOURNAMENT_SYSTEM_USER_ID = 999999;
-  
+
   // Cache for online friends list
   private cachedOnlineFriends: number[] = [];
 
@@ -121,7 +121,7 @@ export class chat extends Component {
     }
 
     try {
-      const res = await fetch(`${API_URL}/chat/messages/${userId}`, {
+      const res = await fetch(`${API_URL}/chat/messages/${userId}?markSeen=true`, {
         credentials: 'include',
         headers: {
           'x-user-id': currentUser.id.toString()
@@ -190,13 +190,13 @@ export class chat extends Component {
 
       // Fetch online friends via REST API
       await this.fetchOnlineFriends();
-      
+
       // Apply cached online status
       this.applyOnlineStatus();
-      
+
       // Load saved tournament notifications
       await this.loadTournamentNotifications();
-      
+
       this.render();
     } catch (error) {
       console.error('Failed to load friends:', error);
@@ -207,29 +207,29 @@ export class chat extends Component {
     }
   }
 
-  	async sendInvite(friendId: number, url: string) {
-		try {
-			const user = userState.get();
-			if (!user) {throw new Error("User not logged in");}
-			console.log("Sending game invite to user ID:", friendId);
-		      const response = await fetch(`api/chat/messages`, {
-      		  method: 'POST',
-      		  headers: {
-      		    'Content-Type': 'application/json',
-      		    'x-user-id': user.id.toString()
-      		  },
-      		  body: JSON.stringify({
-      		    receiverId: friendId,
-      		    content: `🎮 Game Invite\nJoin me in Galactik Pingpong! Click here to play: ${url}\n🚨after 10min of now this link will no longer be available`
-      		  }),
-      		  credentials: 'include'
-      		});	
-		}
-		catch (error) {
-			console.error("Error sending game invite:", error);
-			 alert('Network error. Please check your connection and try again.');
-		}
-	}
+  async sendInvite(friendId: number, url: string) {
+    try {
+      const user = userState.get();
+      if (!user) { throw new Error("User not logged in"); }
+      console.log("Sending game invite to user ID:", friendId);
+      const response = await fetch(`api/chat/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': user.id.toString()
+        },
+        body: JSON.stringify({
+          receiverId: friendId,
+          content: `🎮 Game Invite\nJoin me in Galactik Pingpong! Click here to play: ${url}\n🚨after 10min of now this link will no longer be available`
+        }),
+        credentials: 'include'
+      });
+    }
+    catch (error) {
+      console.error("Error sending game invite:", error);
+      alert('Network error. Please check your connection and try again.');
+    }
+  }
 
 
 
@@ -261,6 +261,7 @@ export class chat extends Component {
               hour: '2-digit',
               minute: '2-digit'
             });
+            this.users[userId].unread = msg.unreadCount || 0;
           }
         });
         this.render();
@@ -280,7 +281,7 @@ export class chat extends Component {
       if (response.ok) {
         const data = await response.json();
         const onlineFriends: Friend[] = data.friends || [];
-        
+
         // Update cache with online friend IDs
         this.cachedOnlineFriends = onlineFriends.map(f => f.id);
         console.log('Fetched online friends:', this.cachedOnlineFriends);
@@ -335,7 +336,7 @@ export class chat extends Component {
             if (!this.conversations[chat.TOURNAMENT_SYSTEM_USER_ID]) {
               this.conversations[chat.TOURNAMENT_SYSTEM_USER_ID] = [];
             }
-            
+
             // Avoid duplicates
             const exists = this.conversations[chat.TOURNAMENT_SYSTEM_USER_ID].some(m => m.id === n.id);
             if (!exists) {
@@ -399,20 +400,20 @@ export class chat extends Component {
   // Apply online status from cache to loaded users
   private applyOnlineStatus() {
     if (Object.keys(this.users).length === 0) return;
-    
+
     // Set all users to offline first
     Object.keys(this.users).forEach((key) => {
       const userId = Number(key);
       this.users[userId].status = 'Offline';
     });
-    
+
     // Mark cached online friends as online
     this.cachedOnlineFriends.forEach((friendId: number) => {
       if (this.users[friendId]) {
         this.users[friendId].status = 'Online';
       }
     });
-    
+
     // Don't call render here - let the caller decide when to render
   }
 
@@ -450,10 +451,10 @@ export class chat extends Component {
         if (!this.socket || !this.socket.connected) {
           this.connectSocket(user);
         }
-        
+
         // Subscribe to online status updates
         this.subscribeToOnlineStatus();
-        
+
         // Subscribe to tournament match notifications
         this.subscribeToMatchNotifications();
       } else {
@@ -465,40 +466,40 @@ export class chat extends Component {
           this.socket.disconnect();
           this.socket = null;
         }
-        
+
         // Unsubscribe from online status events
         this.unsubscribeFromOnlineStatus();
-        
+
         // Unsubscribe from match notifications
         this.unsubscribeFromMatchNotifications();
-        
+
         this.render();
       }
     });
   }
-  
+
   private subscribeToMatchNotifications() {
     console.log('chat.subscribeToMatchNotifications: Setting up subscription');
     // Ensure tournament system user exists
     this.ensureTournamentSystemUser();
-    
+
     // Subscribe to match notification state
     this.unsubscribeMatchNotification = matchNotificationState.subscribe((notification: MatchNotification | null) => {
       console.log('chat.subscribeToMatchNotifications: Received notification state:', notification);
       if (!notification) return;
-      
+
       console.log('chat.subscribeToMatchNotifications: Calling handleMatchNotification');
       this.handleMatchNotification(notification);
     });
   }
-  
+
   private unsubscribeFromMatchNotifications() {
     if (this.unsubscribeMatchNotification) {
       this.unsubscribeMatchNotification();
       this.unsubscribeMatchNotification = null;
     }
   }
-  
+
   private ensureTournamentSystemUser() {
     const systemUserId = chat.TOURNAMENT_SYSTEM_USER_ID;
     console.log('ensureTournamentSystemUser: checking for user', systemUserId, 'exists:', !!this.users[systemUserId]);
@@ -518,13 +519,13 @@ export class chat extends Component {
       console.log('ensureTournamentSystemUser: Created tournament user, users now:', Object.keys(this.users));
     }
   }
-  
+
   private handleMatchNotification(notification: MatchNotification) {
     const systemUserId = chat.TOURNAMENT_SYSTEM_USER_ID;
-    
+
     // Ensure system user exists
     this.ensureTournamentSystemUser();
-    
+
     // Create notification message
     const message: Message = {
       id: Date.now(),
@@ -535,32 +536,32 @@ export class chat extends Component {
       isSystemMessage: true,
       matchLink: `/match/${notification.matchKey}`
     };
-    
+
     // Add to tournament conversation
     if (!this.conversations[systemUserId]) {
       this.conversations[systemUserId] = [];
     }
     this.conversations[systemUserId].push(message);
-    
+
     // Update last message for the user list - include tournament link info
     this.users[systemUserId].lastMessage = `your next match in Tournament is ready!`;
     this.users[systemUserId].lastMessageTime = message.time;
     this.users[systemUserId].unread = (this.users[systemUserId].unread || 0) + 1;
-    
+
     // If not currently viewing tournament chat, increment unread
     if (this.currentChatUserId !== systemUserId) {
       console.log('New tournament notification - unread count:', this.users[systemUserId].unread);
     }
-    
+
     // Save notification to backend for persistence
     this.saveTournamentNotification(notification);
-    
+
     this.render();
-    
+
     // Auto-open tournament chat if desired (optional)
     // this.openChat(systemUserId);
   }
-  
+
   private subscribeToOnlineStatus() {
     // Listen for initial online friends list
     socketService.on('initial_online_list', (onlineFriendIds: number[]) => {
@@ -573,7 +574,7 @@ export class chat extends Component {
     // Listen for friend status changes (online/offline)
     socketService.on('friend_status', (data: { userId: number, status: 'online' | 'offline' }) => {
       console.log('Friend status update:', data);
-      
+
       // Update the cache
       if (data.status === 'online') {
         if (!this.cachedOnlineFriends.includes(data.userId)) {
@@ -582,7 +583,7 @@ export class chat extends Component {
       } else {
         this.cachedOnlineFriends = this.cachedOnlineFriends.filter(id => id !== data.userId);
       }
-      
+
       // Update the user status if user is loaded
       if (this.users[data.userId]) {
         this.users[data.userId].status = data.status === 'online' ? 'Online' : 'Offline';
@@ -593,7 +594,7 @@ export class chat extends Component {
     // Request the online friends list if socket is connected
     socketService.emit('get_online_friends');
   }
-  
+
   private unsubscribeFromOnlineStatus() {
     socketService.off('initial_online_list');
     socketService.off('friend_status');
@@ -615,6 +616,10 @@ export class chat extends Component {
 
     this.socket.on("receive-message", (message: any) => {
       this.handleReceiveMessage(message);
+    });
+
+    this.socket.on("unread-count-update", (data: any) => {
+      this.handleUnreadCountUpdate(data);
     });
 
     this.socket.on("disconnect", () => {
@@ -675,6 +680,11 @@ export class chat extends Component {
     if (this.currentChatUserId === otherUserId) {
       this.render();
       this.scrollToBottom();
+
+      // If the chat is open, mark the message as seen in the database
+      if (!isMine) {
+        this.markMessagesAsSeen(otherUserId);
+      }
     } else {
       if (!isMine && this.users[otherUserId]) {
         this.users[otherUserId].unread = (this.users[otherUserId].unread || 0) + 1;
@@ -751,9 +761,9 @@ export class chat extends Component {
       const isSystemUser = user.id === chat.TOURNAMENT_SYSTEM_USER_ID;
       return `
       <div class="user-item p-2 cursor-pointer transition-all hover:bg-neon-cyan/10 border-l-4 ${this.currentChatUserId === user.id
-        ? 'bg-neon-cyan/10 border-neon-cyan'
-        : 'border-transparent'
-      }" data-user-id="${user.id}">
+          ? 'bg-neon-cyan/10 border-neon-cyan'
+          : 'border-transparent'
+        }" data-user-id="${user.id}">
         <div class="flex items-center gap-2">
           <div class="relative">
             <div class="w-8 h-8 bg-gradient-to-br from-neon-purple to-neon-cyan rounded-full flex items-center justify-center overflow-hidden">
@@ -834,7 +844,7 @@ export class chat extends Component {
           </div>
         `;
       }
-      
+
       // Regular message
       return `
         <div class="flex ${msg.isMine ? 'justify-end' : 'justify-start'}">
@@ -860,7 +870,7 @@ export class chat extends Component {
 
     // Check if this is the tournament system user
     const isSystemUser = this.currentChatUserId === chat.TOURNAMENT_SYSTEM_USER_ID;
-    
+
     // Show welcome message for tournament system if no messages
     let displayMessages = messagesHtml;
     if (isSystemUser && messages.length === 0) {
@@ -1073,18 +1083,20 @@ export class chat extends Component {
 
       if (playBtn) {
         e.stopPropagation();
-        if(!this.currentChatUserId){
+        if (!this.currentChatUserId) {
           this.activeMenuUserId = null;
           this.updateMenuDropdown();
           return;
         }
-        const friend : Friend = {id: this.users[this.currentChatUserId].id, 
-          username: this.users[this.currentChatUserId].name,  avatar: this.users[this.currentChatUserId].avatar};
-        const room = new Game("remote","");
+        const friend: Friend = {
+          id: this.users[this.currentChatUserId].id,
+          username: this.users[this.currentChatUserId].name, avatar: this.users[this.currentChatUserId].avatar
+        };
+        const room = new Game("remote", "");
         const url = await room.createroom(friend);
-				const fullUrl = new URL(String(url), window.location.origin).href;
-				await	this.sendInvite(friend.id, fullUrl);
-				navigate(url)
+        const fullUrl = new URL(String(url), window.location.origin).href;
+        await this.sendInvite(friend.id, fullUrl);
+        navigate(url)
       }
 
       if (blockBtn) {
@@ -1396,5 +1408,29 @@ export class chat extends Component {
         container.scrollTop = container.scrollHeight;
       }
     }, 100);
+  }
+
+  private handleUnreadCountUpdate(data: { fromUserId: number, count: number }) {
+    if (this.users[data.fromUserId]) {
+      this.users[data.fromUserId].unread = data.count;
+      this.render();
+    }
+  }
+
+  private async markMessagesAsSeen(userId: number) {
+    const currentUser = userState.get();
+    if (!currentUser) return;
+
+    try {
+      await fetch(`${API_URL}/chat/messages/${userId}/mark-seen`, {
+        method: 'PUT',
+        headers: {
+          'x-user-id': currentUser.id.toString()
+        },
+        credentials: 'include'
+      });
+    } catch (error) {
+      console.error('Error marking messages as seen:', error);
+    }
   }
 }

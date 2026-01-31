@@ -105,6 +105,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
     const message = await prisma.message.create({
       data: {
         content,
+        seen: false,
         sender: {
           connectOrCreate: {
             where: { id: senderId },
@@ -126,7 +127,8 @@ export async function chatRoutes(fastify: FastifyInstance) {
       content: message.content,
       from: message.senderId,
       to: message.receiverId,
-      createdAt: message.createdAt
+      createdAt: message.createdAt,
+      seen: false
     });
 
     // Emit to sender for multi-tab synchronization
@@ -135,16 +137,32 @@ export async function chatRoutes(fastify: FastifyInstance) {
       content: message.content,
       from: message.senderId,
       to: message.receiverId,
-      createdAt: message.createdAt
+      createdAt: message.createdAt,
+      seen: true // Message is "seen" by sender
+    });
+
+    // Emit unread count update to receiver
+    const unreadCount = await prisma.message.count({
+      where: {
+        receiverId: receiverIdNum,
+        senderId: senderId,
+        seen: false
+      }
+    });
+    
+    fastify.io.to(receiverId.toString()).emit('unread-count-update', {
+      fromUserId: senderId,
+      count: unreadCount
     });
 
     return message;
   });
 
   // Get messages with a user
-  fastify.get<{ Params: { userId: string } }>('/messages/:userId', async (req, reply) => {
+  fastify.get<{ Params: { userId: string }, Querystring: { markSeen?: string } }>('/messages/:userId', async (req, reply) => {
     const me = req.user.id;
     const other = Number(req.params.userId);
+    const markSeen = req.query.markSeen === 'true';
 
     const messages = await prisma.message.findMany({
       where: {
@@ -156,6 +174,28 @@ export async function chatRoutes(fastify: FastifyInstance) {
       orderBy: { createdAt: 'desc' },
       take: 50
     });
+
+    // Only mark messages as seen if explicitly requested
+    if (markSeen) {
+      const updatedMessages = await prisma.message.updateMany({
+        where: {
+          senderId: other,
+          receiverId: me,
+          seen: false
+        },
+        data: {
+          seen: true
+        }
+      });
+
+      // If any messages were marked as seen, emit unread count update
+      if (updatedMessages.count > 0) {
+        fastify.io.to(me.toString()).emit('unread-count-update', {
+          fromUserId: other,
+          count: 0
+        });
+      }
+    }
 
     return messages;
   });
@@ -209,8 +249,20 @@ export async function chatRoutes(fastify: FastifyInstance) {
         orderBy: { createdAt: 'desc' }
       });
 
+      // Get unread count for this conversation
+      const unreadCount = await prisma.message.count({
+        where: {
+          senderId: otherId,
+          receiverId: me,
+          seen: false
+        }
+      });
+
       if (lastMsg) {
-        results[otherId] = lastMsg;
+        results[otherId] = {
+          ...lastMsg,
+          unreadCount
+        };
       }
     }
 
@@ -304,6 +356,276 @@ export async function chatRoutes(fastify: FastifyInstance) {
     } catch (err: any) {
       console.error('Error fetching tournament notifications:', err);
       return reply.code(500).send({ error: 'Failed to fetch notifications' });
+    }
+  });
+
+  // Mark messages as seen when user opens a conversation
+  fastify.post<{ Body: { senderId: number } }>('/messages/mark-seen', async (req, reply) => {
+    if (!req.user?.id) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+    const receiverId = req.user.id;
+    const { senderId } = req.body;
+
+    if (!senderId) {
+      return reply.code(400).send({ error: 'senderId is required' });
+    }
+
+    try {
+      // Mark all messages from senderId to current user as seen
+      const result = await prisma.message.updateMany({
+        where: {
+          senderId: senderId,
+          receiverId: receiverId,
+          seen: false
+        },
+        data: {
+          seen: true
+        }
+      });
+
+      // If any messages were marked as seen, emit unread count update
+      if (result.count > 0) {
+        fastify.io.to(receiverId.toString()).emit('unread-count-update', {
+          fromUserId: senderId,
+          count: 0
+        });
+      }
+
+      return { success: true, markedCount: result.count };
+    } catch (error) {
+      console.error('Error marking messages as seen:', error);
+      return reply.code(500).send({ error: 'Failed to mark messages as seen' });
+    }
+  });
+
+  // Mark messages as seen for a specific user (simpler endpoint)
+  fastify.put<{ Params: { userId: string } }>('/messages/:userId/mark-seen', async (req, reply) => {
+    if (!req.user?.id) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+    const receiverId = req.user.id;
+    const senderId = Number(req.params.userId);
+
+    try {
+      const result = await prisma.message.updateMany({
+        where: {
+          senderId: senderId,
+          receiverId: receiverId,
+          seen: false
+        },
+        data: {
+          seen: true
+        }
+      });
+
+      // Emit unread count update
+      if (result.count > 0) {
+        fastify.io.to(receiverId.toString()).emit('unread-count-update', {
+          fromUserId: senderId,
+          count: 0
+        });
+      }
+
+      return { success: true, markedCount: result.count };
+    } catch (error) {
+      console.error('Error marking messages as seen:', error);
+      return reply.code(500).send({ error: 'Failed to mark messages as seen' });
+    }
+  });
+
+  // Get unread message counts for all conversations
+  fastify.get('/messages/unread-counts', async (req, reply) => {
+    if (!req.user?.id) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+    const userId = req.user.id;
+
+    try {
+      // Get unread message counts grouped by sender
+      const unreadCounts = await prisma.message.groupBy({
+        by: ['senderId'],
+        where: {
+          receiverId: userId,
+          seen: false
+        },
+        _count: {
+          id: true
+        }
+      });
+
+      // Convert to a more convenient format
+      const counts: Record<number, number> = {};
+      unreadCounts.forEach(item => {
+        counts[item.senderId] = item._count.id;
+      });
+
+      return { unreadCounts: counts };
+    } catch (error) {
+      console.error('Error getting unread counts:', error);
+      return reply.code(500).send({ error: 'Failed to get unread counts' });
+    }
+  });
+
+  // Get all unread counts for the current user (for page refresh)
+  fastify.get('/messages/all-unread-counts', async (req, reply) => {
+    if (!req.user?.id) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+    const userId = req.user.id;
+
+    try {
+      const unreadCounts = await prisma.message.groupBy({
+        by: ['senderId'],
+        _count: { id: true },
+        where: {
+          receiverId: userId,
+          seen: false
+        }
+      });
+
+      const counts: Record<number, number> = {};
+      unreadCounts.forEach(item => {
+        counts[item.senderId] = item._count.id;
+      });
+
+      return { unreadCounts: counts };
+    } catch (error) {
+      console.error('Error getting all unread counts:', error);
+      return reply.code(500).send({ error: 'Failed to get all unread counts' });
+    }
+  });
+
+  // Get unread count for specific user
+  fastify.get<{ Params: { userId: string } }>('/messages/unread-count/:userId', async (req, reply) => {
+    if (!req.user?.id) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+    const receiverId = req.user.id;
+    const senderId = Number(req.params.userId);
+
+    try {
+      const count = await prisma.message.count({
+        where: {
+          senderId: senderId,
+          receiverId: receiverId,
+          seen: false
+        }
+      });
+
+      return { unreadCount: count };
+    } catch (error) {
+      console.error('Error getting unread count:', error);
+      return reply.code(500).send({ error: 'Failed to get unread count' });
+    }
+  });
+
+  // Get all conversations with unread counts (for initial page load)
+  fastify.get('/conversations', async (req, reply) => {
+    if (!req.user?.id) {
+      return reply.code(401).send({ error: 'Not authenticated' });
+    }
+    const me = req.user.id;
+
+    try {
+      // Get all users I have conversations with
+      const conversations = await prisma.message.findMany({
+        where: {
+          OR: [
+            { senderId: me },
+            { receiverId: me }
+          ]
+        },
+        select: {
+          senderId: true,
+          receiverId: true,
+          createdAt: true,
+          content: true,
+          seen: true
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+
+      // Group conversations by other user
+      const conversationMap = new Map();
+      
+      for (const msg of conversations) {
+        const otherId = msg.senderId === me ? msg.receiverId : msg.senderId;
+        
+        if (!conversationMap.has(otherId)) {
+          // Get unread count for this conversation
+          const unreadCount = await prisma.message.count({
+            where: {
+              senderId: otherId,
+              receiverId: me,
+              seen: false
+            }
+          });
+
+          conversationMap.set(otherId, {
+            userId: otherId,
+            lastMessage: msg,
+            unreadCount
+          });
+        }
+      }
+
+      return Array.from(conversationMap.values());
+    } catch (error) {
+      console.error('Error getting conversations:', error);
+      return reply.code(500).send({ error: 'Failed to get conversations' });
+    }
+  });
+
+  // DEBUG: Reset all messages to unseen (temporary endpoint for testing)
+  fastify.post('/debug/reset-messages-unseen', async (req, reply) => {
+    if (!req.user?.id) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+    
+    try {
+      const result = await prisma.message.updateMany({
+        where: {
+          receiverId: req.user.id
+        },
+        data: {
+          seen: false
+        }
+      });
+      
+      return { success: true, updatedCount: result.count };
+    } catch (error) {
+      console.error('Error resetting messages:', error);
+      return reply.code(500).send({ error: 'Failed to reset messages' });
+    }
+  });
+
+  // DEBUG: Get message seen status
+  fastify.get('/debug/message-status', async (req, reply) => {
+    if (!req.user?.id) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+    
+    try {
+      const messages = await prisma.message.findMany({
+        where: {
+          receiverId: req.user.id
+        },
+        select: {
+          id: true,
+          content: true,
+          seen: true,
+          senderId: true,
+          createdAt: true
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 10
+      });
+      
+      return { messages };
+    } catch (error) {
+      console.error('Error getting message status:', error);
+      return reply.code(500).send({ error: 'Failed to get message status' });
     }
   });
 }
