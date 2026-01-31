@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/13 17:23:50 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/30 19:50:45 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/31 19:41:08 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -100,14 +100,10 @@ export class rabbitmq {
                 try {
                     const content = msg.content.toString();
                     const matchData: Match = JSON.parse(content);
-
-                    console.log('Received match result:', matchData);
-                    
                     const room : Room = {id : matchData.id, join1:0, join2:0, created:Date.now(),
                       player1:matchData.player1.username, player2:matchData.player2.username,pid1:undefined,
                       pid2:undefined, wallet1:matchData.player1.addr, wallet2:matchData.player2.addr,startedAt:new Date().toISOString(),
                     };
-                    // console.log('created room :', room);
                     setroom(room);
                     this.consume_match.ack(msg);
                 } catch (err) {
@@ -127,8 +123,8 @@ export class PongGame {
   paddleRightY = 0;
   ballx = 0;
   bally = 0;
-  ballVX = 0.25; 
-  ballVY = 0.14; 
+  ballVX = 0.22; 
+  ballVY = 0.12; 
   move = false;
   start = false;
   stop = true;
@@ -141,7 +137,7 @@ export class PongGame {
   delet = 0;
   updt = 0;
 
-  readonly Duration = 9000;
+  readonly Duration = 90000;
   readonly PADDLE_HEIGHT = 2.3;
   readonly PLAY_AREA_WIDTH = 38;
   readonly PLAY_AREA_HEIGHT = 16;
@@ -159,8 +155,8 @@ export class PongGame {
 
   private calculateBounce(paddleY: number, ballY: number) {
     const relativeIntersectY = (ballY - paddleY) / (this.PADDLE_HEIGHT / 2);
-    this.ballVX *= -1.04; 
-    this.ballVY = relativeIntersectY * 0.14; 
+    this.ballVX *= -1.02; 
+    this.ballVY = relativeIntersectY * 0.12; 
   }
 
   update() {
@@ -176,7 +172,6 @@ export class PongGame {
         else if (this.bally + this.delta < (this.paddleLeftY - (this.PADDLE_HEIGHT/4)) ){
           this.paddleLeftY -= this.PADDLE_SPEED
         }
-        //  this.paddleLeftY = Math.max(-this.MAX_p_Y, Math.min(this.MAX_p_Y, this.paddleLeftY));
       }
 
     if (this.input.rightUp) this.paddleRightY += this.PADDLE_SPEED;
@@ -197,7 +192,7 @@ export class PongGame {
       return;
     }
 
-    if(this.updt % 2 != 0) return;
+    if(this.updt % 2 == 0) return;
     
     this.ballx += this.ballVX;
     this.bally += this.ballVY;
@@ -236,8 +231,8 @@ export class PongGame {
   resetPoint(direction: number) {
     this.ballx = 0;
     this.bally = 0;
-    this.ballVX = 0.25 * direction;
-    this.ballVY = (Math.random() - 0.5) * 0.14;
+    this.ballVX = 0.20 * direction;
+    this.ballVY = (Math.random() - 0.5) * 0.12;
   }
 
   reset(){

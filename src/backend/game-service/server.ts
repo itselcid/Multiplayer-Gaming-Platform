@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 17:15:36 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/30 23:27:02 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/31 19:46:13 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -112,8 +112,6 @@ io.on('connection', (socket) => {
     }
     else{
       if(room){
-        // console.log(wallet);
-        // console.log(`room== `,room);
         if(room.wallet1?.toLowerCase() === wallet){
           room.join1 += 1;
         } 
@@ -150,25 +148,29 @@ const id = socket.data.roomId;
     const logame = logames.get(id);
     const match = tour.get(id);
     if(match){
-      match.updt++;
-      Object.assign(match.input, input);
-       if(room && room.join1 && room.join2 && !match.move){
-        io.to(id).emit('resume');
-        match.move = true;
-        match.start = true;
-      }
-      match.update();
+      if(input.role !== "viewer"){
+        match.updt++;
+        Object.assign(match.input, input);
+        if(room && room.join1 && room.join2 && !match.move){
+          match.move = true;
+          io.to(id).emit('resume');
+          match.start = true;
+        }
+        match.update();
+      } 
       fct(match.getState());
     }
     if (game){
-      game.updt++;
-      Object.assign(game.input, input);
-      if(room && room.join1 && room.join2 && !game.move){
-        io.to(id).emit('resume');
-        game.move = true;
-        game.start = true;
-      }
-      game.update();
+      if(input.role !== "viewer"){
+       game.updt++;
+       Object.assign(game.input, input);
+       if(room && room.join1 && room.join2 && !game.move){
+         io.to(id).emit('resume');
+         game.move = true;
+         game.start = true;
+       }
+       game.update();
+    }
       fct(game.getState());
     }
     else if (logame){
@@ -203,7 +205,6 @@ const id = socket.data.roomId;
     }
     else if (logame &&logame.stop){
       logame.starTime = Date.now();
-      // room.startedAt = new Date().toISOString();
       logame.stop = false;
     }
   });
@@ -226,7 +227,8 @@ socket.on('gameOver',()=>{
      socket.leave(id);
      if(game){
        game.delet++;
-       if(game.delet == 2){
+       game.move = false;
+       if(game.delet == io.sockets.adapter.rooms.get(id)?.size){
          sendMAtch(id);
          rooms.delete(id);
          games.delete(id);
@@ -234,7 +236,8 @@ socket.on('gameOver',()=>{
       }
       else if (match){
         match.delet++;
-        if(match.delet == 2){
+        match.move = false;
+        if(match.delet == io.sockets.adapter.rooms.get(id)?.size){
           sendMAtch(id);
           rooms.delete(id);
           tour.delete(id);

@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/13 19:43:15 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/31 01:35:01 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/31 18:55:06 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -104,10 +104,6 @@ export class Home extends Component {
   selectmode(){
 	const logged = userState.get();
 	
-	if(!logged){
-		navigate("/login");
-		return;
-	}
 	const container = document.createElement("div");
 	container.className =`fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50`;
 	container.innerHTML=`<div class="backdrop-blur-xl rounded-xl shadow-xl items-center flex flex-col gap-4 p-6" 
@@ -127,6 +123,11 @@ export class Home extends Component {
   }
 
   async handleRemote(){
+	const logged = userState.get();
+	if(!logged){
+		navigate("/login");
+		return;
+	}
 	this.friends = await this.getfriends();
 	this.online = await this.getonline();
 	const container = document.createElement("div");

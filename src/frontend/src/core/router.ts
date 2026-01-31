@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/13 22:19:50 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/24 15:40:41 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/31 18:59:22 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -109,6 +109,11 @@ export async function renderRoute() {
     return;
   }
 
+  // Guard Logic
+  // const currentPath = location.pathname.replace(/\/+$/, "") || "/";
+  // Define route types
+  // const protectedRoutes = ["/chat", "/friends", "/game?mode=remote"];
+
   // 1. Loading State
   if (authLoading.get()) {
     // Show a minimal loading state while we verify session
@@ -119,6 +124,31 @@ export async function renderRoute() {
     `;
     return;
   }
+
+  // 2. Auth Guards
+  // const isProtectedRoute = protectedRoutes.includes(currentPath);
+  // const guestOnlyRoutes = ["/login", "/register", "/forgot-password", "/reset-password", "/login/verify"];
+  // const isGuestOnlyRoute = guestOnlyRoutes.includes(currentPath);
+
+  // if (!user) {
+  //   // User is NOT logged in
+
+  //   // If trying to access a protected route, redirect to login
+  //   if (isProtectedRoute) {
+  //     console.log("🔒 Unauthorized access to protected route. Redirecting to /login");
+  //     navigate("/login");
+  //     return;
+  //   }
+  // } else {
+  //   // User IS logged in
+
+  //   // If trying to access guest-only routes (Login/Register), redirect to profile
+  //   if (isGuestOnlyRoute) {
+  //     console.log("👤 User already logged in. Redirecting to /profile");
+  //     navigate("/profile");
+  //     return;
+  //   }
+  // }
 
   const { view: View, params } = match;
 
@@ -151,9 +181,10 @@ export async function renderRoute() {
   }
   else if(View === Game ||(!user && (View === chat || View === Friends)) ){
         const key = match.params;
+        const urlParams = new URLSearchParams(window.location.search);
+        let mode = urlParams.get("mode") || "bot";
         if(View === Game && key && key.key){
           const gameobj  = new Game(key.key);
-          // console.log("wikwik");
           if(!(await gameobj.verify())){
             const page = new Page404();
             page.mount(root);
@@ -161,15 +192,12 @@ export async function renderRoute() {
           }
           gameobj.mount(root);
         }
-        else if(!user){
+        else if((!user && View !== Game) || (!user && mode === "remote")){
           const page = new Login();
           page.mount(root);
           return;
         }
-        else if(View === Game) {
-          // console.log("waaayli");
-          const urlParams = new URLSearchParams(window.location.search);
-          let mode = urlParams.get("mode") || "bot";
+        else if(View === Game ) {
           const id = urlParams.get("id") || "";
           const gameobj = new Game(id,mode);
           if(!mode || (mode !== "bot" && mode !== "local" && mode != "remote")){
@@ -182,7 +210,7 @@ export async function renderRoute() {
           }
           gameobj.mount(root);
         }
-  }
+      }
   else {
       const page = new View(params);
       page.mount(root);

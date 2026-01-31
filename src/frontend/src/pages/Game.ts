@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/27 01:44:47 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/31 00:26:33 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/31 19:48:08 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,11 +51,10 @@ export class Game extends Component {
 	private user2?:string;
 	private vision!:number;
 	private	id?:string;
-	private role!:string;
 	private	room!:Room;
 	private countdownStarted = false;
 	private waitingStarted = false;
-	private input = { leftUp: false, mode: "bot",leftDown: false,rightUp: false , rightDown:false};
+	private input = { leftUp: false, mode: "bot",leftDown: false,rightUp: false , rightDown:false, role:"role"};
 	private state = {paddleLeftY: 0, paddleRightY:0, ballx:0, bally:0, left:0, right:0, min:1, sec:30,
 		move:false , start:false, stop:true, gameOver:false};
 
@@ -69,16 +68,16 @@ export class Game extends Component {
 			path: '/socket.io/',
 			transports: ['websocket', 'polling']
 		});
+		this.vision = 0;
 		this.id = id;
 		if(flag){
-			this.role = "playerR";
+			this.input.role = "playerR";
 			this.input.mode = flag;
 			const u = userState.get();
-			this.user1 = u?.username ;
+			this.user1 = u?.username || "Guest1";
 			this.user2 = "bot";
-			this.vision = 0;
 			if(flag === "local")
-				this.user2 = "Guest";
+				this.user2 = "Guest2";
 		}
 		else{
 			this.input.mode = "match";
@@ -93,17 +92,13 @@ export class Game extends Component {
 		this.user1 = this.room.player1;
 		this.user2 = this.room.player2;
 		if(wallet === this.room.wallet1.toLowerCase() ){
-			this.role = "playerR";
+			this.input.role = "playerR";
 		}
 		else if (wallet === this.room.wallet2.toLowerCase() ){
-			// this.user1 = this.room.player;
-			// this.user2 = this.room.player1;
-			this.role = "playerL";
+			this.input.role = "playerL";
 		}
 		else{
-			// this.user1 = this.room.player1;
-			// this.user2 = this.room.player2;
-			this.role = "viewer";
+			this.input.role = "viewer";
 		}
 		this.socket.emit('joinroom',wallet,this.id,0);
 	}
@@ -114,15 +109,13 @@ export class Game extends Component {
 			});
 			this.user2 = this.room.player2;
 			if(this.user1 === this.room.player2){
-				this.role = "playerL";
-				this.user1 = this.room.player1;
-				this.user2 = this.room.player2; 
+				this.input.role = "playerL"; 
 			}
 			else if(this.user1 !== this.room.player1 && this.user1 !== this.room.player2){
-				this.role = "viewer";
+				this.input.role = "viewer";
 			}
+			this.user1 = this.room.player1;
 			this.socket.emit('joinroom',"",this.id,userState.get()?.id);
-			
 	}
 		
 	async verify():Promise<boolean>{
@@ -249,20 +242,20 @@ export class Game extends Component {
 		
 		const handlekeycahnge = (event : KeyboardEvent , isDown: boolean)=>{
 			event.preventDefault();
-			if(this.role === "viewer") return;
+			if(this.input.role === "viewer") return;
 			const key = event.key.toLowerCase();
 			if(this.input.mode === "local"){
 				if (key == "w") this.input.leftUp = isDown;
 				if (key === "s") this.input.leftDown = isDown;
 			}
 			if(key === "arrowup"){
-				if(this.role === "playerR"){this.input.rightUp = isDown;};
-				if(this.role === "playerL")this.input.leftUp = isDown;
+				if(this.input.role === "playerR"){this.input.rightUp = isDown;};
+				if(this.input.role === "playerL")this.input.leftUp = isDown;
 			}
 			
 			if(key === "arrowdown"){
-				if(this.role === "playerR")this.input.rightDown = isDown;
-				if(this.role === "playerL")this.input.leftDown = isDown;
+				if(this.input.role === "playerR")this.input.rightDown = isDown;
+				if(this.input.role === "playerL")this.input.leftDown = isDown;
 			}
 		};
 		const handlevision = (event : KeyboardEvent)=>{
@@ -294,7 +287,7 @@ export class Game extends Component {
 		
 		this.engine.runRenderLoop(async() => {
 			this.state = await new Promise((resolve)=>{this.socket.emit('input', this.input, resolve)});
-			if(!this.state.start && this.input.mode === "remote" && !this.waitingStarted){
+			if(!this.state.start && (this.input.mode === "remote" || this.input.mode === "match") && !this.waitingStarted){
 				this.startWaiting();
 				this.waitingStarted = true;
 			}
@@ -329,7 +322,7 @@ export class Game extends Component {
 		<h1 class="text-5xl font-bold text-center text-ctex">Game Over</h1>
 		<div class="flex flex-row justify-around items-center gap-8 py-4">
 		<div class="flex flex-col items-center">
-		<h2 class="text-xl opacity-80 text-blue-900 uppercase tracking-wider max-w-[150px] truncate">${this.user2}</h2>
+		<h2 class="text-xl opacity-80 text-blue-700 uppercase tracking-wider max-w-[150px] truncate">${this.user2}</h2>
 		<span class="text-4xl font-mono font-bold text-ctex">${this.state.left}</span>
 		</div>
 		
@@ -365,9 +358,7 @@ export class Game extends Component {
 		if(this.state.right != this.state.left)
 			return true;
 		return false;
-	}
-	
-	
+	}	
 	
 	startWaiting() {
 		const ui= GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI", true, this.scene);
