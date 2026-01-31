@@ -165,6 +165,12 @@ export const user_state_sub = () => {
 				authMobile.innerHTML = '';
 				logged_button.mount(auth);
 				logged_mobile_button.mount(authMobile);
+				const user_container = document.querySelectorAll('.current-web2-user');
+				if (user_container) {
+					user_container.forEach(async (el) => {
+						el.textContent = user.username;
+				});
+		}
 			}
 			// TODO: Show logout button
 		} else {

@@ -144,9 +144,9 @@ export class Navbar_user_logged extends Component {
 			</div>
 		`);
 
-		const	link_span = addElement('span', 'text-sm font-mono current-web3-account', this.el);
-		// link_span.id = 'current-web3-account';
-		link_span.textContent = 'username'; 
+		const	link_span = addElement('span', 'text-sm font-mono current-web2-user', this.el);
+		// link_span.id = '';
+		// link_span.textContent = 'username'; 
 	}
 }
 
