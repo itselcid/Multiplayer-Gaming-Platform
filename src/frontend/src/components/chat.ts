@@ -737,9 +737,25 @@ export class chat extends Component {
   linkify(text?: string) {
     if (!text) return '';
     const escaped = this.escapeHtml(text);
+
     return escaped.replace(/(https?:\/\/[^\s"<]+)/g, (url) => {
-      const safe = encodeURI(url);
-      return `<a href="${safe}" target="_blank" rel="noopener noreferrer" class="text-neon-cyan underline">${url}</a>`;
+      try {
+        const urlObj = new URL(url);
+        const currentHost = window.location.hostname;
+
+        // Check if the URL belongs to our site
+        if (urlObj.hostname === currentHost || urlObj.hostname === 'localhost') {
+          const relativePath = urlObj.pathname + urlObj.search + urlObj.hash;
+          return `<a href="${relativePath}" target="_blank" rel="noopener noreferrer" class="text-neon-cyan underline">invite link</a>`;
+        }
+
+        // It's an external link (like Facebook), keep the full URL
+        const safe = encodeURI(url);
+        return `<a href="${safe}" target="_blank" rel="noopener noreferrer" class="text-neon-cyan underline">check this out!</a>`;
+        
+      } catch (e) {
+        return url;
+      }
     });
   }
 
