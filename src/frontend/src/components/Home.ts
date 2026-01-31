@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/13 19:43:15 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/30 03:54:22 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/31 01:35:01 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@ import { Component } from "../core/Component";
 import { navigate } from "../core/router";
 import { userState } from "../core/appStore";
 import { Game } from "../pages/Game";
+import { AuthService } from "../services/auth";
 
 interface Friend {
   id: number;
@@ -48,7 +49,7 @@ export class Home extends Component {
     if (options.body) {
       headers['Content-Type'] = 'application/json';
     }
-    const response = await fetch(`${api}`, {
+    let response = await fetch(`${api}`, {
       ...options,
       headers: {
         ...headers,
@@ -56,6 +57,20 @@ export class Home extends Component {
       },
       credentials: 'include',
     });
+
+	if (response.status === 401 || response.status === 405) {
+		AuthService.getCurrentUser();
+	}
+	
+	response = await fetch(`${api}`, {
+      ...options,
+      headers: {
+        ...headers,
+        ...options.headers,
+      },
+      credentials: 'include',
+    });
+	
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Request failed' }));
       throw new Error(error.message || error.error || 'Something went wrong');
@@ -73,8 +88,8 @@ export class Home extends Component {
 	</div>
 	<img src="/avatar.png" alt="avatar" class="w-64 h-64 sm:w-96 sm:h-96 lg:w-120 lg:h-120 object-contain ">
 		</div>
-        <button id="Letsplay" class="self-center w-fit px-8 py-4 text-5xl font-display animate-bounce text-gray-300 hover:text-neon-cyan bg-clip-text 
-		shadow-sm rounded-sm hover:animate-none hover:bg-clip-border transition">
+        <button id="Letsplay" class="self-center w-fit px-8 py-4 text-5xl font-display animate-bounce hover:text-neon-cyan bg-clip-text 
+		shadow-sm rounded-sm hover:animate-none text-ctex hover:bg-clip-border transition">
         	Let's play
 		</button>
 		<p class="mt-12 max-w-7xl text-center text-ctex italic text-lg sm:text-xl lg:text-2xl">
@@ -94,13 +109,15 @@ export class Home extends Component {
 		return;
 	}
 	const container = document.createElement("div");
-	container.className =`fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm z-50`;
-	container.innerHTML=`<div class="backdrop-blur-xl rounded-xl shadow-xl flex flex-col gap-4 p-6">
+	container.className =`fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50`;
+	container.innerHTML=`<div class="backdrop-blur-xl rounded-xl shadow-xl items-center flex flex-col gap-4 p-6" 
+	style="background: linear-gradient(135deg, rgba(10, 22, 40, 0.85) 0%, rgba(30, 11, 61, 0.85) 100%); border: 2px solid #00d9ff; box-shadow: 0 0 30px rgba(0, 217, 255, 0.3), inset 0 0 30px rgba(0, 217, 255, 0.05);">
+	 <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(0, 217, 255, 0.1) 35px, rgba(0, 217, 255, 0.1) 70px);"></div>
 	<h2 class="text-3xl text-center text-ctex mb-4">Choose your game mode</h2>
-      <button id="local" class="btn px-6 py-3 rounded-sm text-black hover:bg-neon-cyan  transition">🎮 Local Game</button>
-      <button id="remote" class="btn px-6 py-3 rounded-sm text-black hover:bg-neon-cyan transition">🌐 Play with Friend</button>
-      <button id="bot" class="btn px-6 py-3 rounded-sm text-black hover:bg-neon-cyan  transition">🤖 Play vs Bot</button>
-      <button id="cancel" class="btn px-6  py-3 rounded-sm text-black hover:bg-neon-cyan  transition mt-2">Cancel</button>
+      <button id="local" class="btn px-10 py-3  w-fit shadow-sm rounded-sm text-ctex border border-transparent hover:border-neon-cyan hover:shadow-[0_4px_15px_rgba(34,211,238,0.5)] transition">🎮 Local Game</button>
+      <button id="remote" class="btn px-10 py-3 w-fit shadow-sm rounded-sm text-ctex border border-transparent  hover:border-neon-cyan hover:shadow-[0_4px_15px_rgba(34,211,238,0.5)] transition">🌐 Play with Friend</button>
+      <button id="bot" class="btn px-10 py-3 w-fit shadow-sm rounded-sm text-ctex border border-transparent hover:border-neon-cyan hover:shadow-[0_4px_15px_rgba(34,211,238,0.5)]  transition">🤖 Play vs Bot</button>
+      <button id="cancel" class="btn px-10 py-3 w-fit shadow-sm rounded-sm text-ctex border border-transparent hover:border-neon-cyan hover:shadow-[0_4px_15px_rgba(34,211,238,0.5)]  transition mt-2">Cancel</button>
 	  </div>`
 	  this.el.append(container);
 	  container.querySelector("#local")?.addEventListener("click",()=> navigate("/game?mode=local"));
@@ -113,26 +130,32 @@ export class Home extends Component {
 	this.friends = await this.getfriends();
 	this.online = await this.getonline();
 	const container = document.createElement("div");
-	container.className =`fixed inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm z-50`;
+	container.className =`fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50`;
 	if(!this.friends.length){
-		container.innerHTML=`<div class="backdrop-blur-xl rounded-xl shadow-xl flex flex-col gap-4 p-6">
+		container.innerHTML=`<div class="backdrop-blur-xl items-center rounded-xl shadow-xl flex flex-col gap-4 p-6" 
+		style="background: linear-gradient(135deg, rgba(10, 22, 40, 0.85) 0%, rgba(30, 11, 61, 0.85) 100%); border: 2px solid #00d9ff; box-shadow: 0 0 30px rgba(0, 217, 255, 0.3), inset 0 0 30px rgba(0, 217, 255, 0.05);">
+		<div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(0, 217, 255, 0.1) 35px, rgba(0, 217, 255, 0.1) 70px);"></div>
 		<h2 class="text-3xl text-center text-ctex mb-4">No playmates around</h2>
-		<button id="make" class="btn px-6 py-3 rounded-sm text-white/75 hover:bg-neon-cyan/75  transition">👥 Start Friendships</button>
-      	<button id="cancel" class="btn px-6  py-3 rounded-sm text-white/75 hover:bg-neon-cyan/75  transition mt-2">Cancel</button>
+		<button id="make" class="btnpx-10 py-3  w-fit shadow-sm rounded-sm text-ctex border border-transparent hover:border-neon-cyan hover:shadow-[0_4px_15px_rgba(34,211,238,0.5)] transition">👥 Start Friendships</button>
+      	<button id="cancel" class="btn px-10 py-3  w-fit shadow-sm rounded-sm text-ctex border border-transparent hover:border-neon-cyan hover:shadow-[0_4px_15px_rgba(34,211,238,0.5)] transition">Cancel</button>
 		</div>`;
 		
 	}
 	else if (!this.online.length){
-		container.innerHTML = `<div class="backdrop-blur-xl rounded-xl shadow-xl flex flex-col gap-4 p-6">
+		container.innerHTML = `<div class="backdrop-blur-xl rounded-xl items-center shadow-xl flex flex-col gap-4 p-6"
+		style="background: linear-gradient(135deg, rgba(10, 22, 40, 0.85) 0%, rgba(30, 11, 61, 0.85) 100%); border: 2px solid #00d9ff; box-shadow: 0 0 30px rgba(0, 217, 255, 0.3), inset 0 0 30px rgba(0, 217, 255, 0.05);">
+		<div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(0, 217, 255, 0.1) 35px, rgba(0, 217, 255, 0.1) 70px);"></div>
 		<h2 class="text-3xl text-center text-ctex mb-4">No online playmates around</h2>
-		<button id="cancel" class="btn px-6  py-3 rounded-sm text-white/75 hover:bg-neon-cyan/75  transition mt-2">Cancel</button>
+		<button id="cancel" class="btn px-10 py-3  w-fit shadow-sm rounded-sm text-ctex border border-transparent hover:border-neon-cyan hover:shadow-[0_4px_15px_rgba(34,211,238,0.5)] transition">Cancel</button>
 		</div>`;
 	}
 	else{
-		container.innerHTML = `<div class="backdrop-blur-xl rounded-xl shadow-xl flex flex-col gap-4 p-6">
+		container.innerHTML = `<div class="backdrop-blur-xl rounded-xl items-center shadow-xl flex flex-col gap-4 p-6"
+		style="background: linear-gradient(135deg, rgba(10, 22, 40, 0.85) 0%, rgba(30, 11, 61, 0.85) 100%); border: 2px solid #00d9ff; box-shadow: 0 0 30px rgba(0, 217, 255, 0.3), inset 0 0 30px rgba(0, 217, 255, 0.05);">
+		<div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(0, 217, 255, 0.1) 35px, rgba(0, 217, 255, 0.1) 70px);"></div>
 		<h2 class="text-3xl text-center text-ctex mb-4">Select a playmate</h2>
 		<div id="friendsList" class="flex flex-col gap-2"></div>
-		<button id="cancel" class="btn px-6 py-3 rounded-sm text-white/75 hover:bg-neon-cyan/75 transition mt-4">Cancel</button>
+		<button id="cancel" class="btn px-10 py-3  w-fit shadow-sm rounded-sm text-ctex border border-transparent hover:border-neon-cyan hover:shadow-[0_4px_15px_rgba(34,211,238,0.5)] transition">Cancel</button>
     	</div>`;
 		
 		const list = container.querySelector("#friendsList");
@@ -140,7 +163,7 @@ export class Home extends Component {
   		this.online.forEach(friend => {
     		const btn = document.createElement("button");
     		btn.className =
-    		  "btn flex items-center gap-3 px-4 py-2 rounded-sm text-white/80 hover:bg-neon-cyan/75 transition text-left";
+    		  "btn overflow-y-auto flex text-center px-10 py-3 w-fit shadow-sm rounded-sm text-ctex border border-transparent hover:border-neon-cyan hover:shadow-[0_4px_15px_rgba(34,211,238,0.5)] transition";
     		const avatar = document.createElement("img");
     		avatar.src = friend.avatar || '👤'; 
     		avatar.alt = friend.username;
@@ -152,7 +175,6 @@ export class Home extends Component {
 				const url = await room.createroom(friend);
 				const fullUrl = new URL(String(url), window.location.origin).href;
 				await	this.sendInvite(friend.id, fullUrl);
-				console.log("Invitation sent to " + friend.username);
 				navigate(url)});
 			list?.appendChild(btn);});
 		}
@@ -175,15 +197,10 @@ export class Home extends Component {
       		  },
       		  body: JSON.stringify({
       		    receiverId: friendId,
-      		    content: `🎮 Game Invite: Join me in Galactik Pingpong! Click here to play: ${url}`
+      		    content: `🎮 Game Invite\nJoin me in Galactik Pingpong! Click here to play: ${url}\n🚨after 10min of now this link will no longer be available`
       		  }),
       		  credentials: 'include'
       		});	
-			console.log(`status: ${response.status}`);
-			      if (response.ok) {
-        const message = await response.json();
-        console.log('✅ Message sent via HTTP:', message);
-      }
 		}
 		catch (error) {
 			console.error("Error sending game invite:", error);
@@ -200,5 +217,3 @@ export class Home extends Component {
     return `<span class="text-sm">${avatar || '👤'}</span>`;
   }
 }
-
-//mimi //watch //alone

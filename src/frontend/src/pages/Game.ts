@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/27 01:44:47 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/25 22:14:37 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/31 00:26:33 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -321,29 +321,30 @@ export class Game extends Component {
 
 	gameOver(){
 		const container = document.createElement("div");
-		container.className = "fixed inset-0 flex items-center justify-center bg-space-blue/40 backdrop-blur-sm z-50 p-4";	
+		container.className = "fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50 p-4";	
 		container.innerHTML = `
-		<div class="bg-white/5 backdrop-blur-xl rounded-2xl flex flex-col gap-6 p-8 border border-white/20 max-w-lg w-full">
+		<div class="backdrop-blur-xl rounded-2xl flex flex-col gap-6 p-8 items-center border border-cyan/20 max-w-lg w-full" 
+			style="background: linear-gradient(135deg, rgba(10, 22, 40, 0.85) 0%, rgba(30, 11, 61, 0.85) 100%); border: 2px solid #00d9ff; box-shadow: 0 0 30px rgba(0, 217, 255, 0.3), inset 0 0 30px rgba(0, 217, 255, 0.05);">
+        <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(0, 217, 255, 0.1) 35px, rgba(0, 217, 255, 0.1) 70px);"></div>
 		<h1 class="text-5xl font-bold text-center text-ctex">Game Over</h1>
 		<div class="flex flex-row justify-around items-center gap-8 py-4">
 		<div class="flex flex-col items-center">
-		<h2 class="text-xl opacity-80 text-ctex uppercase tracking-wider">${this.user2}</h2>
+		<h2 class="text-xl opacity-80 text-blue-900 uppercase tracking-wider max-w-[150px] truncate">${this.user2}</h2>
 		<span class="text-4xl font-mono font-bold text-ctex">${this.state.left}</span>
 		</div>
 		
 		<div class="text-3xl font-light text-white/30">VS</div>
 		
 		<div class="flex flex-col items-center">
-		<h2 class="text-xl opacity-80 text-ctex uppercase tracking-wider">${this.user1}</h2>
+		<h2 class="text-xl opacity-80 text-rose-400 uppercase tracking-wider max-w-[150px] truncate">${this.user1}</h2>
 		<span class="text-4xl font-mono font-bold text-ctex">${this.state.right}</span>
 		</div>
 		</div>
 		
-		<button id="home" class="w-full bg-neon-cyan/20 border border-neon-cyan/50 py-3 rounded-lg text-white font-semibold hover:bg-neon-cyan/40 transition-all duration-300">
+		<button id="home" class=" px-10 py-3  w-fit shadow-sm rounded-sm text-ctex border border-transparent hover:border-neon-cyan hover:shadow-[0_4px_15px_rgba(34,211,238,0.5)] transition">
 		Return Home
 		</button>
 		</div>`;
-		
 		this.el.append(container);
 		
 		container.querySelector("#home")?.addEventListener("click", () => { navigate("/home")});

@@ -34,7 +34,7 @@ export class Friends extends Component {
   private myUserId: number | null = null;
 
   constructor() {
-    super("div", "w-full max-w-2xl mx-auto pt-24 px-4 grid-bg min-h-screen");
+    super("div", "w-full max-w-6xl mx-auto py-15");
     this.init();
   }
 
@@ -341,16 +341,17 @@ export class Friends extends Component {
     }
 
     this.el.innerHTML = `
-      <div class="bg-space-blue/80 border border-neon-cyan/20 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-md">
+      <div class="h-[82vh] bg-black/60 border border-neon-cyan/20 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-md" style="background: linear-gradient(135deg, rgba(10, 22, 40, 0.85) 0%, rgba(30, 11, 61, 0.85) 100%);  inset 0 0 30px rgba(0, 217, 255, 0.05);">
+		    <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(0, 217, 255, 0.1) 35px, rgba(0, 217, 255, 0.1) 70px);"></div>
         <!-- Header -->
-        <div class="p-4 bg-space-dark/50 border-b border-neon-cyan/10">
+        <div class="p-4 bg-space-dark/70 border-b border-neon-cyan/10">
           <div class="flex justify-between items-center mb-3">
             <h1 class="text-xl font-bold text-neon-cyan">👥 Friends</h1>
             <span class="text-xs text-gray-400 font-mono"></span>
           </div>
           
           <!-- Tabs -->
-          <div class="flex gap-2 bg-space-dark/50 p-1 rounded-lg">
+          <div class="flex gap-2 bg-space-dark/70 p-1 rounded-lg">
             <button id="tab-friends" class="flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all ${this.activeTab === 'friends' ? 'bg-neon-cyan/20 text-neon-cyan shadow-sm' : 'text-gray-400 hover:text-neon-cyan'}">
               Friends (${this.friends.length})
             </button>
@@ -363,7 +364,7 @@ export class Friends extends Component {
           </div>
 
           ${this.activeTab === 'search' ? `
-            <div class="mt-3 relative">
+            <div class="mt-3  bg-space-dark/70 relative">
               <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
               </svg>
@@ -379,7 +380,7 @@ export class Friends extends Component {
         </div>
 
         <!-- Content -->
-        <div class="p-4 min-h-[300px] max-h-[400px] overflow-y-auto">
+        <div class="p-4 overflow-y-auto" >
           ${this.isLoading ? `
             <div class="text-center py-8">
               <div class="animate-spin text-4xl mb-2">⏳</div>

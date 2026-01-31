@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 17:15:36 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/25 22:41:45 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/30 23:27:02 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -91,7 +91,7 @@ function generateroom(): string{
         }
       }
     });
-  },10000*120);
+  },1000*120);
 
 io.on('connection', (socket) => {
   console.log(`client connected ${socket.id}`);

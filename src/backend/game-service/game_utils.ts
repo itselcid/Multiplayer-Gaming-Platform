@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/13 17:23:50 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/30 01:34:11 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/01/30 19:50:45 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -141,7 +141,7 @@ export class PongGame {
   delet = 0;
   updt = 0;
 
-  readonly Duration = 90000;
+  readonly Duration = 9000;
   readonly PADDLE_HEIGHT = 2.3;
   readonly PLAY_AREA_WIDTH = 38;
   readonly PLAY_AREA_HEIGHT = 16;

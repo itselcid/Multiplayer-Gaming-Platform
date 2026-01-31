@@ -4,6 +4,7 @@ import { io, Socket } from "socket.io-client";
 import { userState, matchNotificationState } from "../core/appStore";
 import { socketService } from "../services/socket";
 import type { MatchNotification } from "../web3/getters";
+import { Game } from "../pages/Game";
 
 // Use relative URLs to go through nginx proxy
 const API_URL = '/api';
@@ -205,6 +206,32 @@ export class chat extends Component {
       this.isLoadingFriends = false;
     }
   }
+
+  	async sendInvite(friendId: number, url: string) {
+		try {
+			const user = userState.get();
+			if (!user) {throw new Error("User not logged in");}
+			console.log("Sending game invite to user ID:", friendId);
+		      const response = await fetch(`api/chat/messages`, {
+      		  method: 'POST',
+      		  headers: {
+      		    'Content-Type': 'application/json',
+      		    'x-user-id': user.id.toString()
+      		  },
+      		  body: JSON.stringify({
+      		    receiverId: friendId,
+      		    content: `🎮 Game Invite\nJoin me in Galactik Pingpong! Click here to play: ${url}\n🚨after 10min of now this link will no longer be available`
+      		  }),
+      		  credentials: 'include'
+      		});	
+		}
+		catch (error) {
+			console.error("Error sending game invite:", error);
+			 alert('Network error. Please check your connection and try again.');
+		}
+	}
+
+
 
   private async fetchLastMessages(userIds: number[]) {
     const currentUser = userState.get();
@@ -657,7 +684,7 @@ export class chat extends Component {
   }
 
   constructor() {
-    super("div", "w-full max-w-3xl mx-auto");
+    super("div", "w-full max-w-6xl mx-auto py-15");
 
     // Check immediately if user is logged in
     const currentUser = userState.get();
@@ -763,8 +790,8 @@ export class chat extends Component {
     // If user is blocked, show header with unblock button and simple message
     if (isBlocked) {
       return `
-        <div class="px-4 py-2 border-b border-neon-cyan/10 bg-space-dark/50 flex items-center justify-between rounded-lg mb-4">
-          <div class="flex items-center gap-2">
+        <div class="px-4 py-2 border-b backdrop-blur-xl bg-black/60 border-neon-cyan/10 flex items-center justify-between rounded-lg mb-4">
+        <div class="flex items-center gap-2">
             <div class="relative">
               <div class="w-8 h-8 bg-gradient-to-br from-neon-purple to-neon-cyan rounded-full flex items-center justify-center overflow-hidden opacity-50">
                 ${this.renderAvatar(user?.avatar)}
@@ -795,7 +822,7 @@ export class chat extends Component {
           <div class="flex justify-center my-4">
             <div class="max-w-sm w-full bg-gradient-to-r from-neon-purple/20 to-neon-cyan/20 border border-neon-cyan/30 rounded-xl p-4 shadow-lg">
               <div class="text-center">
-                <p class="text-lg font-bold text-neon-cyan mb-3">${this.linkify(msg.text)}</p>
+                <p class="text-lg font-bold text-neon-cyan whitespace-pre-wrap mb-3">${this.linkify(msg.text)}</p>
                 <button class="play-match-btn inline-flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-lg font-bold hover:opacity-90 transition shadow-md text-lg cursor-pointer" data-match-link="${msg.matchLink || '/match/test'}">
                   Play Now
                 </button>
@@ -813,13 +840,13 @@ export class chat extends Component {
         <div class="flex ${msg.isMine ? 'justify-end' : 'justify-start'}">
           <div class="group max-w-xs lg:max-w-md ${msg.isMine ? 'order-2' : 'order-1'}">
             <div class="px-4 py-3 rounded-2xl ${msg.isMine
-          ? 'bg-blue-600 text-white rounded-br-sm'
-          : 'bg-space-blue/80 text-gray-200 rounded-bl-sm border border-neon-cyan/20'
+          ? 'bg-blue-800 text-white rounded-br-sm'
+          : 'bg-space-blue/80 backdrop-blur-xl text-gray-200 rounded-bl-sm border border-neon-cyan/20'
         }">
-              <p class="text-sm leading-relaxed">${this.linkify(msg.text)}</p>
+              <p class="text-xs font-thin leading-relaxed whitespace-pre-wrap">${this.linkify(msg.text)}</p>
             </div>
             <div class="flex items-center gap-2 mt-1 px-2">
-              <span class="text-xs text-gray-500">${this.escapeHtml(msg.time)}</span>
+              <span class="text-xs font-light text-gray-500">${this.escapeHtml(msg.time)}</span>
               ${msg.reactions.length > 0 ? `
                 <div class="flex gap-1">
                   ${msg.reactions.map(r => `<span class="text-xs">${r}</span>`).join('')}
@@ -852,7 +879,7 @@ export class chat extends Component {
     }
 
     return `
-      <div class="px-4 py-2 border-b border-neon-cyan/10 bg-space-dark/50 flex items-center justify-between rounded-lg mb-4">
+      <div class="px-4 py-2 border-b border-neon-cyan/10 bg-space-dark/50 backdrop-blur-xl flex items-center justify-between rounded-lg mb-4">
         <div class="flex items-center gap-2 ${!isSystemUser ? 'cursor-pointer hover:opacity-80' : ''} transition" ${!isSystemUser ? `id="chat-user-profile-link" data-user-id="${user.id}" title="View profile"` : ''}>
           <div class="relative">
             <div class="w-8 h-8 ${isSystemUser ? 'bg-gradient-to-r from-neon-purple to-neon-cyan' : 'bg-gradient-to-br from-neon-purple to-neon-cyan'} rounded-full flex items-center justify-center overflow-hidden">
@@ -866,7 +893,7 @@ export class chat extends Component {
           </div>
         </div>
         ${!isSystemUser ? `
-          <div class="flex items-center gap-2 relative">
+          <div class="flex items-center relative gap-2 bg-dark/60 relative">
             <button id="chat-header-menu-btn" class="p-2 hover:bg-neon-cyan/10 rounded-lg transition text-gray-400">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
@@ -891,7 +918,7 @@ export class chat extends Component {
 
     if (this.activeMenuUserId === userId) {
       container.innerHTML = `
-        <div class="absolute right-0 top-2 bg-space-blue border border-neon-cyan/20 shadow-xl rounded-xl py-2 z-50 w-40">
+        <div class="absolute right-0 top-2 bg-dark/60 border border-neon-cyan/20 shadow-xl rounded-xl py-2 z-50 w-40">
             <button class="menu-action-play w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-neon-cyan/10 hover:text-neon-cyan flex items-center gap-2 transition-colors" data-user-id="${userId}">
                 <span>🎮</span> Play Game
             </button>
@@ -923,68 +950,69 @@ export class chat extends Component {
     }
 
     this.el.innerHTML = `
-      <div class="bg-space-blue/80 border border-neon-cyan/20 rounded-2xl shadow-2xl overflow-hidden h-[500px] flex backdrop-blur-md">
+      <div class="h-[82vh] border-neon-cyan/20  rounded-2xl shadow-2xl overflow-hidden flex backdrop-blur-md">
         
         <!-- Sidebar -->
-        <div class="w-64 bg-space-dark/50 border-r border-neon-cyan/10 flex flex-col">
-          <div class="p-3 border-b border-neon-cyan/10">
-            <div class="flex justify-between items-center mb-2">
-              <h1 class="text-lg font-bold text-neon-cyan">Messages</h1>
-              ${loggedInUser ? `<span class="text-xs text-gray-400 font-mono"></span>` : ''}
-            </div>
-            
+          <div class="w-2/8  border-r border-neon-cyan/10 flex flex-col">
+            <div class="p-3 border-b border-neon-cyan/10">
+              <div class="flex justify-between items-center mb-2">
+                <h1 class=" text-sm md:text-md lg:text-lg font-bold text-neon-cyan">Messages</h1>
+                ${loggedInUser ? `<span class="text-xs text-gray-400 font-mono"></span>` : ''}
+              </div>
 
-            <div class="relative">
-              <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-              </svg>
-              <input
-                id="search-input"
-                type="text"
-                placeholder="Search..."
-                value="${this.escapeHtml(this.searchQuery)}"
-                class="w-full pl-10 pr-4 py-2 bg-space-dark/50 border border-neon-cyan/20 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 text-gray-200 placeholder-gray-500"
-              />
+
+              <div class="relative">
+                <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+                <input
+                  id="search-input"
+                  type="text"
+                  placeholder="Search..."
+                  value="${this.escapeHtml(this.searchQuery)}"
+                  class="w-full pl-10 pr-4 py-2 bg-black/60 border border-neon-cyan/20 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-neon-cyan/50 text-gray-200 placeholder-gray-500"
+                />
+              </div>
+            </div>
+            <div id="users-list" class="flex-1 overflow-y-auto no-scrollbar">
+              ${this.renderUsersList()}
             </div>
           </div>
-          <div id="users-list" class="flex-1 overflow-y-auto no-scrollbar">
-            ${this.renderUsersList()}
-          </div>
-        </div>
 
         <!-- Main Chat Area -->
-        <div class="flex-1 flex flex-col bg-space-dark/30">
-          ${!currentUser ? `
-            <div class="flex-1 flex items-center justify-center text-gray-400">
-              <div class="text-center">
-                <p class="text-xl font-semibold text-neon-cyan/70">Select a conversation</p>
-                <p class="text-sm mt-2">Choose from your friends to start chatting</p>
-              </div>
-            </div>
-          ` : `
-            <div class="flex-1 overflow-y-auto no-scrollbar p-6 bg-gradient-to-b from-space-dark/30 to-space-blue/30 flex flex-col">
-              ${this.renderMessages()}
-            </div>
-            ${!this.blockedUsers.has(this.currentChatUserId!) && this.currentChatUserId !== chat.TOURNAMENT_SYSTEM_USER_ID ? `
-              <div class="p-4 border-t border-neon-cyan/10 bg-space-dark/50">
-                <div class="bg-space-blue/50 border border-neon-cyan/20 rounded-2xl px-4 py-2 flex items-end gap-2">
-                  <textarea
-                    id="message-input"
-                    placeholder="Type a message..."
-                    rows="1"
-                    class="flex-1 bg-transparent resize-none focus:outline-none text-gray-200 py-2 placeholder-gray-500"
-                    style="min-height: 24px; max-height: 128px;"
-                  >${this.escapeHtml(this.messageInput)}</textarea>
-                  <button id="send-btn" class="p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-500 transition">
-                    <svg class="w-5 h-5 transform rotate-90 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
-                    </svg>
-                  </button>
+          <div class="flex-1 flex flex-col relative overflow-hidden bg-black/60" style="background: linear-gradient(135deg, rgba(10, 22, 40, 0.85) 0%, rgba(30, 11, 61, 0.85) 100%);  inset 0 0 30px rgba(0, 217, 255, 0.05);">
+		    <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(0, 217, 255, 0.1) 35px, rgba(0, 217, 255, 0.1) 70px);"></div>
+            ${!currentUser ? `
+              <div class="flex-1 flex items-center justify-center text-gray-400">
+                <div class="text-center">
+                  <p class="text-xl font-semibold text-neon-cyan/70">Select a conversation</p>
+                  <p class="text-sm mt-2">Choose from your friends to start chatting</p>
                 </div>
               </div>
-            ` : ''}
-          `}
-        </div>
+            ` : `
+              <div class="flex-1 overflow-y-auto no-scrollbar p-6 flex flex-col">
+                ${this.renderMessages()}
+              </div>
+              ${!this.blockedUsers.has(this.currentChatUserId!) && this.currentChatUserId !== chat.TOURNAMENT_SYSTEM_USER_ID ? `
+                <div class="p-4 border-t border-neon-cyan/10 bg-space-dark/50 backdrop-blur-xl">
+                  <div class="bg-space-blue/50  border border-neon-cyan/20 rounded-2xl px-4 py-2 flex items-end gap-2">
+                    <textarea
+                      id="message-input"
+                      placeholder="Type a message..."
+                      rows="1"
+                      class="flex-1 bg-transparent resize-none focus:outline-none text-gray-200 py-2 placeholder-gray-500"
+                      style="min-height: 24px; max-height: 128px;"
+                    >${this.escapeHtml(this.messageInput)}</textarea>
+                    <button id="send-btn" class="p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-500 transition">
+                      <svg class="w-5 h-5 transform rotate-90 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              ` : ''}
+            `}
+          </div>
       </div>
     `;
 
@@ -1037,7 +1065,7 @@ export class chat extends Component {
     }
 
     // Menu actions - use event delegation on the menu container
-    this.el.querySelector('.menu-actions-container')?.addEventListener('click', (e) => {
+    this.el.querySelector('.menu-actions-container')?.addEventListener('click', async (e) => {
       const target = e.target as HTMLElement;
       const playBtn = target.closest('.menu-action-play');
       const blockBtn = target.closest('.menu-action-block');
@@ -1045,10 +1073,18 @@ export class chat extends Component {
 
       if (playBtn) {
         e.stopPropagation();
-        const userId = parseInt((playBtn as HTMLElement).dataset.userId || '0');
-        console.log('Play with user', userId);
-        this.activeMenuUserId = null;
-        this.updateMenuDropdown();
+        if(!this.currentChatUserId){
+          this.activeMenuUserId = null;
+          this.updateMenuDropdown();
+          return;
+        }
+        const friend : Friend = {id: this.users[this.currentChatUserId].id, 
+          username: this.users[this.currentChatUserId].name,  avatar: this.users[this.currentChatUserId].avatar};
+        const room = new Game("remote","");
+        const url = await room.createroom(friend);
+				const fullUrl = new URL(String(url), window.location.origin).href;
+				await	this.sendInvite(friend.id, fullUrl);
+				navigate(url)
       }
 
       if (blockBtn) {
