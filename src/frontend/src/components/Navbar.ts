@@ -64,6 +64,8 @@ export class Navbar extends Component {
 	link('a', 'transition-all text-gray-300 hover:text-neon-cyan', links_container, 'Home', 'home', '/');
 	link('a', 'transition-all text-gray-300 hover:text-neon-cyan', links_container, 'Tournaments', 'tournaments', '/tournaments');
 	link('a', 'transition-all text-gray-300 hover:text-neon-cyan', links_container, 'Profile', 'profile', '/profile');
+	link('a', 'transition-all text-gray-300 hover:text-neon-cyan', links_container, 'Chat', 'chat', '/chat');
+    link('a', 'transition-all text-gray-300 hover:text-neon-cyan', links_container, 'Friends', 'friends', '/friends');
 	const	auth = addElement('div', 'hidden lg:flex gap-2', container2);
 	const auth_login = addElement('div', '', auth);
 	auth_login.id = 'auth-login';
@@ -84,6 +86,8 @@ export class Navbar extends Component {
 	link('a', 'block text-center transition-all text-gray-300 hover:text-neon-cyan', mobileMenu, 'Home', 'homeMobile', '/');
 	link('a', 'block text-center transition-all text-gray-300 hover:text-neon-cyan', mobileMenu, 'Tournaments', 'tournamentsMobile', '/tournaments');
 	link('a', 'block text-center transition-all text-gray-300 hover:text-neon-cyan', mobileMenu, 'Profile', 'profileMobile', '/profile');
+	link('a', 'block text-center transition-all text-gray-300 hover:text-neon-cyan', mobileMenu, 'Chat', 'chatMobile', '/chat');
+    link('a', 'block text-center transition-all text-gray-300 hover:text-neon-cyan', mobileMenu, 'Friends', 'friendsMobile', '/friends');
 	const	authMobile = addElement('div', 'flex items-center justify-center gap-2', mobileMenu);
 	const authMobile_login = addElement('div', '', authMobile);
 	authMobile_login.id = 'authMobile-login';
