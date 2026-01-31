@@ -952,12 +952,10 @@ export class chat extends Component {
     const currentUser = this.currentChatUserId ? this.users[this.currentChatUserId] : null;
     const loggedInUser = userState.get();
 
-    // Redirect to login if not logged in
-    if (!loggedInUser) {
-      window.history.pushState({}, '', '/login');
-      window.dispatchEvent(new PopStateEvent('popstate'));
-      return;
-    }
+    // Save focus state
+    const activeId = document.activeElement?.id;
+    const selectionStart = (document.activeElement as any)?.selectionStart;
+    const selectionEnd = (document.activeElement as any)?.selectionEnd;
 
     this.el.innerHTML = `
       <div class="h-[82vh] border-neon-cyan/20  rounded-2xl shadow-2xl overflow-hidden flex backdrop-blur-md">
@@ -1027,6 +1025,17 @@ export class chat extends Component {
     `;
 
     this.attachEventListeners();
+
+    // Restore focus
+    if (activeId) {
+      const element = this.el.querySelector(`#${activeId}`) as any;
+      if (element && (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement)) {
+        element.focus();
+        if (typeof selectionStart === 'number' && typeof selectionEnd === 'number') {
+          element.setSelectionRange(selectionStart, selectionEnd);
+        }
+      }
+    }
   }
 
   attachEventListeners() {
@@ -1237,7 +1246,8 @@ export class chat extends Component {
     const inputEl = this.el.querySelector('#message-input') as HTMLTextAreaElement;
     if (inputEl) {
       inputEl.value = '';
-      console.log('7. Input cleared');
+      inputEl.focus(); // Restore focus after sending
+      console.log('7. Input cleared and focused');
     }
 
     console.log('=== END DEBUG ===');
