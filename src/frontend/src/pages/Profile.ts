@@ -19,28 +19,10 @@ import { addElement, Component } from "../core/Component";
 import { userState } from "../core/appStore";
 import { navigate } from "../core/router";
 import { AuthService } from "../services/auth";
+import type { UserProfile } from "../types/user.types";
 
 // Use relative URL to go through nginx proxy
 const API_URL = '/api';
-
-interface UserAchievement {
-	unlockedAt: Date;
-	achievement: {
-		id: number;
-		key: string;
-		name: string;
-		description: string;
-		icon: string;
-	};
-}
-
-interface UserProfile {
-	id: number;
-	username: string;
-	email: string;
-	avatar?: string;
-	achievements?: UserAchievement[];
-}
 
 export class ProfileView extends Component {
 	private userId: number | null = null;

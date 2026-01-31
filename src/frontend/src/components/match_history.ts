@@ -33,19 +33,25 @@ interface MatchHistory {
     playedAt: string; // JSON date comes as string
 }
 
+interface MatchHistoryResponse {
+    wins?: number;
+    losses?: number;
+    historyData: MatchHistory[];
+}
+
 // Fetch function
-const fetchMatchHistory = async (userId: string, page: number = 1, limit: number = 10): Promise<MatchHistory[]> => {
+const fetchMatchHistory = async (userId: string, page: number = 1, limit: number = 10): Promise<MatchHistoryResponse> => {
     try {
         const response = await fetch(`/api/users/${userId}/history?page=${page}&limit=${limit}`);
         if (!response.ok) {
             throw new Error(`Error fetching history: ${response.statusText}`);
         }
-        const data = await response.json();
-        // Backend controller wraps it in { historyData: [...] }
-        return data.historyData || [];
+        const data: MatchHistoryResponse = await response.json();
+        // Backend controller wraps it in { wins, losses, historyData: [...] }
+        return data || { wins: 0, losses: 0, historyData: [] };
     } catch (error) {
         console.error("Failed to fetch match history", error);
-        return [];
+        return { wins: 0, losses: 0, historyData: [] };
     }
 }
 
@@ -60,10 +66,14 @@ export class Match_history extends Component {
         this._userId = userId;
         this._targetUserId = targetUserId ?? null;
         this._page = 1;
-        this._limit = 5;
+        this._limit = 10;
     }
 
     async render(): Promise<void> {
+
+        // fetch match history
+        const historyData = await fetchMatchHistory(this._userId, this._page, this._limit);
+
         // Clear existing content
         this.el.innerHTML = '';
 
@@ -79,23 +89,30 @@ export class Match_history extends Component {
                 </svg>
                 Match History
             </h3>
+            <div class="flex items-center space-x-4">
+                <span class="px-3 py-1 bg-green-500/20 text-green-400 rounded-lg font-bold">
+                    W: ${historyData.wins ?? 0}
+                </span>
+                <span class="px-3 py-1 bg-red-500/20 text-red-400 rounded-lg font-bold">
+                    L: ${historyData.losses ?? 0}
+                </span>
+            </div>
             <div class="flex items-center space-x-2">
                 <span class="text-gray-400 text-sm mr-2">Page ${this._page}</span>
                 <button id="prev-page-btn" class="px-3 py-1 bg-neon-purple/20 hover:bg-neon-purple/40 text-neon-purple border border-neon-purple/50 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed" ${this._page <= 1 ? 'disabled' : ''}>
-                    Previous
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-left w-6 h-6" aria-hidden="true"><path d="m15 18-6-6 6-6"></path>
+                </svg>
                 </button>
                 <button id="next-page-btn" class="px-3 py-1 bg-neon-cyan/20 hover:bg-neon-cyan/40 text-neon-cyan border border-neon-cyan/50 rounded-lg transition-all">
-                    Next
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right w-6 h-6" aria-hidden="true"><path d="m9 18 6-6-6-6"></path>
+                </svg>
                 </button>
             </div>
         `;
 
         const matchesList = addElement('div', 'space-y-4', containerInfo);
 
-        // Fetch Data
-        const historyData = await fetchMatchHistory(this._userId, this._page, this._limit);
-
-        if (historyData.length === 0) {
+        if (historyData.historyData.length === 0) {
             matchesList.innerHTML = `
                 <div class="text-center p-8 text-gray-400">
                     No matches found.
@@ -109,7 +126,7 @@ export class Match_history extends Component {
             const currentUser = userState.get();
             const perspectiveUserId = this._targetUserId ?? currentUser?.id;
 
-            historyData.forEach(match => {
+            historyData.historyData.forEach(match => {
                 // Determine if the profile user won based on their actual position in the match
                 let profileUserWon = false;
                 let profileUserScore = 0;
@@ -169,8 +186,8 @@ export class Match_history extends Component {
                 matchesList.insertAdjacentHTML('beforeend', itemHTML);
             });
 
-            // Disable next button if we got less data than the limit (last page)
-            if (historyData.length < this._limit) {
+            // Disable next button when less data than limit
+            if (historyData.historyData.length < this._limit) {
                 const nextBtn = document.getElementById('next-page-btn') as HTMLButtonElement;
                 if (nextBtn) nextBtn.disabled = true;
             }

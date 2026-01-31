@@ -35,3 +35,22 @@ export interface LoginResponse {
     requires2FA?: boolean;
     method?: 'email' | 'totp';
 }
+
+export interface UserAchievement {
+    unlockedAt: Date;
+    achievement: {
+        id: number;
+        key: string;
+        name: string;
+        description: string;
+        icon: string;
+    };
+}
+
+export interface UserProfile {
+    id: number;
+    username: string;
+    email: string;
+    avatar?: string;
+    achievements?: UserAchievement[];
+}

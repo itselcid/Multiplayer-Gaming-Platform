@@ -31,8 +31,8 @@ const UpdateProfileSchema = {
                 type: 'object',
                 properties: {
                     oldpassword: { type: 'string' },
-                    newpassword: { type: 'string' },
-                    repeatednewpasswd: { type: 'string' }
+                    newpassword: { type: 'string', minLength: 8, maxLength: 16 },
+                    repeatednewpasswd: { type: 'string', minLength: 8, maxLength: 16 }
                 },
                 required: ['oldpassword', 'newpassword', 'repeatednewpasswd']
             }
@@ -66,7 +66,7 @@ export default async function userRoutes(server: FastifyInstance): Promise<void>
     server.get('/', { preHandler: [server.authenticate] }, userController.getAllUsers);
     // get logged in user data
     server.get('/me', { preHandler: [server.authenticate] }, userController.getLoggedInUser);
-    //! update logged in user data only email available for now
+    // update logged in user data
     server.put<{ Body: updateLoggedInUserBody }>('/me', { preHandler: [server.authenticate], schema: UpdateProfileSchema }, userController.updateLoggedInUser);
     // delete logged in user account
     server.delete<{ Body: { password: string } }>('/me', { preHandler: [server.authenticate], schema: DeleteProfileSchema }, userController.deleteLoggedInUser);

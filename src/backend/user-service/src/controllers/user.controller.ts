@@ -1,5 +1,5 @@
 import createHttpError from "http-errors";
-import { deleteUser, getAllUsers, getMatchHistory, getUserById, getUserByUsername, getUserForAuth, searchUsers, updateUser } from "../db";
+import { deleteUser, getAllUsers, getMatchHistory, getUserById, getUserByUsername, getUserForAuth, getWinsAndLosses, searchUsers, updateUser } from "../db";
 import path from "node:path";
 import fs from "node:fs";
 import { pipeline } from "node:stream/promises";
@@ -97,14 +97,15 @@ export const userController = {
             throw createHttpError(404, 'User not found');
 
         // Cleanup old avatar if it's a local file (starts with /public/)
-        if (userTmp.avatar && userTmp.avatar.startsWith('/public/uploads/')) {
+        if (userTmp.avatar && userTmp.avatar.startsWith('/uploads/')) {
             const oldFilename = path.basename(userTmp.avatar);
             const oldPath = path.join(uploadDir, oldFilename);
+            console.log('\nOld path:', oldPath);
             if (fs.existsSync(oldPath)) {
                 try {
                     fs.unlinkSync(oldPath);
                 } catch (e) {
-                    console.error('Failed to delete old avatar:', e);
+                    console.error('\nFailed to delete old avatar:\n', e);
                 }
             }
         }
@@ -155,8 +156,9 @@ export const userController = {
         if (!user)
             throw createHttpError(404, 'User not found');
         const historyData: MatchHistory[] = await getMatchHistory(userId, offset, limit);
+        const { wins, losses } = await getWinsAndLosses(userId);
 
-        return reply.send({ historyData });
+        return reply.send({ wins, losses, historyData });
     }
 
 }

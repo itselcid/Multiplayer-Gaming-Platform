@@ -187,22 +187,27 @@ export async function updateUser(id: number, updates: UpdateUserInput): Promise<
 
     if (updates.password !== undefined) {
         const { oldpassword, newpassword, repeatednewpasswd } = updates.password;
-        console.log("oldpassword: ", oldpassword || "undefined");
-        console.log("newpassword: ", newpassword || "undefined");
-        console.log("repeatednewpasswd: ", repeatednewpasswd || "undefined");
         const user = await getUserForAuth('auth', id);
 
         if (!user)
             throw createHttpError(404, 'User not found');
 
-        if (oldpassword && repeatednewpasswd) {
+        // Check if user has a password set (regular user vs GitHub-only user)
+        const hasExistingPassword = !!user.password;
+
+        if (hasExistingPassword) {
+            // Regular user: must provide and validate old password
+            if (!oldpassword)
+                throw createHttpError(400, 'Current password is required');
+
             const isPasswordValid = await bcrypt.compare(oldpassword, user.password);
             if (!isPasswordValid)
                 throw createHttpError(401, 'Invalid password');
-
-            if (newpassword !== repeatednewpasswd)
-                throw createHttpError(400, 'Passwords do not match');
         }
+
+        // Validate new passwords match
+        if (newpassword !== repeatednewpasswd)
+            throw createHttpError(400, 'Passwords do not match');
 
         const hash = await bcrypt.hash(newpassword, 10);
         data.password = hash;
@@ -268,7 +273,7 @@ export async function findOrCreateGithubUser(profile: GithubProfile): Promise<Us
 
     if (user) {
         // user already exists linked with github
-        if (user.avatar !== profile.avatar_url) {
+        if (user.avatar && user.avatar.startsWith('https') && user.avatar !== profile.avatar_url) {
             // if users avatar changed in github we change it here as well
             await prisma.user.update({
                 where: { id: user.id },
@@ -906,6 +911,44 @@ export async function saveMatch(matchData: MatchResult) {
         console.error('Error saving match to DB:', error);
         throw error;
     }
+}
+
+export async function getWinsAndLosses(userId: number) {
+    const matches = await prisma.match.findMany({
+        where: {
+            OR: [
+                { player1Id: userId },
+                { player2Id: userId }
+            ]
+        },
+        select: {
+            player1Id: true,
+            player2Id: true,
+            score1: true,
+            score2: true
+        }
+    });
+
+    let wins = 0;
+    let losses = 0;
+
+    matches.forEach(match => {
+        if (match.player1Id === userId) {
+            if (match.score1 > match.score2) {
+                wins++;
+            } else if (match.score1 < match.score2) {
+                losses++;
+            }
+        } else {
+            if (match.score2 > match.score1) {
+                wins++;
+            } else if (match.score2 < match.score1) {
+                losses++;
+            }
+        }
+    });
+
+    return { wins, losses };
 }
 
 

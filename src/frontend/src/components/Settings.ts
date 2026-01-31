@@ -75,7 +75,7 @@ export class Settings extends Component {
 
 		const body: any = {};
 		if (username) body.username = username;
-		if (oldpassword && newpassword && repeatednewpasswd) {
+		if (newpassword && repeatednewpasswd) {
 			body.password = { oldpassword, newpassword, repeatednewpasswd };
 		}
 

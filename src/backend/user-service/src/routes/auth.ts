@@ -21,7 +21,7 @@ const RegisterSchema = {
         properties: {
             username: { type: 'string', minLength: 3, maxLength: 16 },
             email: { type: 'string', format: 'email' },
-            password: { type: 'string', minLength: 3, maxLength: 16 }
+            password: { type: 'string', minLength: 8, maxLength: 16 }
         }
     }
 } as const;
@@ -49,7 +49,7 @@ const ResetPasswordSchema = {
         required: ['token', 'newpassword'],
         properties: {
             token: { type: 'string' },
-            newpassword: { type: 'string' }
+            newpassword: { type: 'string', minLength: 8, maxLength: 16 }
         }
     }
 } as const;
