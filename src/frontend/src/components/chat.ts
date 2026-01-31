@@ -116,6 +116,7 @@ export class chat extends Component {
     // For tournament system user, use the tournament notifications endpoint
     if (userId === chat.TOURNAMENT_SYSTEM_USER_ID) {
       await this.loadTournamentNotifications();
+      this.markMessagesAsSeen(userId); // Mark notifications as seen in DB
       this.scrollToBottom();
       return;
     }
@@ -322,7 +323,11 @@ export class chat extends Component {
           this.ensureTournamentSystemUser();
 
           // Convert notifications to messages
+          let unreadCount = 0;
           notifications.forEach((n: any) => {
+            if (!n.seen) {
+              unreadCount++;
+            }
             const message: Message = {
               id: n.id,
               text: `your next match in Tournament is ready!`,
@@ -337,22 +342,25 @@ export class chat extends Component {
               this.conversations[chat.TOURNAMENT_SYSTEM_USER_ID] = [];
             }
 
-            // Avoid duplicates
-            const exists = this.conversations[chat.TOURNAMENT_SYSTEM_USER_ID].some(m => m.id === n.id);
+            // Avoid duplicates by ID or matchLink
+            const exists = this.conversations[chat.TOURNAMENT_SYSTEM_USER_ID].some(m =>
+              m.id === n.id || (n.matchKey && m.matchLink === `/match/${n.matchKey}`)
+            );
             if (!exists) {
               this.conversations[chat.TOURNAMENT_SYSTEM_USER_ID].push(message);
               console.log('loadTournamentNotifications: Added message', message.id);
             }
           });
 
-          // Update last message for user list
+          // Update last message and unread count for user list
           const lastNotification = notifications[notifications.length - 1];
           if (lastNotification) {
             this.users[chat.TOURNAMENT_SYSTEM_USER_ID].lastMessage = `your next match in Tournament is ready!`;
             this.users[chat.TOURNAMENT_SYSTEM_USER_ID].lastMessageTime = new Date(lastNotification.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            this.users[chat.TOURNAMENT_SYSTEM_USER_ID].unread = unreadCount;
           }
 
-          console.log('Loaded tournament notifications:', notifications.length);
+          console.log('Loaded tournament notifications:', notifications.length, 'Unread:', unreadCount);
         } else {
           console.log('loadTournamentNotifications: No notifications found');
         }
@@ -480,6 +488,10 @@ export class chat extends Component {
 
   private subscribeToMatchNotifications() {
     console.log('chat.subscribeToMatchNotifications: Setting up subscription');
+
+    // Cleanup any existing subscription first to prevent leaks
+    this.unsubscribeFromMatchNotifications();
+
     // Ensure tournament system user exists
     this.ensureTournamentSystemUser();
 
@@ -490,6 +502,9 @@ export class chat extends Component {
 
       console.log('chat.subscribeToMatchNotifications: Calling handleMatchNotification');
       this.handleMatchNotification(notification);
+
+      // Clear the state so it doesn't trigger again on remount
+      matchNotificationState.set(null);
     });
   }
 
@@ -541,16 +556,34 @@ export class chat extends Component {
     if (!this.conversations[systemUserId]) {
       this.conversations[systemUserId] = [];
     }
+
+    // Deduplicate: check if this match notification already exists
+    const matchLink = `/match/${notification.matchKey}`;
+    const exists = this.conversations[systemUserId].some(m => m.matchLink === matchLink);
+    if (exists) {
+      console.log('handleMatchNotification: Notification already exists for match', notification.matchKey);
+      return;
+    }
+
     this.conversations[systemUserId].push(message);
 
     // Update last message for the user list - include tournament link info
     this.users[systemUserId].lastMessage = `your next match in Tournament is ready!`;
     this.users[systemUserId].lastMessageTime = message.time;
-    this.users[systemUserId].unread = (this.users[systemUserId].unread || 0) + 1;
 
     // If not currently viewing tournament chat, increment unread
     if (this.currentChatUserId !== systemUserId) {
+      this.users[systemUserId].unread = (this.users[systemUserId].unread || 0) + 1;
       console.log('New tournament notification - unread count:', this.users[systemUserId].unread);
+    } else {
+      // If chat is open, mark it as seen in DB after it's saved
+      const markAsSeen = async () => {
+        await this.saveTournamentNotification(notification);
+        await this.markMessagesAsSeen(systemUserId);
+        await this.loadTournamentNotifications(); // Reload to get IDs and seen status
+      };
+      markAsSeen();
+      return;
     }
 
     // Save notification to backend for persistence
@@ -717,6 +750,7 @@ export class chat extends Component {
       this.socket.disconnect();
     }
     this.unsubscribeFromOnlineStatus();
+    this.unsubscribeFromMatchNotifications();
     super.unmount();
   }
 
@@ -752,7 +786,7 @@ export class chat extends Component {
         // It's an external link (like Facebook), keep the full URL
         const safe = encodeURI(url);
         return `<a href="${safe}" target="_blank" rel="noopener noreferrer" class="text-neon-cyan underline">check this out!</a>`;
-        
+
       } catch (e) {
         return url;
       }

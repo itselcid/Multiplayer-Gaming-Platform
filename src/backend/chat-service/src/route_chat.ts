@@ -90,7 +90,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
 
     const { receiverId, content } = req.body;
 
-  const receiverIdNum   = Number(receiverId);
+    const receiverIdNum = Number(receiverId);
 
     if (!receiverIdNum || !content) {
       return reply.code(400).send({ error: 'Invalid data' });
@@ -149,7 +149,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
         seen: false
       }
     });
-    
+
     fastify.io.to(receiverId.toString()).emit('unread-count-update', {
       fromUserId: senderId,
       count: unreadCount
@@ -294,6 +294,22 @@ export async function chatRoutes(fastify: FastifyInstance) {
         create: { id: userId, username: `user_${userId}` }
       });
 
+      // Check if a notification for this match already exists for this user
+      const existingNotification = await prisma.message.findFirst({
+        where: {
+          receiverId: userId,
+          senderId: TOURNAMENT_SYSTEM_USER_ID,
+          content: {
+            contains: `"matchKey":"${matchKey}"`
+          }
+        }
+      });
+
+      if (existingNotification) {
+        console.log(`Notification for match ${matchKey} already exists for user ${userId}`);
+        return { success: true, message: existingNotification, duplicated: true };
+      }
+
       // Save notification as a message from system to user
       const message = await prisma.message.create({
         data: {
@@ -335,18 +351,20 @@ export async function chatRoutes(fastify: FastifyInstance) {
       });
 
       // Parse the JSON content
-      const parsedNotifications = notifications.map((n: { id: number; content: string; createdAt: Date }) => {
+      const parsedNotifications = notifications.map((n: { id: number; content: string; createdAt: Date; seen: boolean }) => {
         try {
           const data = JSON.parse(n.content);
           return {
             id: n.id,
             ...data,
+            seen: n.seen,
             createdAt: n.createdAt
           };
         } catch {
           return {
             id: n.id,
             text: n.content,
+            seen: n.seen,
             createdAt: n.createdAt
           };
         }
@@ -548,10 +566,10 @@ export async function chatRoutes(fastify: FastifyInstance) {
 
       // Group conversations by other user
       const conversationMap = new Map();
-      
+
       for (const msg of conversations) {
         const otherId = msg.senderId === me ? msg.receiverId : msg.senderId;
-        
+
         if (!conversationMap.has(otherId)) {
           // Get unread count for this conversation
           const unreadCount = await prisma.message.count({
@@ -582,7 +600,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
     if (!req.user?.id) {
       return reply.code(401).send({ error: 'Unauthorized' });
     }
-    
+
     try {
       const result = await prisma.message.updateMany({
         where: {
@@ -592,7 +610,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
           seen: false
         }
       });
-      
+
       return { success: true, updatedCount: result.count };
     } catch (error) {
       console.error('Error resetting messages:', error);
@@ -605,7 +623,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
     if (!req.user?.id) {
       return reply.code(401).send({ error: 'Unauthorized' });
     }
-    
+
     try {
       const messages = await prisma.message.findMany({
         where: {
@@ -621,7 +639,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
         orderBy: { createdAt: 'desc' },
         take: 10
       });
-      
+
       return { messages };
     } catch (error) {
       console.error('Error getting message status:', error);
