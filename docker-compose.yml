@@ -10,8 +10,6 @@ services:
       - rabbitmq-data:/var/lib/rabbitmq
     networks:
       - app-network
-    mem_limit: 256m
-    cpus: 0.5
     restart: unless-stopped
     logging:
       driver: gelf
@@ -25,7 +23,7 @@ services:
       dockerfile: infra/nginx/Dockerfile
     container_name: nginx
     ports:
-      - "443:443"
+      - "1443:443"
     depends_on:
       - user-service
       - game-service
@@ -35,8 +33,6 @@ services:
       - elk
     volumes:
       - nginx-logs:/var/log/nginx
-    mem_limit: 64m
-    cpus: 0.25
     restart: unless-stopped
     logging:
       driver: gelf
@@ -50,15 +46,12 @@ services:
     env_file:
       - .env
     volumes:
-      - user-data:/app/data
-      - user-uploads:/app/public/uploads
+      - user-public:/app/public
     networks:
       - app-network
       - monitoring
     depends_on:
       - rabbitmq
-    mem_limit: 256m
-    cpus: 0.5
     restart: unless-stopped
     logging:
       driver: gelf
@@ -75,8 +68,6 @@ services:
       - app-network
     depends_on:
       - rabbitmq
-    mem_limit: 180m
-    cpus: 0.5
     restart: unless-stopped
     logging:
       driver: gelf
@@ -93,8 +84,6 @@ services:
       - chat-data:/app/data
     networks:
       - app-network
-    mem_limit: 180m
-    cpus: 0.5
     restart: unless-stopped
     logging:
       driver: gelf
@@ -111,8 +100,6 @@ services:
       - app-network
     depends_on:
       - rabbitmq
-    mem_limit: 180m
-    cpus: 0.5
     restart: unless-stopped
     logging:
       driver: gelf
@@ -123,8 +110,7 @@ services:
 volumes:
   rabbitmq-data:
   nginx-logs:
-  user-data:
-  user-uploads:
+  user-public:
   chat-data:
 
 networks:

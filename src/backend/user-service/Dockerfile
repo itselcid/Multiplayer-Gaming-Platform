@@ -14,7 +14,8 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/openapi.yaml ./
-RUN mkdir -p public/uploads data
+COPY --from=builder /app/public ./public
+RUN mkdir -p public
 RUN npx prisma generate
 EXPOSE 3001
 CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]
