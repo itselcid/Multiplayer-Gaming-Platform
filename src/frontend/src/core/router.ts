@@ -109,11 +109,6 @@ export async function renderRoute() {
     return;
   }
 
-  // Guard Logic
-  // const currentPath = location.pathname.replace(/\/+$/, "") || "/";
-  // Define route types
-  // const protectedRoutes = ["/chat", "/friends", "/game?mode=remote"];
-
   // 1. Loading State
   if (authLoading.get()) {
     // Show a minimal loading state while we verify session
@@ -124,31 +119,6 @@ export async function renderRoute() {
     `;
     return;
   }
-
-  // 2. Auth Guards
-  // const isProtectedRoute = protectedRoutes.includes(currentPath);
-  // const guestOnlyRoutes = ["/login", "/register", "/forgot-password", "/reset-password", "/login/verify"];
-  // const isGuestOnlyRoute = guestOnlyRoutes.includes(currentPath);
-
-  // if (!user) {
-  //   // User is NOT logged in
-
-  //   // If trying to access a protected route, redirect to login
-  //   if (isProtectedRoute) {
-  //     console.log("🔒 Unauthorized access to protected route. Redirecting to /login");
-  //     navigate("/login");
-  //     return;
-  //   }
-  // } else {
-  //   // User IS logged in
-
-  //   // If trying to access guest-only routes (Login/Register), redirect to profile
-  //   if (isGuestOnlyRoute) {
-  //     console.log("👤 User already logged in. Redirecting to /profile");
-  //     navigate("/profile");
-  //     return;
-  //   }
-  // }
 
   const { view: View, params } = match;
 

@@ -1,5 +1,5 @@
 {
-  "address": "0x6940282a96c219378bb7c362d26e4d9cc75c9101",
+  "address": "0xe9cea81dac26c8b83bddea343b64eb89b42902a9",
   "abi": [
     {
       "inputs": [
@@ -113,6 +113,19 @@
           "type": "uint256"
         }
       ],
+      "name": "RoundForfeited",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "_id",
+          "type": "uint256"
+        }
+      ],
       "name": "RoundsCreated",
       "type": "event"
     },
@@ -147,11 +160,6 @@
         {
           "internalType": "uint256",
           "name": "_id",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_index",
           "type": "uint256"
         }
       ],
@@ -337,6 +345,21 @@
         {
           "components": [
             {
+              "internalType": "uint256",
+              "name": "id",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "round",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "matchNumber",
+              "type": "uint256"
+            },
+            {
               "components": [
                 {
                   "internalType": "address",
@@ -445,6 +468,21 @@
       "outputs": [
         {
           "components": [
+            {
+              "internalType": "uint256",
+              "name": "id",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "round",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "matchNumber",
+              "type": "uint256"
+            },
             {
               "components": [
                 {
@@ -794,19 +832,9 @@
     {
       "inputs": [
         {
-          "internalType": "uint256",
-          "name": "_id",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_round",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_matchId",
-          "type": "uint256"
+          "internalType": "bytes32",
+          "name": "_key",
+          "type": "bytes32"
         },
         {
           "internalType": "uint256",

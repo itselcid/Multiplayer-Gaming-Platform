@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/18 18:01:17 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/17 20:32:14 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/30 19:04:40 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,7 +61,6 @@ export const	username_availabality_checker = async (username: string): Promise<N
 	try {
 		const	usernameIsTaken = await isUsernameTaken(username);
 		if (usernameIsTaken) {
-			console.error('usrname taken');
 			const	metamask_error = new Metamask_error(
 				"Transaction failed",
 				"The transaction failed for the following reason: Username already taken",
@@ -231,7 +230,7 @@ export class CreateTournament extends Component {
 		const	accounts = await walletClientMetamask.getAddresses();
 		const	account = accounts[0];
 		let		allowance = await getAllowance(account);
-
+		// console.log('allowance',allowance);
 		if (allowance == 0n){
 			create_button.textContent = 'Approve';
 		} else {
@@ -245,14 +244,18 @@ export class CreateTournament extends Component {
 				return ;
 			}
 			if (!userState.get()) {
+				// console.log('user is not logged in, checking availability...');
 				if (await username_availabality_checker(username_input.value)){
+					// console.log('username not available');
 					create_button.disabled = false;
 					return;
 				}
+				// console.log('username available');
 			}
 			const	pend_button = new PendingButton();
 			try {
 				allowance = await getAllowance(account);	
+				console.log('getting allowance',allowance);
 				const	entryFeeValue:bigint = parseEther(entryFee_input.value);
 				
 				if (allowance < entryFeeValue) {
@@ -288,6 +291,7 @@ export class CreateTournament extends Component {
 					);
 					metamask_error.mount(root);
 				}
+				create_button.disabled = false;
 			}
 			create_button.disabled = false;
 		};

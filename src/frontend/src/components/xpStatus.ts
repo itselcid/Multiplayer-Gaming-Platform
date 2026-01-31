@@ -12,198 +12,78 @@
 
 import { Component } from "../core/Component";
 
+const LEVEL_THRESHOLDS = [
+	{ level: 1, minXP: 0, maxXP: 150 },
+	{ level: 2, minXP: 151, maxXP: 500 },
+	{ level: 3, minXP: 501, maxXP: 1000 },
+	{ level: 4, minXP: 1001, maxXP: Infinity },
+];
+
 interface XPTrackerProps {
-    currentXP: number;
-    maxXP: number;
-    level?: number;
+	totalXP: number;
 }
 
 export class XPTracker extends Component {
-    private currentXP: number;
-    private maxXP: number;
-    private level: number;
+	private totalXP: number;
 
-    constructor(props: XPTrackerProps) {
-        super('div', 'xp-tracker-container');
-        this.currentXP = props.currentXP;
-        this.maxXP = props.maxXP;
-        this.level = props.level ?? 12;
-    }
+	constructor(props: XPTrackerProps) {
+		super('div', 'xp-tracker-container');
+		this.totalXP = props.totalXP;
+	}
 
-    /**
-     * Update XP values and re-render
-     */
-    public update(props: Partial<XPTrackerProps>): void {
-        if (props.currentXP !== undefined) this.currentXP = props.currentXP;
-        if (props.maxXP !== undefined) this.maxXP = props.maxXP;
-        if (props.level !== undefined) this.level = props.level;
-        this.render();
-    }
+	/**
+	 * Get level info based on total XP
+	 */
+	private getLevelInfo() {
+		const xp = this.totalXP;
 
-    render(): void {
-        const percentage = (this.currentXP / this.maxXP) * 100;
-        const radius = 70;
-        const circumference = 2 * Math.PI * radius;
-        const strokeDashoffset = circumference - (circumference * percentage) / 100;
-        const xpToNextLevel = this.maxXP - this.currentXP;
+		// Find current level based on XP
+		for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
+			const threshold = LEVEL_THRESHOLDS[i];
+			if (xp >= threshold.minXP) {
+				const isMaxLevel = threshold.level === 4;
+				const currentLevelXP = xp - threshold.minXP;
+				const xpNeededForLevel = isMaxLevel ? currentLevelXP : (threshold.maxXP - threshold.minXP + 1);
+				const xpToNextLevel = isMaxLevel ? 0 : (threshold.maxXP - xp + 1);
+				const percentage = isMaxLevel ? 100 : (currentLevelXP / xpNeededForLevel) * 100;
 
-        this.el.innerHTML = `
-			<style>
-				.xp-tracker-container {
-					border-radius: 0.75rem;
-					overflow: hidden;
-					width: 100%;
-					background: linear-gradient(135deg, rgba(10, 22, 40, 0.9) 0%, rgba(30, 11, 61, 0.9) 100%);
-					border: 2px solid rgba(45, 215, 255, 0.3);
-					box-shadow: 0 0 20px rgba(45, 215, 255, 0.2);
-				}
+				return {
+					level: threshold.level,
+					currentLevelXP,
+					xpNeededForLevel,
+					xpToNextLevel,
+					percentage: Math.min(percentage, 100),
+					isMaxLevel,
+				};
+			}
+		}
 
-				.xp-tracker-inner {
-					padding: 1.5rem;
-				}
+		// Default to level 1
+		return {
+			level: 1,
+			currentLevelXP: xp,
+			xpNeededForLevel: 151,
+			xpToNextLevel: 151 - xp,
+			percentage: (xp / 151) * 100,
+			isMaxLevel: false,
+		};
+	}
 
-				.xp-tracker-header {
-					display: flex;
-					align-items: center;
-					justify-content: space-between;
-					margin-bottom: 1.25rem;
-				}
+	/**
+	 * Update XP values and re-render
+	 */
+	public update(props: Partial<XPTrackerProps>): void {
+		if (props.totalXP !== undefined) this.totalXP = props.totalXP;
+		this.render();
+	}
 
-				.xp-tracker-title-wrapper {
-					display: flex;
-					align-items: center;
-					gap: 0.5rem;
-				}
+	render(): void {
+		const levelInfo = this.getLevelInfo();
+		const radius = 70;
+		const circumference = 2 * Math.PI * radius;
+		const strokeDashoffset = circumference - (circumference * levelInfo.percentage) / 100;
 
-				.xp-tracker-icon {
-					width: 1.25rem;
-					height: 1.25rem;
-					color: #2dd7ff;
-					filter: drop-shadow(0 0 4px #2dd7ff);
-				}
-
-				.xp-tracker-title {
-					font-family: 'Audiowide', sans-serif;
-					font-size: 14px;
-					color: white;
-					margin: 0;
-				}
-
-				.xp-tracker-level-badge {
-					padding: 0.25rem 0.75rem;
-					border-radius: 0.25rem;
-					font-family: 'Audiowide', sans-serif;
-					font-size: 11px;
-					background: rgba(45, 215, 255, 0.2);
-					border: 1px solid rgba(45, 215, 255, 0.4);
-					color: #2dd7ff;
-					box-shadow: 0 0 10px rgba(45, 215, 255, 0.3);
-				}
-
-				.xp-tracker-content {
-					display: flex;
-					flex-direction: column;
-					align-items: center;
-				}
-
-				.xp-tracker-circle-wrapper {
-					position: relative;
-					width: 160px;
-					height: 160px;
-					margin-bottom: 1rem;
-				}
-
-				.xp-tracker-svg {
-					display: block;
-					width: 100%;
-					height: 100%;
-					transform: rotate(-90deg);
-				}
-
-				.xp-tracker-bg-circle {
-					stroke: rgba(45, 215, 255, 0.15);
-					stroke-width: 10;
-					fill: none;
-					stroke-linecap: round;
-				}
-
-				.xp-tracker-progress-circle {
-					stroke: url(#xpProgressGradient);
-					stroke-width: 10;
-					fill: none;
-					stroke-linecap: round;
-					transition: stroke-dashoffset 1s ease-out;
-					filter: drop-shadow(0px 0px 10px #3AD7FC);
-				}
-
-				.xp-tracker-center {
-					position: absolute;
-					inset: 0;
-					display: flex;
-					flex-direction: column;
-					align-items: center;
-					justify-content: center;
-				}
-
-				.xp-tracker-percentage {
-					font-family: 'Zen Dots', sans-serif;
-					font-size: 28px;
-					color: #2dd7ff;
-					margin-bottom: 0.25rem;
-					text-shadow: 0px 0px 20px rgba(45, 215, 255, 0.8);
-				}
-
-				.xp-tracker-xp-text {
-					font-family: 'Zen Dots', sans-serif;
-					font-size: 11px;
-					color: rgba(255, 255, 255, 0.5);
-				}
-
-				.xp-tracker-bar-wrapper {
-					width: 100%;
-				}
-
-				.xp-tracker-bar-container {
-					width: 100%;
-					height: 0.5rem;
-					border-radius: 9999px;
-					overflow: hidden;
-					position: relative;
-					background: rgba(10, 22, 40, 0.5);
-					border: 1px solid rgba(45, 215, 255, 0.2);
-					margin-bottom: 0.5rem;
-				}
-
-				.xp-tracker-bar-fill {
-					height: 100%;
-					transition: width 1s ease-out;
-					border-radius: 9999px;
-					position: absolute;
-					top: 0;
-					left: 0;
-					background: linear-gradient(90deg, #2dd7ff 0%, #b967ff 100%);
-					box-shadow: 0 0 10px rgba(45, 215, 255, 0.5);
-				}
-
-				.xp-tracker-footer {
-					display: flex;
-					align-items: center;
-					justify-content: space-between;
-				}
-
-				.xp-tracker-footer-label {
-					font-family: 'Zen Dots', sans-serif;
-					font-size: 9px;
-					color: rgba(255, 255, 255, 0.5);
-				}
-
-				.xp-tracker-footer-value {
-					font-family: 'Audiowide', sans-serif;
-					font-size: 10px;
-					color: #2dd7ff;
-				}
-			</style>
-
+		this.el.innerHTML = `
 			<div class="xp-tracker-inner">
 				<!-- Header -->
 				<div class="xp-tracker-header">
@@ -214,7 +94,7 @@ export class XPTracker extends Component {
 						<h3 class="xp-tracker-title">Level Progress</h3>
 					</div>
 					<div class="xp-tracker-level-badge">
-						LVL ${this.level}
+						LVL ${levelInfo.level}
 					</div>
 				</div>
 
@@ -252,10 +132,10 @@ export class XPTracker extends Component {
 						<!-- Center Content -->
 						<div class="xp-tracker-center">
 							<div class="xp-tracker-percentage">
-								${Math.round(percentage)}%
+								${Math.round(levelInfo.percentage)}%
 							</div>
 							<div class="xp-tracker-xp-text">
-								${this.currentXP} / ${this.maxXP}
+								${levelInfo.currentLevelXP} / ${levelInfo.xpNeededForLevel}
 							</div>
 						</div>
 					</div>
@@ -266,22 +146,22 @@ export class XPTracker extends Component {
 						<div class="xp-tracker-bar-container">
 							<div 
 								class="xp-tracker-bar-fill"
-								style="width: ${percentage}%;"
+								style="width: ${levelInfo.percentage}%;"
 							></div>
 						</div>
 
 						<!-- XP to Next Level -->
 						<div class="xp-tracker-footer">
 							<span class="xp-tracker-footer-label">
-								XP TO NEXT LEVEL
+								${levelInfo.isMaxLevel ? 'MAX LEVEL REACHED' : 'XP TO NEXT LEVEL'}
 							</span>
 							<span class="xp-tracker-footer-value">
-								${xpToNextLevel} XP
+								${levelInfo.isMaxLevel ? this.totalXP + ' XP TOTAL' : levelInfo.xpToNextLevel + ' XP'}
 							</span>
 						</div>
 					</div>
 				</div>
 			</div>
 		`;
-    }
+	}
 }

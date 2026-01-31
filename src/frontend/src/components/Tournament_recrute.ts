@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/21 15:12:27 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/17 00:52:15 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/30 21:05:13 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -100,8 +100,6 @@ class	Tournament_recrute_register_button extends Component {
 			button_text = `REGISTER NOW - ${formatNumber(formatEther(this._tournament.entryFee))} TRIZcoin`;
 		}
 
-		console.log('text: ', button_text);
-		
 		this.el.innerHTML = `
                   
                     <span class="flex items-center justify-center gap-3">
@@ -164,7 +162,12 @@ class Tournament_recrute_register extends Component {
 					register_button.el.hidden = false;
 				} else {
 					const state = userState.get();
-					await join_tournament(this._tournament, state && state.username !== undefined? state.username: username_input.value);
+					if (await join_tournament(this._tournament, state && state.username !== undefined? state.username: username_input.value)) {
+						pend_button.unmount();
+						register_button.render();
+						register_button.el.hidden = false;
+						return;
+					}
 					const	registered = new Tournament_recrute_registered(this._tournament);
 					registered.render();
 					this.el.innerHTML = registered.el.innerHTML;
@@ -175,7 +178,6 @@ class Tournament_recrute_register extends Component {
 					if (current_participants && current_progress && spots) {
 						current_participants.textContent = String(this._tournament.participants);
 						const percentage = String((Number(this._tournament.participants) / Number(this._tournament.maxParticipants)) * 100);
-						console.log(percentage, this._tournament.participants, this._tournament.maxParticipants, this._tournament.participants / this._tournament.maxParticipants);
 						current_progress.style.width = `${percentage}%`;
 						spots.textContent = String(this._tournament.maxParticipants - this._tournament.participants) + ' spots left';
 					}
@@ -185,7 +187,6 @@ class Tournament_recrute_register extends Component {
 				register_button.el.hidden = false;
 				const	root = document.getElementById('app');
 				if (root) {
-					// console.log(err);
 					const	metamask_error = new Metamask_error(
 						"Transaction failed",
 						"The transaction failed for the following reason: " + getRevertReason(err),

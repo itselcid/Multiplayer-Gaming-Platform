@@ -69,8 +69,8 @@ export const authController = {
         if (!username || !email || !password)
             throw createHttpError(400, 'username, email and password are required');
 
-        if (password.length < 4) // weaker password for development
-            throw createHttpError(400, 'password must be at least 4 characters long');
+        if (password.length < 8)
+            throw createHttpError(400, 'password must be at least 8 characters long');
 
         const newUser: CreateUserInput = {
             username,
@@ -143,9 +143,7 @@ export const authController = {
             await sendPasswordResetEmail(user.email, resetToken.token, user.username);
 
             return reply.send({
-                message: "Password reset email sent successfully",
-                // !!! ONLY FOR DEVELOPMENT Remove in production!
-                devToken: resetToken.token
+                message: "Password reset email sent successfully"
             })
         }
         return reply.send({
@@ -159,8 +157,8 @@ export const authController = {
         if (!token || !newpassword)
             throw createHttpError(400, 'token and newpassword are required');
 
-        if (newpassword.length < 4)   //! change to 8 in production
-            throw createHttpError(400, 'password must be at least 4 characters long');
+        if (newpassword.length < 8)
+            throw createHttpError(400, 'password must be at least 8 characters long');
 
         //find and validate token
         const resetToken = await findPasswordResetToken(token);
@@ -239,7 +237,6 @@ export const authController = {
                 if (user.twoFactor.method === 'email') {
                     code = await generateTwoFactorCode(user.id);
                     await send2faEmailCode(user.email, code);
-                    console.log('> > > code sent to email: ' + code);
                 }
 
                 return reply.redirect(`${env.FRONTEND_URL}/login/verify`, 303);
@@ -253,7 +250,6 @@ export const authController = {
             return reply.redirect(`${env.FRONTEND_URL}/profile`, 303);
 
         } catch (err: any) {
-            console.error('[GitHub OAuth error]:', err);
             if (err instanceof createHttpError.HttpError)
                 throw createHttpError(err.statusCode, err.message);
             throw createHttpError(500, 'Authentication failed');

@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/20 15:33:28 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/24 21:29:59 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/29 02:29:20 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -76,12 +76,64 @@ class	History_match extends Component {
 	}
 }
 
+class	History_forfeited_match extends Component {
+	private _match: Match;
+	private _round: bigint;
+
+	constructor(match: Match, round: bigint) {
+		super('div', 'group/history relative');
+		this._match = match;
+		this._round = round;
+	}
+
+	render(): void {
+		const match_round = get_round_name(this._round);
+		this.el.innerHTML = `
+			<div class="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/5 to-red-500/0 rounded-xl opacity-0 group-hover/history:opacity-100 transition-all"></div>
+			<div class="relative bg-slate-900/50 rounded-xl border border-red-700/50 p-4 hover:border-red-500/30 transition-all">
+				<div class="flex items-center justify-between">
+				<div class="flex items-center gap-5 flex-1">
+					<span class="px-4 py-2 bg-gradient-to-br from-slate-800/80 to-slate-700/80 rounded-lg text-cyan-300/80 text-xs font-bold min-w-[140px] text-center border border-slate-600/30">
+						${match_round}
+					</span>
+					<div class="flex items-center gap-5 flex-1">
+					<span class="text-slate-400 font-bold text-sm min-w-[120px] text-right opacity-60">
+						${this._match.player1.username}
+					</span>
+					<div class="flex items-center gap-3">
+						<span class="text-2xl font-black transition-all text-slate-700">
+						0
+						</span>
+						<span class="text-slate-500 font-black text-sm">:</span>
+						<span class="text-2xl font-black transition-all text-slate-700">
+						0
+						</span>
+					</div>
+					<span class="text-slate-400 font-bold text-sm min-w-[120px] opacity-60">
+						${this._match.player2.username}
+					</span>
+					</div>
+					<span class="px-3 py-1 bg-red-900/30 border border-red-500/40 rounded-lg text-red-400 text-xs font-bold">
+					FORFEITED
+					</span>
+				</div>
+				</div>
+			</div>
+		`;
+	}
+}
+
 export const render_tournament_matches_history = async (_tournament: Tournament, matches_list: HTMLElement) => {
 	for(let round = 1n; round !== _tournament.maxParticipants; round *= 2n) {
 		for (let index = 0n; index < round; index++) {
 			const match = await getMatch(_tournament.id, round, index);
 			if (match.status === 0)
 				continue;
+			if (match.player1Score === 0n && match.player2Score === 0n) {
+				const forfeited_match = new History_forfeited_match(match, round);
+				forfeited_match.mount(matches_list);
+				continue;
+			}
 			const history_match = new History_match(match, round);
 			history_match.mount(matches_list);
 		}
@@ -112,14 +164,6 @@ export class Tournament_matches_history extends Component {
 		const	matches_list = addElement('div', 'space-y-3', matches_history);
 		matches_list.id = 'tournament-match-histrory';
 
-		for(let round = 1n; round !== this._tournament.maxParticipants; round *= 2n) {
-			for (let index = 0n; index < round; index++) {
-				const match = await getMatch(this._tournament.id, round, index);
-				if (match.status === 0)
-					continue;
-				const history_match = new History_match(match, round);
-				history_match.mount(matches_list);
-			}
-		}
+		render_tournament_matches_history(this._tournament, matches_list);
 	}
 }

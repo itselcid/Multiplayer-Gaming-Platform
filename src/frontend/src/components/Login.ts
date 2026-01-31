@@ -14,16 +14,11 @@ export class Login extends Component {
 
     render() {
         this.el.innerHTML = `
-            <!-- Optimized Backdrop: Separated from container for better performance -->
-            <!-- Using will-change-opacity to hint the browser for layer promotion -->
             <div id="auth-backdrop" class="absolute inset-0 bg-black/60 backdrop-blur-sm opacity-0 transition-opacity duration-500 ease-out will-change-opacity"></div>
 
-            <!-- Login Box Container -->
-            <!-- Changed transition-all to transition-[opacity,transform] to act only on compositor-handled properties -->
             <div id="auth-content" class="relative z-10 w-[420px] rounded-xl overflow-hidden opacity-0 translate-y-10 scale-95 transition-[opacity,transform] duration-500 ease-out will-change-transform" 
                  style="background: linear-gradient(135deg, rgba(10, 22, 40, 0.85) 0%, rgba(30, 11, 61, 0.85) 100%); border: 2px solid #00d9ff; box-shadow: 0 0 30px rgba(0, 217, 255, 0.3), inset 0 0 30px rgba(0, 217, 255, 0.05);">
                 
-                <!-- Diagonal pattern overlay -->
                 <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(0, 217, 255, 0.1) 35px, rgba(0, 217, 255, 0.1) 70px);"></div>
 
                 <div class="relative z-10 px-10 py-8">

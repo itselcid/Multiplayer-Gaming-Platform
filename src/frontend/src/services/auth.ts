@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   auth.ts                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: oessaadi <oessaadi@student.42.fr>          +#+  +:+       +#+        */
+/*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/07 16:25:07 by laoubaid          #+#    #+#             */
-/*   Updated: 2026/01/08 17:18:45 by oessaadi         ###   ########.fr       */
+/*   Updated: 2026/01/30 20:51:38 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,42 +15,7 @@ import { userState } from "../core/appStore";
 // Use relative URL to go through nginx proxy
 const API_URL = '/api';
 
-// the User type based on backend response
-export interface User {
-    id: number;
-    username: string;
-    email: string;
-    avatar: string;
-    xp: number;
-    twoFactor?: {
-        method: string | null;
-        enabled?: boolean;
-    } | null;
-    achievements?: {
-        unlockedAt: Date;
-        achievement: {
-            id: number;
-            key: string;
-            name: string;
-            description: string;
-            icon: string;
-        };
-    }[];
-    createdAt: Date;
-    updatedAt: Date;
-}
-
-interface SignResponse {
-    message: string;
-    user: User;
-}
-
-interface LoginResponse {
-    message: string;
-    user?: User;
-    requires2FA?: boolean;
-    method?: 'email' | 'totp';
-}
+import type { User, LoginResponse, SignResponse } from "../types/user.types";
 
 // Custom error class for 2FA required
 export class TwoFactorRequiredError extends Error {
@@ -189,24 +154,23 @@ export class AuthService {
             return await this.login(username, password);
 
         } catch (error) {
-            // Handle network errors (server down, no internet, etc.)
+            // Handle network errors
             if (error instanceof Error) {
-                throw error;  // Re-throw our custom error messages
+                throw error;  // Re-throw custom error messages
             }
             throw new Error('Network error. Please check your connection.');
         }
     }
 
     static async getCurrentUser(): Promise<User | null> {
-
         try {
             const response = await fetch(`${API_URL}/users/me`, {
                 method: 'GET',
                 credentials: 'include',  // Allows cookies to be sent/received
             })
 
-            if (response.status === 401) {
-                return null;
+            if (response.status === 403 || response.status === 401) {
+                return await this.refreshSession();
             }
 
             if (!response.ok) {
@@ -215,7 +179,7 @@ export class AuthService {
 
             const data = await response.json();
 
-            userState.set(data.user);        // THE RIGHT PLACE ???
+            userState.set(data.user);
             return data.user;
 
         } catch (error) {
@@ -229,18 +193,43 @@ export class AuthService {
         try {
             const response = await fetch(`${API_URL}/auth/logout`, {
                 method: 'POST',
-                credentials: 'include',  // Allows cookies to be sent/received
+                credentials: 'include',
             })
             const data = await response.json();
 
-            userState.set(null);        // THE RIGHT PLACE ???
+            userState.set(null);
             return data.message;
 
         } catch (error) {
             console.error('logout failed! error:', error);
-            userState.set(null);        // THE RIGHT PLACE ???
+            userState.set(null);
             return null;
         }
     }
 
+    static async refreshSession(): Promise<User | null> {
+        try {
+            const response = await fetch(`${API_URL}/auth/refresh`, {
+                method: 'POST',
+                credentials: 'include',
+            })
+
+            if (response.status === 401) {
+                throw new Error('failed to refresh session');
+            }
+
+            if (!response.ok) {
+                throw new Error('failed to refresh session');
+            }
+
+            const data = await response.json();
+
+            userState.set(data.user);
+            return data.user;
+
+        } catch (error) {
+            console.error('Refresh session error:', error);
+            return null;
+        }
+    }
 }

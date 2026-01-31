@@ -1,6 +1,6 @@
 import { addElement, Component } from "../core/Component";
 
-export class TestBG extends Component {
+export class Particels extends Component {
 	constructor() {
 		super('div', 'fixed inset-0 z-0');
 	}

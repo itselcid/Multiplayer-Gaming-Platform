@@ -1,15 +1,16 @@
-// ************************************************************************** //
-//                                                                            //
-//                                                        :::      ::::::::   //
-//   Success_wallet_connection.ts                       :+:      :+:    :+:   //
-//                                                    +:+ +:+         +:+     //
-//   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        //
-//                                                +#+#+#+#+#+   +#+           //
-//   Created: 2025/11/09 01:35:01 by kez-zoub          #+#    #+#             //
-//   Updated: 2025/11/11 02:33:51 by kez-zoub         ###   ########.fr       //
-//                                                                            //
-// ************************************************************************** //
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Success_wallet_connection.ts                       :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/11/09 01:35:01 by kez-zoub          #+#    #+#             */
+/*   Updated: 2026/01/31 16:33:11 by kez-zoub         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
+import { web3auth } from "../core/appStore";
 import { addElement, Component } from "../core/Component";
 
 export class Success_wallet_connection extends Component {
@@ -17,7 +18,7 @@ export class Success_wallet_connection extends Component {
 		super('div', 'fixed inset-0 z-10 bg-black/40 backdrop-blur-sm overflow-y-auto overscroll-y-auto no-scrollbar flex justify-center items-start');
 	}
 
-	render(): void {
+	async render(): Promise<void> {
 		const	container = addElement('div', 'max-w-lg w-full relative z-10 my-8', this.el);
 		container.style = 'animation: fadeIn 0.5s ease-out;';
 		const	container2 = addElement('div', 'relative', container);
@@ -52,6 +53,7 @@ export class Success_wallet_connection extends Component {
 									  	</p>
 									  </div>
 									  `);
+		const	wallet_address = await web3auth.getEthAddress();
 		container3.insertAdjacentHTML('beforeend', `
 										<div class="bg-gradient-to-br from-green-950/30 to-emerald-950/30 rounded-xl p-6 border border-green-500/30 mb-8" style="animation: slide-up 0.6s ease-out 0.2s both;">
 									  		<div class="flex items-center justify-between mb-4">
@@ -65,7 +67,7 @@ export class Success_wallet_connection extends Component {
 									  		</div>
 										</div>
 										<div class="bg-slate-900/70 rounded-lg px-4 py-3.5 border border-slate-700/50">
-									  	<p class="text-green-400 font-mono text-sm tracking-wide">0X26A2BF197820C79150DDE3DB793C23BF71A973CF</p>
+									  	<p class="text-green-400 font-mono text-sm tracking-wide">${wallet_address.toUpperCase()}</p>
 										</div>
 									</div>
 		`);

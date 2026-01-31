@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/14 21:57:12 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/12 03:58:34 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/30 23:34:49 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -129,7 +129,6 @@ export class TournamentsDisplay extends Component {
 				};
 			});
 		
-		// console.log(typeof(tournaments));
 	}
 }
 
@@ -169,47 +168,47 @@ export class TournamentsView extends Component {
 		lazy_load(trigger);
 	}
 	
-	const	live_feed = addElement('div', 'bg-gradient-to-r from-space-blue to-space-dark border border-neon-cyan/30 rounded-xl p-8', this.el);
-	live_feed.insertAdjacentHTML('beforeend', `
-		<h2 class="text-2xl font-bold mb-6 text-neon-cyan">
-		  Live Tournament Feed
-		</h2>
-		<div class="space-y-4">
-		  <div class="flex items-center justify-between p-4 bg-space-dark/50 rounded-lg border border-neon-purple/20">
-			<div class="flex items-center space-x-3">
-			  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-check w-5 h-5 text-neon-cyan" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path d="m9 12 2 2 4-4"></path></svg>
-			  <span class="text-gray-300">
-				Player
-				<span class="text-neon-gold font-bold">CosmicAce</span> won
-				Galactic Championship
-			  </span>
-			</div>
-			<span class="text-sm text-gray-500">2 min ago</span>
-		  </div>
-		  <div class="flex items-center justify-between p-4 bg-space-dark/50 rounded-lg border border-neon-purple/20">
-			<div class="flex items-center space-x-3">
-			  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-check w-5 h-5 text-neon-cyan" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path d="m9 12 2 2 4-4"></path></svg>
-			  <span class="text-gray-300">
-				Score verified on chain:
-				<span class="text-neon-cyan font-mono">0xf8a3...b2e1</span>
-			  </span>
-			</div>
-			<span class="text-sm text-gray-500">5 min ago</span>
-		  </div>
-		  <div class="flex items-center justify-between p-4 bg-space-dark/50 rounded-lg border border-neon-purple/20">
-			<div class="flex items-center space-x-3">
-			  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-check w-5 h-5 text-neon-cyan" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path d="m9 12 2 2 4-4"></path></svg>
-			  <span class="text-gray-300">
-				New tournament
-				<span class="text-neon-purple font-bold">
-				  Quantum Arena
-				</span>
-				starting soon
-			  </span>
-			</div>
-			<span class="text-sm text-gray-500">8 min ago</span>
-		  </div>
-		`);
+	// const	live_feed = addElement('div', 'bg-gradient-to-r from-space-blue to-space-dark border border-neon-cyan/30 rounded-xl p-8', this.el);
+	// live_feed.insertAdjacentHTML('beforeend', `
+	// 	<h2 class="text-2xl font-bold mb-6 text-neon-cyan">
+	// 	  Live Tournament Feed
+	// 	</h2>
+	// 	<div class="space-y-4">
+	// 	  <div class="flex items-center justify-between p-4 bg-space-dark/50 rounded-lg border border-neon-purple/20">
+	// 		<div class="flex items-center space-x-3">
+	// 		  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-check w-5 h-5 text-neon-cyan" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path d="m9 12 2 2 4-4"></path></svg>
+	// 		  <span class="text-gray-300">
+	// 			Player
+	// 			<span class="text-neon-gold font-bold">CosmicAce</span> won
+	// 			Galactic Championship
+	// 		  </span>
+	// 		</div>
+	// 		<span class="text-sm text-gray-500">2 min ago</span>
+	// 	  </div>
+	// 	  <div class="flex items-center justify-between p-4 bg-space-dark/50 rounded-lg border border-neon-purple/20">
+	// 		<div class="flex items-center space-x-3">
+	// 		  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-check w-5 h-5 text-neon-cyan" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path d="m9 12 2 2 4-4"></path></svg>
+	// 		  <span class="text-gray-300">
+	// 			Score verified on chain:
+	// 			<span class="text-neon-cyan font-mono">0xf8a3...b2e1</span>
+	// 		  </span>
+	// 		</div>
+	// 		<span class="text-sm text-gray-500">5 min ago</span>
+	// 	  </div>
+	// 	  <div class="flex items-center justify-between p-4 bg-space-dark/50 rounded-lg border border-neon-purple/20">
+	// 		<div class="flex items-center space-x-3">
+	// 		  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-check w-5 h-5 text-neon-cyan" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path d="m9 12 2 2 4-4"></path></svg>
+	// 		  <span class="text-gray-300">
+	// 			New tournament
+	// 			<span class="text-neon-purple font-bold">
+	// 			  Quantum Arena
+	// 			</span>
+	// 			starting soon
+	// 		  </span>
+	// 		</div>
+	// 		<span class="text-sm text-gray-500">8 min ago</span>
+	// 	  </div>
+	// 	`);
 	}
 	
 }

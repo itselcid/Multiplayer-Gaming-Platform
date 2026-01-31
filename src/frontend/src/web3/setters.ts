@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/19 02:15:08 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/01 23:23:01 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/27 02:00:16 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,15 +73,23 @@ export const create_tournament = async (title: string, entryFee: bigint, partici
 	});
 }
 
-export const join_tournament = async (_tournament: Tournament, _username: string) : Promise<void> => {
+export const join_tournament = async (_tournament: Tournament, _username: string) : Promise<number> => {
 	if (!walletClientMetamask)
-		return;
+		return (1);
 	
 	const	accounts = await walletClientMetamask.getAddresses();
 	const	account = accounts[0];
 	if ((await getBalance(account)) < _tournament.entryFee){
-		console.log('not enough funds');
-		return;
+		const	root = document.getElementById('app');
+		if (root) {
+			const	metamask_error = new Metamask_error(
+				"Not Enough TRIZcoins",
+				"Oops! You don’t have enough TRIZcoins to join. Get some more and come back stronger!",
+				false
+			);
+			metamask_error.mount(root);
+		}
+		return (1);
 	}
 	// const	allowance = await getAllowance(account);
 	// if (allowance < _tournament.entryFee) {
@@ -115,6 +123,7 @@ export const join_tournament = async (_tournament: Tournament, _username: string
 	await publicClient.waitForTransactionReceipt({
 		hash: tx
 	});
+	return (0);
 }
 
 export const claim_refunds = async (_id:bigint, _index:bigint) => {
@@ -138,7 +147,7 @@ export const claim_refunds = async (_id:bigint, _index:bigint) => {
 	});
 }
 
-export const claim_prize = async (_id:bigint, _index:bigint) => {
+export const claim_prize = async (_id:bigint) => {
 	if (!walletClientMetamask)
 		return;
 	const	accounts = await walletClientMetamask.getAddresses();
@@ -147,7 +156,7 @@ export const claim_prize = async (_id:bigint, _index:bigint) => {
 		address: TournamentFactoryAddress,
 		abi: TournamentFactoryAbi,
 		functionName: 'claimPrize',
-		args: [_id, _index],
+		args: [_id],
 		account: account			
 	});
 

@@ -56,7 +56,6 @@ export const twoFactorController = {
 
         return reply.send({
             message: 'Verification code sent to your email',
-            devCode: code,   // devonly for testing
             expiresIn: '10 minutes'
         });
     },

@@ -6,7 +6,7 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/15 16:43:52 by kez-zoub          #+#    #+#             */
-/*   Updated: 2025/12/25 10:59:27 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/27 01:55:55 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,7 +29,6 @@ export class MatchView extends Component {
 			// not found
 			return ;
 		}
-		// console.log(match);
 		this.el.innerHTML = `
 
 		<div class="relative w-full max-w-2xl">
@@ -151,7 +150,6 @@ export class MatchView extends Component {
 		const	submit_button = this.el.querySelector('#submit') as HTMLButtonElement;
 		if (param1 && param2 && param3 && player1score && player2score && submit_button) {
 			submit_button.onclick = async () => {
-				console.log('param1: ', param1.value, ', param2: ', param2.value, ', param3: ', param3.value, ', player 1: ', player1score.value, ', player 2: ', player2score.value);
 				await tobedeleted_submit_match_score(
 					BigInt(param1.value), 
 					BigInt(param2.value), 
