@@ -6,12 +6,12 @@
 /*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/03 15:31:14 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/30 18:09:02 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/01/31 17:30:14 by kez-zoub         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 import { Disconnect_wallet } from "../components/Disconnect_wallet";
-import { Navbar_connect_wallet, Navbar_connected_wallet } from "../components/Navbar";
+import { Navbar_connect_wallet, Navbar_connected_wallet, Navbar_user_logged, Navbar_user_logging } from "../components/Navbar";
 import { Sign_in } from "../components/sign_in";
 import { Tournament_card } from "../components/Tournament_card";
 import { render_claim_prize_button } from "../components/Tournament_claim_prize";
@@ -88,8 +88,8 @@ export const login_state = new State(
 );
 export const web3_login_sub = () => {
 	login_state.subscribe(() => {
-		const auth = document.getElementById('auth');
-		const authMobile = document.getElementById('authMobile');
+		const auth = document.getElementById('auth-connect');
+		const authMobile = document.getElementById('authMobile-connect');
 		// console.log(authMobile)
 		const disconnect_container = document.getElementById('disconnect_container');
 		if (!auth || !authMobile) {
@@ -151,15 +151,34 @@ export async function initAuth() {
 export const user_state_sub = () => {
 	userState.subscribe((user) => {
 		// When user state changes, update the UI
+		const auth = document.getElementById('auth-login');
+		const authMobile = document.getElementById('authMobile-login');
+
 		if (user) {
-			console.log('User logged in:', user.username);
+			// console.log('User logged in:', user.username);
 			socketService.connect();
 			// TODO: Update navbar to show user avatar/username
+			const logged_button = new Navbar_user_logged();
+			const logged_mobile_button = new Navbar_user_logged();
+			if (auth && authMobile) {
+				auth.innerHTML = '';
+				authMobile.innerHTML = '';
+				logged_button.mount(auth);
+				logged_mobile_button.mount(authMobile);
+			}
 			// TODO: Show logout button
 		} else {
 			console.log('User logged out');
 			socketService.disconnect();
 			// TODO: Update navbar to show login button
+			const login_button = new Navbar_user_logging();
+			const login_mobile_button = new Navbar_user_logging();
+			if (auth && authMobile) {
+				auth.innerHTML = '';
+				authMobile.innerHTML = '';
+				login_button.mount(auth);
+				login_mobile_button.mount(authMobile);
+			}
 		}
 	});
 }

@@ -25,6 +25,9 @@ contract TournamentFactory is Ownable {
     }
 
     struct Match {
+        uint id;
+        uint round;
+        uint matchNumber;
         Player player1;
         uint player1Score;
         Player player2;
@@ -56,7 +59,6 @@ contract TournamentFactory is Ownable {
         return (keccak256(abi.encodePacked(tournamentId, round, matchNumber)));
     }
 
-    // TODO: review if round isn't needed
     function getPlayerKey(
         uint tournamentId,
         uint round,
@@ -78,28 +80,23 @@ contract TournamentFactory is Ownable {
         uint _startTime,
         string memory _username
     ) external {
-        // 1. Title length: 3–18 characters
         uint titleLength = bytes(_title).length;
-        require(titleLength >= 3 && titleLength <= 18, "Title length invalid");
+        require(titleLength >= 3 && titleLength <= 16, "Title length invalid");
 
-        // 2. Username length: 3–18 characters
         uint usernameLength = bytes(_username).length;
         require(
-            usernameLength >= 3 && usernameLength <= 18,
+            usernameLength >= 3 && usernameLength <= 16,
             "Username length invalid"
         );
 
-        // 3. Entry fee must be positive
         require(_entryFee > 0, "Entry fee must be > 0");
 
-        // 4. Max participants must be a power of two (2, 4, 8, 16, ...)
         require(
             _maxParticipants > 1 &&
                 (_maxParticipants & (_maxParticipants - 1)) == 0,
             "Max participants must be power of 2"
         );
 
-        // 5. Start time must be in the future
         require(
             _startTime > block.timestamp,
             "Start time must be in the future"
@@ -177,7 +174,7 @@ contract TournamentFactory is Ownable {
         require(t.participants < t.maxParticipants, "tournament is full");
         uint usernameLength = bytes(_username).length;
         require(
-            usernameLength >= 3 && usernameLength <= 18,
+            usernameLength >= 3 && usernameLength <= 16,
             "Username length invalid"
         );
         require(
@@ -297,6 +294,9 @@ contract TournamentFactory is Ownable {
         Player memory p2
     ) public onlyOwner {
         Match memory tmp_match = Match({
+            id: _id,
+            round: _round,
+            matchNumber: _matchId,
             player1: p1,
             player1Score: 0,
             player2: p2,
@@ -310,13 +310,11 @@ contract TournamentFactory is Ownable {
     event MatchFinished(uint _id, uint _round, uint _matchId);
 
     function submitMatchScore(
-        uint _id,
-        uint _round,
-        uint _matchId,
+        bytes32 _key,
         uint _score_1,
         uint _score_2
     ) external onlyOwner {
-        Match storage the_match = matches[getMatchKey(_id, _round, _matchId)];
+        Match storage the_match = matches[_key];
         require(the_match.status != Status.Finished, "Match already finished");
         the_match.player1Score = _score_1;
         the_match.player2Score = _score_2;
@@ -325,9 +323,19 @@ contract TournamentFactory is Ownable {
         if (_score_1 > _score_2) winner = the_match.player1;
         else if (_score_1 < _score_2) winner = the_match.player2;
         if (_score_1 != _score_2) {
-            players[getPlayerKey(_id, _round / 2, _matchId)] = winner;
+            players[
+                getPlayerKey(
+                    the_match.id,
+                    the_match.round / 2,
+                    the_match.matchNumber
+                )
+            ] = winner;
         }
-        emit MatchFinished(_id, _round, _matchId);
+        emit MatchFinished(
+            the_match.id,
+            the_match.round,
+            the_match.matchNumber
+        );
     }
 
     function getMatch(

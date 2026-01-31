@@ -63,7 +63,7 @@ const waitForTxSafe = async (hash: `0x${string}`, retries = 20, delayMs = 3000) 
 	return (null);
 }
 
-const transact = async (_functionName: string, _args: unknown[]): Promise<void> => {
+export const transact = async (_functionName: string, _args: unknown[]): Promise<void> => {
 	if (processing) {
 		setTimeout(async () => { await transact(_functionName, _args) }, 1000);
 		return;
