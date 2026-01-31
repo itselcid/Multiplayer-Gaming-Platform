@@ -2,9 +2,12 @@ services:
   prometheus:
     image: prom/prometheus
     container_name: prometheus
-    command: #prometheus works with cli not env like grafana
+    env_file:
+      - ../../.env
+    command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
       - '--web.external-url=http://localhost:9090/'
       - '--web.route-prefix=/'
     ports:
@@ -14,19 +17,35 @@ services:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - ./prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml
     networks:
-      - monitoring  
+      - monitoring
     restart: unless-stopped
     mem_limit: 512m
     cpus: 1.0
-  
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager-data:/alertmanager
+    networks:
+      - monitoring
+    restart: unless-stopped
+    mem_limit: 128m
+    cpus: 0.5
+
   grafana:
     image: grafana/grafana
     container_name: grafana
+    env_file:
+      - ../../.env
     ports:
       - "3001:3000"
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin123}
     volumes:
       - grafana-data:/var/lib/grafana
       - ./grafana/datasources:/etc/grafana/provisioning/datasources
@@ -35,21 +54,21 @@ services:
     depends_on:
       - prometheus
     networks:
-      - monitoring  
+      - monitoring
     restart: unless-stopped
     mem_limit: 512m
     cpus: 1.0
-  
+
   node_exporter:
     image: prom/node-exporter:latest
     container_name: node_exporter
-    command: 
+    command:
       - --path.rootfs=/host
     pid: host
     volumes:
       - /:/host:ro
     networks:
-      - monitoring  
+      - monitoring
     restart: unless-stopped
     mem_limit: 128m
     cpus: 0.5
@@ -70,31 +89,12 @@ services:
     mem_limit: 256m
     cpus: 0.5
 
-
-  portainer:
-    image: portainer/portainer-ce:latest
-    container_name: portainer
-    ports:
-      - "9000:9000"
-      - "9443:9443"
-    volumes:
-      - /:/rootfs:ro
-      - /var/run:/var/run:ro
-      - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
-    ports:
-      - "8080:8080"
-    networks:
-      - monitoring
-    restart: unless-stopped
-    mem_limit: 256m
-    cpus: 0.5
-
-
 volumes:
   grafana-data:
-    driver: local 
+    driver: local
   prometheus-data:
+    driver: local
+  alertmanager-data:
     driver: local
 
 networks:

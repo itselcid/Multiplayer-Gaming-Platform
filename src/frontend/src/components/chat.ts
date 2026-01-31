@@ -175,7 +175,7 @@ export class chat extends Component {
         this.users[friend.id] = {
           id: friend.id,
           name: friend.username,  // <-- CHANGE 'username' to 'name' for chat
-          avatar: friend.avatar || '👤',
+          avatar: friend.avatar || '',
           status: 'Offline',  // Default to Offline, actual status comes from socket/API
           lastSeen: '',  // Empty - will show last message if exists
           unread: 0,
@@ -220,7 +220,7 @@ export class chat extends Component {
         },
         body: JSON.stringify({
           receiverId: friendId,
-          content: `🎮 Game Invite\nJoin me in Galactik Pingpong! Click here to play: ${url}\n🚨after 10min of now this link will no longer be available`
+          content: `Game Invite\nJoin me in Galactik Pingpong! Click here to play: ${url}\nAfter 10min of now this link will no longer be available`
         }),
         credentials: 'include'
       });
@@ -506,7 +506,7 @@ export class chat extends Component {
     if (!this.users[systemUserId]) {
       this.users[systemUserId] = {
         id: systemUserId,
-        name: 'Tournament 🏆',
+        name: 'Tournament',
         avatar: '/logo.png',
         status: 'Online',
         lastSeen: 'System',
@@ -763,7 +763,7 @@ export class chat extends Component {
     if (avatar && (avatar.startsWith('/') || avatar.startsWith('http'))) {
       return `<img src="${avatar}" alt="avatar" class="${size} rounded-full object-cover" />`;
     }
-    return `<span class="text-lg">${avatar || '👤'}</span>`;
+    return `<span class="text-lg">${avatar || ''}</span>`;
   }
 
   renderUsersList() {
@@ -894,7 +894,7 @@ export class chat extends Component {
         <div class="flex justify-center my-4">
           <div class="max-w-sm w-full bg-gradient-to-r from-neon-purple/20 to-neon-cyan/20 border border-neon-cyan/30 rounded-xl p-4 shadow-lg">
             <div class="text-center">
-              <p class="text-2xl mb-2">🏆</p>
+              <p class="text-2xl mb-2"></p>
               <h3 class="text-lg font-bold text-neon-cyan mb-2">Tournament Notifications</h3>
               <p class="text-sm text-gray-300 mb-3">When your tournament match starts, you'll receive a notification here with a link to view your tournament.</p>
               <p class="text-xs text-gray-500">Join a tournament to get started!</p>
@@ -946,15 +946,15 @@ export class chat extends Component {
       container.innerHTML = `
         <div class="absolute right-0 top-2 bg-dark/60 border border-neon-cyan/20 shadow-xl rounded-xl py-2 z-50 w-40">
             <button class="menu-action-play w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-neon-cyan/10 hover:text-neon-cyan flex items-center gap-2 transition-colors" data-user-id="${userId}">
-                <span>🎮</span> Play Game
+                <span></span> Play Game
             </button>
             ${isBlocked ? `
               <button class="menu-action-unblock w-full text-left px-4 py-2 text-sm text-green-400 hover:bg-green-500/10 flex items-center gap-2 transition-colors" data-user-id="${userId}">
-                  <span>✅</span> Unblock User
+                  <span></span> Unblock User
               </button>
             ` : `
               <button class="menu-action-block w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors" data-user-id="${userId}">
-                  <span>🚫</span> Block User
+                  <span></span> Block User
               </button>
             `}
         </div>
@@ -1248,7 +1248,7 @@ export class chat extends Component {
         content: content
       });
 
-      console.log('✅ Socket emit called');
+      console.log('Socket emit called');
 
     } else {
       console.error('❌ Socket is NOT connected! Cannot send via WebSocket.');
@@ -1309,7 +1309,7 @@ export class chat extends Component {
 
       if (response.ok) {
         const message = await response.json();
-        console.log('✅ Message sent via HTTP:', message);
+        console.log('Message sent via HTTP:', message);
 
         // Update the optimistic message with real data
         //this.updateOptimisticMessage(message);

@@ -109,7 +109,7 @@ export class ProfileView extends Component {
 
 		this.el.insertAdjacentHTML('beforeend', `
 								<div class="mb-12 flex items-center justify-between">
-								   <h1 class="text-5xl font-bold mb-4 pb-2 bg-gradient-to-r from-neon-cyan to-neon-purple bg-clip-text text-transparent">
+								   <h1 class="text-5xl font-bold mb-4 pb-2 text-ctex">
 								   Player Profile
 								   </h1>
 								   <div id="profile-settings-container"></div>
@@ -142,7 +142,7 @@ export class ProfileView extends Component {
 			// Guest user - show creative call-to-action instead of achievements/match history
 			profile_achievement.insertAdjacentHTML('beforeend', `
 				<div class="bg-gradient-to-br from-space-blue to-space-dark border border-neon-purple/30 rounded-xl p-6 text-center">
-					<div class="text-6xl mb-4">🎮</div>
+					<div class="text-6xl mb-4"></div>
 					<h3 class="text-xl font-bold text-neon-purple mb-2">Ready to Play?</h3>
 					<p class="text-gray-400 text-sm">Log in to track your achievements!</p>
 				</div>
@@ -153,21 +153,21 @@ export class ProfileView extends Component {
 				<div class="bg-gradient-to-br from-space-blue to-space-dark border border-neon-cyan/30 rounded-xl p-8 h-full flex flex-col items-center justify-center text-center">
 					<div class="relative mb-8">
 						<div class="w-32 h-32 rounded-full bg-gradient-to-br from-neon-cyan/20 to-neon-purple/20 flex items-center justify-center animate-pulse">
-							<span class="text-7xl">🏓</span>
+							<span class="text-7xl"></span>
 						</div>
 						<div class="absolute -top-2 -right-2 w-8 h-8 bg-neon-gold rounded-full flex items-center justify-center text-lg animate-bounce">
-							✨
-						</div>
+
+							</div>
 					</div>
-					<h2 class="text-3xl font-bold mb-4 bg-gradient-to-r from-neon-cyan to-neon-purple bg-clip-text text-transparent">
+					<h2 class="text-3xl font-bold mb-4 text-ctex">
 						Join the Arena
 					</h2>
 					<p class="text-gray-400 mb-8 max-w-md">
 						Create an account to compete against players worldwide, unlock achievements, and climb the leaderboards!
 					</p>
 					<div class="flex flex-wrap gap-4 justify-center">
-						<a href="/register" class="px-8 py-3 bg-gradient-to-r from-neon-cyan to-neon-purple rounded-lg font-bold text-white hover:shadow-lg hover:shadow-neon-cyan/30 transition-all transform hover:scale-105">
-							🚀 Get Started
+						<a href="/register" class="px-8 py-3 bg-ctex rounded-lg font-bold text-white hover:shadow-lg hover:shadow-neon-cyan/30 transition-all transform hover:scale-105">
+							Get Started
 						</a>
 						<a href="/login" class="px-8 py-3 bg-space-dark border border-neon-cyan/50 rounded-lg font-bold text-neon-cyan hover:border-neon-cyan hover:bg-neon-cyan/10 transition-all">
 							Sign In
@@ -175,13 +175,13 @@ export class ProfileView extends Component {
 					</div>
 					<div class="mt-8 flex items-center gap-8 text-gray-500 text-sm">
 						<div class="flex items-center gap-2">
-							<span class="text-neon-cyan">🏆</span> Earn Trophies
+							<span class="text-neon-cyan"></span> Earn Trophies
 						</div>
 						<div class="flex items-center gap-2">
-							<span class="text-neon-purple">⚡</span> Real-time Matches
+							<span class="text-neon-purple"></span> Real-time Matches
 						</div>
 						<div class="flex items-center gap-2">
-							<span class="text-neon-gold">🔥</span> Streak Rewards
+							<span class="text-neon-gold"></span> Streak Rewards
 						</div>
 					</div>
 				</div>

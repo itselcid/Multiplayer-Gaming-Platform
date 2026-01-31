@@ -43,7 +43,7 @@ export class ConnectWallet extends Component {
 				<h2 class="text-3xl text-center font-bold mb-4 text-neon-cyan">Connect Your Wallet</h2>
 				<p class="text-gray-300 mb-8 text-lg text-center">Connect your Metamask wallet to verify your identity and participate in blockchain-verified tournaments</p>
 				`);
-		const	connect_button = addElement('button', 'w-full m-4 px-8 py-4 rounded-lg bg-gradient-to-r from-neon-cyan to-neon-purple text-white font-bold text-lg hover:shadow-2xl hover:shadow-neon-cyan/50 transition-all transform hover:scale-105', content);
+		const	connect_button = addElement('button', 'w-full m-4 px-8 py-4 rounded-lg bg-ctex text-white font-bold text-lg hover:shadow-2xl hover:shadow-neon-cyan/50 transition-all transform hover:scale-105', content);
 		connect_button.textContent = 'Connect MetaMask';
 		connect_button.onclick = async () => {
 			await web3auth.login();

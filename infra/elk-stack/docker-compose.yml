@@ -4,63 +4,43 @@ services:
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.17.15
     container_name: elasticsearch
+    env_file:
+      - ../../.env
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=true
-      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
-      - "ES_JAVA_OPTS=${ES_JAVA_OPTS}"
     ports:
       - "9200:9200"
     volumes:
       - elasticsearch-data:/usr/share/elasticsearch/data
     networks:
-      - logging 
+      - logging
     mem_limit: 2g
     cpus: 2.0
 
   logstash:
     image: docker.elastic.co/logstash/logstash:7.17.15
     container_name: logstash
+    env_file:
+      - ../../.env
     volumes:
       - ./logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
-      - ./logstash/logstash.yml:/usr/share/logstash/infra/logstash.yml
+      - ./logstash/logstash.yml:/usr/share/logstash/config/logstash.yml
     ports:
-      - "5000:5000"
-      - "5001:5001"
-    environment:
-      - "LS_JAVA_OPTS=-Xms512m -Xmx512m"
-      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - "12201:12201/udp"
     depends_on:
       - elasticsearch
     networks:
-      - logging         
-      - app-network 
+      - logging
+      - app-network
     mem_limit: 1g
     cpus: 1.0
-  
-  filebeat:
-    image: docker.elastic.co/beats/filebeat:7.17.15
-    container_name: filebeat
-    user: root
-    volumes:
-      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
-      - filebeat-data:/usr/share/filebeat/data
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    networks:
-      - logging
-    depends_on:
-      - logstash
-    command: filebeat -e -strict.perms=false
-    restart: unless-stopped
 
   kibana:
     image: docker.elastic.co/kibana/kibana:7.17.15
     container_name: kibana
-    environment:
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-      - ELASTICSEARCH_USERNAME=elastic
-      - ELASTICSEARCH_PASSWORD=${ELASTIC_PASSWORD}
+    env_file:
+      - ../../.env
     ports:
       - "5601:5601"
     volumes:
@@ -68,36 +48,30 @@ services:
     depends_on:
       - elasticsearch
     networks:
-      - logging      
+      - logging
     mem_limit: 1g
     cpus: 1.0
- 
+
   setup:
     image: curlimages/curl:latest
     container_name: elk-setup
+    env_file:
+      - ../../.env
     volumes:
       - ./elasticsearch/ilm-policy.json:/ilm-policy.json:ro
       - ./elasticsearch/setup-ilm.sh:/setup-ilm.sh:ro
-    environment:
-      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
     command: sh /setup-ilm.sh
     depends_on:
       - elasticsearch
     networks:
-      - logging 
+      - logging
     restart: "no"
-
 
 volumes:
   elasticsearch-data:
     driver: local
   kibana-data:
     driver: local
-  filebeat-data:
-    driver: local
-  nginx-logs:
-    external: true
-    name: nginx-logs
 
 networks:
   logging:

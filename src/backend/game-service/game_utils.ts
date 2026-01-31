@@ -64,12 +64,12 @@ export class rabbitmq {
       const rabbitUrl = process.env.RABBITMQ_URL || 'amqp://localhost'; 
       this.conne_game = await amqp.connect(rabbitUrl, {rejectUnauthorized: false});
       this.channel_game= await this.conne_game.createChannel();
-      await this.channel_game.assertQueue(this.QUEUE_GAME, {durable: true });
+      await this.channel_game!.assertQueue(this.QUEUE_GAME, {durable: true });
       console.log(`Connected to RabbitMQ, listening on ${this.QUEUE_GAME}`);
       this.conne_match = await amqp.connect(rabbitUrl, {rejectUnauthorized: false});
       this.channel_match= await this.conne_match.createChannel();
       this.consume_match = await this.conne_match.createChannel();
-      await this.consume_match.assertQueue(this.QUEUE_CREAT, {durable: true });
+      await this.consume_match!.assertQueue(this.QUEUE_CREAT, {durable: true });
       console.log(`Connected to RabbitMQ, listening on ${this.QUEUE_MATCH}`);
       this.getMatch();
     }
@@ -81,13 +81,13 @@ export class rabbitmq {
   
   publishGame(data: MatchResult){
     const jsonresult = JSON.stringify(data,null,2);
-    this.channel_game.sendToQueue(this.QUEUE_GAME,  Buffer.from(jsonresult),{persistent: true});
+    this.channel_game!.sendToQueue(this.QUEUE_GAME,  Buffer.from(jsonresult),{persistent: true});
     console.log(`game published: `, data);
   }
 
   async publishMatch(data: Match){
     const jsonresult = JSON.stringify(data,null,2);
-    await this.channel_match.sendToQueue(this.QUEUE_MATCH,  Buffer.from(jsonresult),{persistent: true});
+    await this.channel_match!.sendToQueue(this.QUEUE_MATCH,  Buffer.from(jsonresult),{persistent: true});
     console.log(`match published: `, data);
     
   }
@@ -105,10 +105,10 @@ export class rabbitmq {
                       pid2:undefined, wallet1:matchData.player1.addr, wallet2:matchData.player2.addr,startedAt:new Date().toISOString(),
                     };
                     setroom(room);
-                    this.consume_match.ack(msg);
+                    this.consume_match!.ack(msg);
                 } catch (err) {
                     console.error('Error processing match result:', err);
-                    this.consume_match.ack(msg);
+                    this.consume_match!.ack(msg);
                 }
         }
   

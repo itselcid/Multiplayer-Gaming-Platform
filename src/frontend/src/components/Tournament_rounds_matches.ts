@@ -25,8 +25,8 @@ export class Round extends Component {
 	}
 	
 	render(): void {
-		addElement('div', 'absolute inset-0 bg-gradient-to-r from-neon-cyan/30 to-neon-purple/30 rounded-3xl blur-xl', this.el);
-		const	round_container = addElement('div', 'relative bg-gradient-to-r from-neon-cyan/10 via-blue-500/10 to-neon-purple/10 backdrop-blur-xl rounded-3xl border border-cyan-400/50 p-6 overflow-hidden', this.el);
+		addElement('div', 'absolute inset-0 bg-ctex rounded-3xl blur-xl', this.el);
+		const	round_container = addElement('div', 'relative bg-ctex backdrop-blur-xl rounded-3xl border border-cyan-400/50 p-6 overflow-hidden', this.el);
 		addElement('div', 'absolute top-0 right-0 w-64 h-64 bg-neon-cyan/10 rounded-full blur-3xl', round_container);
 		const	round = addElement('div', 'relative flex items-center gap-4', round_container);
 		round.insertAdjacentHTML('beforeend', `

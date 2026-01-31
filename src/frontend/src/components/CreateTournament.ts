@@ -109,10 +109,10 @@ export class CreateTournament extends Component {
 		const	header = addElement('div', 'flex items-center justify-between mb-10', content);
 		header.insertAdjacentHTML('beforeend', `
 				<div class="relative">
-					<h2 class="text-5xl text-center font-black text-transparent bg-clip-text bg-gradient-to-r from-neon-cyan via-neon-purple to-pink-400 animate-pulse">
+					<h2 class="text-5xl text-center font-black text-ctex animate-pulse">
 						INITIALIZE TOURNAMENT
 					</h2>
-					<div class="absolute -bottom-2 left-0 right-0 h-1 bg-gradient-to-r from-neon-cyan via-neon-purple to-pink-400 rounded-full"></div>
+					<div class="absolute -bottom-2 left-0 right-0 h-1 bg-ctex rounded-full"></div>
 				</div>
 			`);
 		const	closeButton = addElement('button', 'absolute right-4 top-4 text-neon-cyan hover:text-red-500 text-3xl w-12 h-12 flex items-center justify-center rounded-full border-2 border-neon-cyan hover:border-red-500 hover:bg-neon-cyan/20 duration-300', header);
@@ -127,7 +127,7 @@ export class CreateTournament extends Component {
 			const	username = addElement('div', 'space-y-3', form);
 			username.insertAdjacentHTML('beforeend', `
 				<label class="flex items-center gap-2 text-neon-gold font-bold text-sm uppercase tracking-widest">
-				  <span class="text-xl">👤</span>
+				  <span class="text-xl"></span>
 				  Your Username
 				</label>
 				`);
@@ -147,12 +147,12 @@ export class CreateTournament extends Component {
 			title = addElement('div', 'space-y-3', form);
 		title.insertAdjacentHTML('beforeend', `
 			<label class="flex items-center gap-2 text-neon-cyan font-bold text-sm uppercase tracking-widest">
-			  <span class="text-xl">🎮</span>
+			  <span class="text-xl"></span>
 			  Tournament Name
 			</label>
 			`);
 		const	title_group = addElement('div', 'relative group', title);
-		addElement('div', 'absolute -inset-0.5 bg-gradient-to-r from-neon-cyan to-neon-purple rounded-xl blur opacity-30 group-hover:opacity-60 transition', title_group);
+		addElement('div', 'absolute -inset-0.5 bg-ctex rounded-xl blur opacity-30 group-hover:opacity-60 transition', title_group);
 		const	title_input = addElement('input', 'relative w-full px-5 py-4 bg-slate-900/90 border-2 border-neon-cyan/50 rounded-xl text-white text-lg placeholder-slate-500 focus:border-neon-cyan focus:outline-none focus:ring-4 focus:ring-neon-cyan/20 transition-all', title_group) as HTMLInputElement;
 		title_input.type = 'text';
 		title_input.placeholder = 'Enter an epic name...';
@@ -160,7 +160,7 @@ export class CreateTournament extends Component {
 		const	entryFee = addElement('div', 'space-y-3', form);
 		entryFee.insertAdjacentHTML('beforeend', `
 			<label class="flex items-center gap-2 text-neon-purple font-bold text-sm uppercase tracking-widest">
-			  <span class="text-xl">💎</span>
+			  <span class="text-xl"></span>
 			  Entry Fee
 			</label>
 			`);
@@ -176,7 +176,7 @@ export class CreateTournament extends Component {
 		const	participants = addElement('div', 'space-y-3', form);
 		participants.insertAdjacentHTML('beforeend', `
 				<label class="flex items-center gap-2 text-pink-400 font-bold text-sm uppercase tracking-widest">
-				<span class="text-xl">👥</span>
+				<span class="text-xl"></span>
 				Max Players
 				</label>
 			`);
@@ -189,12 +189,12 @@ export class CreateTournament extends Component {
 		const	startTime = addElement('div', 'col-span-2 space-y-3', form);
 		startTime.insertAdjacentHTML('beforeend', `
 				<label class="flex items-center gap-2 text-neon-cyan font-bold text-sm uppercase tracking-widest">
-					<span class="text-xl">⏰</span>
+					<span class="text-xl"></span>
 					Launch Time (UTC)
 				</label>
 			`);
 		const	startTime_group = addElement('div', 'relative group', startTime);
-		addElement('div', 'absolute -inset-0.5 bg-gradient-to-r from-neon-cyan to-neon-purple rounded-xl blur opacity-30 group-hover:opacity-60 transition', startTime_group);
+		addElement('div', 'absolute -inset-0.5 bg-ctex rounded-xl blur opacity-30 group-hover:opacity-60 transition', startTime_group);
 		const	startTime_input = addElement('input', 'relative w-full px-5 py-4 bg-slate-900/90 border-2 border-neon-cyan/50 rounded-xl text-white text-lg focus:border-neon-cyan focus:outline-none focus:ring-4 focus:ring-neon-cyan/20 transition-all', startTime_group) as HTMLInputElement;
 		startTime_input.type = 'datetime-local';
 
@@ -203,12 +203,12 @@ export class CreateTournament extends Component {
 		const	prizePoolContainer2 = addElement('div', 'relative p-6 bg-slate-900/90 border-2 border-neon-gold rounded-2xl', prizePoolContainer);
 		const	prizePoolContainer3 =addElement('div', 'flex items-center justify-between', prizePoolContainer2);
 		const	prizePoolContainer4 =addElement('div', 'flex items-center gap-3', prizePoolContainer3);
-		prizePoolContainer4.insertAdjacentHTML('beforeend', `<span class="text-4xl">🏆</span>`);
+		prizePoolContainer4.insertAdjacentHTML('beforeend', `<span class="text-4xl"></span>`);
 		const	prizePoolContainer5 =addElement('div', '', prizePoolContainer4);
 		prizePoolContainer5.insertAdjacentHTML('beforeend', `<div class="text-neon-gold/70 text-sm font-bold uppercase tracking-wider">Total Prize Pool</div>`);
 		const	totalPrizePool = addElement('div', 'text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-neon-gold to-orange-400', prizePoolContainer5);
 		totalPrizePool.textContent = "0.00 TRIZcoin";
-		prizePoolContainer3.insertAdjacentHTML('beforeend', `<div class="text-5xl animate-bounce">💰</div>`);
+		prizePoolContainer3.insertAdjacentHTML('beforeend', `<div class="text-5xl animate-bounce"></div>`);
 
 		function updateTotalPrize() {
 		const participants = parseFloat(participants_input.value) || 0;
@@ -223,7 +223,7 @@ export class CreateTournament extends Component {
 		const	cancel_button = addElement('button', 'flex-1 px-8 py-4 bg-slate-800/50 border-2 border-slate-600 rounded-xl text-slate-400 font-bold text-lg uppercase tracking-wider hover:border-slate-400 hover:text-slate-300 hover:bg-slate-800 transition-all duration-300 hover:scale-105', buttons);
 		cancel_button.textContent = 'Cancel';
 		cancel_button.onclick = () => {this.unmount();}
-		const	create_button = addElement('button', 'relative flex-1 px-8 py-4 bg-gradient-to-r from-neon-cyan via-neon-purple to-pink-500 rounded-xl text-white font-black text-lg uppercase tracking-wider overflow-hidden group hover:scale-105 transition-all duration-300 shadow-2xl shadow-neon-cyan/50', buttons) as HTMLButtonElement;
+		const	create_button = addElement('button', 'relative flex-1 px-8 py-4 bg-ctex rounded-xl text-white font-black text-lg uppercase tracking-wider overflow-hidden group hover:scale-105 transition-all duration-300 shadow-2xl shadow-neon-cyan/50', buttons) as HTMLButtonElement;
 		if (!walletClientMetamask)
 				return;
 		

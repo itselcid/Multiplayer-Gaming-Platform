@@ -1,11 +1,30 @@
 services:
+  rabbitmq:
+    build:
+      context: .
+      dockerfile: infra/rabbitmq/Dockerfile
+    container_name: rabbitmq
+    env_file:
+      - .env
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - app-network
+    mem_limit: 256m
+    cpus: 0.5
+    restart: unless-stopped
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://localhost:12201"
+        tag: "rabbitmq"
+
   nginx:
     build:
       context: .
       dockerfile: infra/nginx/Dockerfile
     container_name: nginx
     ports:
-      - "8081:80"
       - "443:443"
     depends_on:
       - user-service
@@ -17,86 +36,104 @@ services:
     volumes:
       - nginx-logs:/var/log/nginx
     mem_limit: 64m
-    mem_reservation: 32m
     cpus: 0.25
     restart: unless-stopped
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://localhost:12201"
+        tag: "nginx"
 
   user-service:
     build: ./src/backend/user-service
     container_name: user-service
-    environment:
-      - NODE_ENV=development
-      - PORT=3001
-      - DATABASE_URL=file:/app/data/usermgmt.db
-      - JWT_SEC=${JWT_SECRET:-super_secret_jwt_key_change_me_32chars}
-      - COOKIE_SECRET=${COOKIE_SECRET:-super_secret_cookie_key_32_chars!}
-      - FRONTEND_URL=https://localhost
-      - BACKEND_URL=http://user-service:3001
-      - EMAIL_HOST=${EMAIL_HOST:-smtp.example.com}
-      - EMAIL_PORT=${EMAIL_PORT:-587}
-      - EMAIL_USER=${EMAIL_USER:-noreply@example.com}
-      - EMAIL_PASS=${EMAIL_PASS:-placeholder}
-      - EMAIL_FROM=${EMAIL_FROM:-noreply@example.com}
-      - UPLOADS_DIR=/app/public/uploads
-      - NODE_OPTIONS=--max-old-space-size=200
+    env_file:
+      - .env
     volumes:
       - user-data:/app/data
       - user-uploads:/app/public/uploads
     networks:
       - app-network
       - monitoring
+    depends_on:
+      - rabbitmq
     mem_limit: 256m
-    mem_reservation: 100m
     cpus: 0.5
     restart: unless-stopped
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://localhost:12201"
+        tag: "user-service"
 
   game-service:
     build: ./src/backend/game-service
     container_name: game-service
-    environment:
-      - PORT=3500
-      - NODE_OPTIONS=--max-old-space-size=128
+    env_file:
+      - .env
     networks:
       - app-network
+    depends_on:
+      - rabbitmq
     mem_limit: 180m
-    mem_reservation: 64m
     cpus: 0.5
     restart: unless-stopped
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://localhost:12201"
+        tag: "game-service"
 
   chat-service:
     build: ./src/backend/chat-service
     container_name: chat-service
-    environment:
-      - PORT=4000
-      - DATABASE_URL=file:/app/data/chat.db
-      - NODE_OPTIONS=--max-old-space-size=128
+    env_file:
+      - .env
     volumes:
       - chat-data:/app/data
     networks:
       - app-network
     mem_limit: 180m
-    mem_reservation: 64m
     cpus: 0.5
     restart: unless-stopped
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://localhost:12201"
+        tag: "chat-service"
+
+  blockchain-service:
+    build: ./src/backend/blockchain-service
+    container_name: blockchain-service
+    env_file:
+      - .env
+    networks:
+      - app-network
+    depends_on:
+      - rabbitmq
+    mem_limit: 180m
+    cpus: 0.5
+    restart: unless-stopped
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://localhost:12201"
+        tag: "blockchain-service"
 
 volumes:
+  rabbitmq-data:
   nginx-logs:
-    driver: local
-    name: nginx-logs
   user-data:
-    driver: local
   user-uploads:
-    driver: local
   chat-data:
-    driver: local
 
 networks:
   app-network:
-    driver: bridge
+    external: true
     name: network
   elk:
-    driver: bridge
+    external: true
     name: logging
   monitoring:
-    driver: bridge
+    external: true
     name: monitoring

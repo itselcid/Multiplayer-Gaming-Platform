@@ -1,6 +1,15 @@
 
 FROM node:20-alpine AS frontend-builder
 WORKDIR /app
+
+# Build args for Vite env variables
+ARG VITE_FUJI_RPC_URL=wss://api.avax-test.network/ext/bc/C/ws
+ARG VITE_FUJI_CHAIN_ID=0xa869
+
+# Set as env for the build
+ENV VITE_FUJI_RPC_URL=$VITE_FUJI_RPC_URL
+ENV VITE_FUJI_CHAIN_ID=$VITE_FUJI_CHAIN_ID
+
 COPY src/frontend/package*.json ./
 RUN npm install
 COPY src/frontend/ ./

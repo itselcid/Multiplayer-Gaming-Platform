@@ -110,9 +110,9 @@ export class Home extends Component {
 	style="background: linear-gradient(135deg, rgba(10, 22, 40, 0.85) 0%, rgba(30, 11, 61, 0.85) 100%); border: 2px solid #00d9ff; box-shadow: 0 0 30px rgba(0, 217, 255, 0.3), inset 0 0 30px rgba(0, 217, 255, 0.05);">
 	 <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(0, 217, 255, 0.1) 35px, rgba(0, 217, 255, 0.1) 70px);"></div>
 	<h2 class="text-3xl text-center text-ctex mb-4">Choose your game mode</h2>
-      <button id="local" class="btn px-10 py-3  w-fit shadow-sm rounded-sm text-ctex border border-transparent hover:border-neon-cyan hover:shadow-[0_4px_15px_rgba(34,211,238,0.5)] transition">🎮 Local Game</button>
-      <button id="remote" class="btn px-10 py-3 w-fit shadow-sm rounded-sm text-ctex border border-transparent  hover:border-neon-cyan hover:shadow-[0_4px_15px_rgba(34,211,238,0.5)] transition">🌐 Play with Friend</button>
-      <button id="bot" class="btn px-10 py-3 w-fit shadow-sm rounded-sm text-ctex border border-transparent hover:border-neon-cyan hover:shadow-[0_4px_15px_rgba(34,211,238,0.5)]  transition">🤖 Play vs Bot</button>
+      <button id="local" class="btn px-10 py-3  w-fit shadow-sm rounded-sm text-ctex border border-transparent hover:border-neon-cyan hover:shadow-[0_4px_15px_rgba(34,211,238,0.5)] transition">Local Game</button>
+      <button id="remote" class="btn px-10 py-3 w-fit shadow-sm rounded-sm text-ctex border border-transparent  hover:border-neon-cyan hover:shadow-[0_4px_15px_rgba(34,211,238,0.5)] transition">Play with Friend</button>
+      <button id="bot" class="btn px-10 py-3 w-fit shadow-sm rounded-sm text-ctex border border-transparent hover:border-neon-cyan hover:shadow-[0_4px_15px_rgba(34,211,238,0.5)]  transition">Play vs Bot</button>
       <button id="cancel" class="btn px-10 py-3 w-fit shadow-sm rounded-sm text-ctex border border-transparent hover:border-neon-cyan hover:shadow-[0_4px_15px_rgba(34,211,238,0.5)]  transition mt-2">Cancel</button>
 	  </div>`
 	  this.el.append(container);
@@ -137,7 +137,7 @@ export class Home extends Component {
 		style="background: linear-gradient(135deg, rgba(10, 22, 40, 0.85) 0%, rgba(30, 11, 61, 0.85) 100%); border: 2px solid #00d9ff; box-shadow: 0 0 30px rgba(0, 217, 255, 0.3), inset 0 0 30px rgba(0, 217, 255, 0.05);">
 		<div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(0, 217, 255, 0.1) 35px, rgba(0, 217, 255, 0.1) 70px);"></div>
 		<h2 class="text-3xl text-center text-ctex mb-4">No playmates around</h2>
-		<button id="make" class="btnpx-10 py-3  w-fit shadow-sm rounded-sm text-ctex border border-transparent hover:border-neon-cyan hover:shadow-[0_4px_15px_rgba(34,211,238,0.5)] transition">👥 Start Friendships</button>
+		<button id="make" class="btnpx-10 py-3  w-fit shadow-sm rounded-sm text-ctex border border-transparent hover:border-neon-cyan hover:shadow-[0_4px_15px_rgba(34,211,238,0.5)] transition">Start Friendships</button>
       	<button id="cancel" class="btn px-10 py-3  w-fit shadow-sm rounded-sm text-ctex border border-transparent hover:border-neon-cyan hover:shadow-[0_4px_15px_rgba(34,211,238,0.5)] transition">Cancel</button>
 		</div>`;
 		
@@ -166,7 +166,7 @@ export class Home extends Component {
     		btn.className =
     		  "btn overflow-y-auto flex text-center px-10 py-3 w-fit shadow-sm rounded-sm text-ctex border border-transparent hover:border-neon-cyan hover:shadow-[0_4px_15px_rgba(34,211,238,0.5)] transition";
     		const avatar = document.createElement("img");
-    		avatar.src = friend.avatar || '👤'; 
+    		avatar.src = friend.avatar || ''; 
     		avatar.alt = friend.username;
     		avatar.className = "w-8 h-8 rounded-full object-cover"; 
 			
@@ -198,7 +198,7 @@ export class Home extends Component {
       		  },
       		  body: JSON.stringify({
       		    receiverId: friendId,
-      		    content: `🎮 Game Invite\nJoin me in Galactik Pingpong! Click here to play: ${url}\n🚨after 10min of now this link will no longer be available`
+      		    content: `Game Invite\nJoin me in Galactik Pingpong! Click here to play: ${url}\nAfter 10min of now this link will no longer be available`
       		  }),
       		  credentials: 'include'
       		});	
@@ -215,6 +215,6 @@ export class Home extends Component {
     if (avatar && (avatar.startsWith('/') || avatar.startsWith('http'))) {
       return `<img src="${avatar}" alt="avatar" class="${size} rounded-full object-cover" />`;
     }
-    return `<span class="text-sm">${avatar || '👤'}</span>`;
+    return `<span class="text-sm">${avatar || ''}</span>`;
   }
 }

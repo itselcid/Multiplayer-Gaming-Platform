@@ -10,5 +10,6 @@ WORKDIR /app
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./
-EXPOSE 3400
-CMD ["node", "dist/server.js"]
+COPY --from=builder /app/contract ./contract
+EXPOSE 3003
+CMD ["node", "dist/index.js"]

@@ -1,24 +1,27 @@
 #!/bin/sh
 
 
-until curl -s -u elastic:${ELASTIC_PASSWORD} http://elasticsearch:9200/_cluster/health > /dev/null; do
-  sleep 3
+echo "Waiting for Elasticsearch..."
+sleep 20
+until curl -s -u elastic:${ELASTIC_PASSWORD} http://elasticsearch:9200/_cluster/health > /dev/null 2>&1; do
+  sleep 5
 done
+echo "Elasticsearch is ready."
 
-
-curl -X PUT "http://elasticsearch:9200/_ilm/policy/app-policy" \
+curl -s -X PUT "http://elasticsearch:9200/_ilm/policy/app-policy" \
   -u elastic:${ELASTIC_PASSWORD} \
   -H 'Content-Type: application/json' \
   -d @/ilm-policy.json
 
-echo "ILM policy is set to 30 days"
+
+echo "ILM policy set to 30 days"
 
 
-curl -X PUT "http://elasticsearch:9200/_index_template/services-template" \
+curl -s -X PUT "http://elasticsearch:9200/_index_template/services-template" \
   -u elastic:${ELASTIC_PASSWORD} \
   -H 'Content-Type: application/json' \
   -d '{
-    "index_patterns": ["*-service-*", "nginx-*", "app-*"],
+    "index_patterns": ["*-service-*", "nginx-*", "rabbitmq-*"],
     "template": {
       "settings": {
         "index.lifecycle.name": "app-policy"
@@ -26,4 +29,5 @@ curl -X PUT "http://elasticsearch:9200/_index_template/services-template" \
     }
   }'
 
-echo "Index template created for all services and linked to ILM policy"
+
+echo "Setup complete!"

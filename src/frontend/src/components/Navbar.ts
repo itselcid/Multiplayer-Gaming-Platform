@@ -46,10 +46,11 @@ export class Navbar extends Component {
 	const	logo = addElement('div', 'flex items-center space-x-2 cursor-pointer', container2);
 	logo.insertAdjacentHTML('beforeend', `
 			<img src="/logo.png" alt="Logo" class="h-15">
-			<span class="text-xl font-bold bg-gradient-to-r from-neon-cyan to-neon-purple bg-clip-text text-transparent">
+			<span class="text-xl  font-bold text-ctex">
 				GALACTIK PONG
 			</span>
 	`);
+		// <span class="text-xl font-bold bg-gradient-to-r from-neon-cyan to-neon-purple bg-clip-text text-transparent">
 	logo.onclick = () => {
 		navigate('/');
 		active_tab.set(
@@ -106,16 +107,16 @@ export class Navbar extends Component {
 
 export class Navbar_connected_wallet extends Component {
 	constructor() {
-		super('div', 'flex items-center justify-center space-x-3 px-4 py-2 rounded-lg bg-gradient-to-r from-neon-cyan/20 to-neon-purple/20 border border-neon-cyan/50 hover:border-neon-cyan transition-all');
+		super('div', 'flex items-center justify-center space-x-3 px-4 py-2 rounded-lg bg-space-blue/80 border border-ctex/30 hover:border-ctex/60 backdrop-blur-sm transition-all');
 	}
 
 	async render() {
 		this.el.insertAdjacentHTML('beforeend', `
-			<div class="w-8 h-8 rounded-full bg-gradient-to-br from-neon-cyan to-neon-purple flex items-center justify-center">
-				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wallet w-4 h-4 text-white"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"></path><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"></path></svg>
+			<div class="w-8 h-8 rounded-full bg-space-blue border border-ctex/50 flex items-center justify-center">
+				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wallet w-4 h-4 text-ctex"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"></path><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"></path></svg>
 			</div>
 		`);
-		const	link_span = addElement('span', 'text-sm font-mono current-web3-account', this.el);
+		const	link_span = addElement('span', 'text-sm font-mono text-ctex current-web3-account', this.el);
 		// link_span.id = 'current-web3-account';
 		link_span.textContent = shortenEthAddress(await web3auth.getEthAddress()); 
 	}
@@ -123,13 +124,13 @@ export class Navbar_connected_wallet extends Component {
 
 export class Navbar_connect_wallet extends Component {
 	constructor() {
-		super('button', 'flex items-center justify-center space-x-2 px-6 py-3 rounded-lg bg-gradient-to-r from-neon-cyan to-neon-purple hover:shadow-lg hover:shadow-neon-cyan/50 transition-all transform hover:scale-105');
+		super('button', 'flex items-center justify-center space-x-2 px-6 py-3 rounded-lg bg-ctex text-space-blue hover:bg-ctex/80 hover:shadow-lg hover:shadow-ctex/30 transition-all transform hover:scale-105');
 	}
 
 	render() {
 	this.el.insertAdjacentHTML('beforeend', `
 		<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wallet w-5 h-5" aria-hidden="true"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"></path><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"></path></svg>
-		<span class="font-semibold">Connect</span>
+		<span class="text-space-blue font-semibold">Connect</span>
 	`);
 	this.el.onclick = web3auth.login;
 	}
@@ -137,18 +138,18 @@ export class Navbar_connect_wallet extends Component {
 
 export class Navbar_user_logged extends Component {
 	constructor() {
-		super('div', 'flex items-center justify-center space-x-3 px-4 py-2 rounded-lg bg-gradient-to-r from-neon-cyan/20 to-neon-purple/20 border border-neon-cyan/50 hover:border-neon-cyan transition-all');
+		super('div', 'flex items-center justify-center space-x-3 px-4 py-2 rounded-lg bg-space-blue/80 border border-ctex/30 hover:border-ctex/60 backdrop-blur-sm transition-all');
 	}
 
 	async render() {
 		this.el.insertAdjacentHTML('beforeend', `
-			<div class="w-8 h-8 rounded-full bg-gradient-to-br from-neon-cyan to-neon-purple flex items-center justify-center">
-				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user w-4 h-4" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>
+			<div class="w-8 h-8 rounded-full bg-space-blue border border-ctex/50 flex items-center justify-center">
+				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user w-4 h-4 text-ctex" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>
 				</svg>
 			</div>
 		`);
 
-		const	link_span = addElement('span', 'text-sm font-mono current-web2-user', this.el);
+		const	link_span = addElement('span', 'text-sm font-mono text-ctex current-web2-user', this.el);
 		// link_span.id = '';
 		// link_span.textContent = 'username'; 
 	}
@@ -156,13 +157,13 @@ export class Navbar_user_logged extends Component {
 
 export class Navbar_user_logging extends Component {
 	constructor() {
-		super('button', 'flex items-center justify-center space-x-2 px-6 py-3 rounded-lg bg-gradient-to-r from-neon-cyan to-neon-purple hover:shadow-lg hover:shadow-neon-cyan/50 transition-all transform hover:scale-105');
+		super('button', 'flex items-center justify-center space-x-2 px-6 py-3 rounded-lg bg-ctex text-space-blue hover:bg-ctex/80 hover:shadow-lg hover:shadow-ctex/30 transition-all transform hover:scale-105');
 	}
 
 	render() {
 	this.el.insertAdjacentHTML('beforeend', `
 		<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-log-in w-5 h-5"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" x2="3" y1="12" y2="12"></line></svg>
-		<span class="font-semibold">Login</span>
+		<span class="text-space-blue font-semibold">Login</span>
 	`);
 	this.el.onclick = () => {
 		navigate('/login');

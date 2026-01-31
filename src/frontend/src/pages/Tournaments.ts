@@ -140,7 +140,7 @@ export class TournamentsView extends Component {
 	render(): void {
 	const	title = addElement('div', 'mb-12', this.el);
 	title.insertAdjacentHTML('beforeend', `
-			<h1 class="text-5xl font-bold mb-4 bg-gradient-to-r from-neon-cyan to-neon-purple bg-clip-text text-transparent pb-2">
+			<h1 class="text-5xl font-bold mb-4 text-ctex pb-2">
 			Tournament Lobby
 			</h1>
 			<p class="text-xl text-gray-300">

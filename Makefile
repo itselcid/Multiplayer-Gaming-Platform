@@ -1,9 +1,13 @@
 
 up:
-	@docker compose up -d --build
-	@sleep 2
+	@docker network create logging 2>/dev/null || true
+	@docker network create network 2>/dev/null || true
+	@docker network create monitoring 2>/dev/null || true
 	@docker compose -f infra/elk-stack/docker-compose.yml up -d
 	@docker compose -f infra/monitoring/docker-compose.yml up -d
+	@echo "Waiting for Logstash..."
+	@sleep 10
+	@docker compose up -d --build
 
 down:
 	@docker compose -f infra/monitoring/docker-compose.yml down
@@ -25,6 +29,28 @@ fclean: clean
 	@docker network prune -f
 
 re: fclean up
+
+
+
+app:
+	@docker network create logging 2>/dev/null || true
+	@docker network create network 2>/dev/null || true
+	@docker network create monitoring 2>/dev/null || true
+	@docker compose up -d --build
+
+app-down:
+	@docker compose down
+
+app-restart: app-down app
+
+app-logs:
+	@docker compose logs -f
+
+app-clean: app-down
+	@docker compose down -v 2>/dev/null || true
+
+app-re: app-clean app
+
 
 
 dev:
@@ -54,8 +80,16 @@ help:
 	@echo "  make fclean    - Full cleanup (prune docker)"
 	@echo "  make re        - Full rebuild"
 	@echo ""
-	@echo "Development (app only, no infra):"
-	@echo "  make dev       - Start app services only"
+	@echo "App only (no DevOps tools):"
+	@echo "  make app       - Start main app only (no ELK/monitoring)"
+	@echo "  make app-down  - Stop app services"
+	@echo "  make app-restart - Restart app services"
+	@echo "  make app-logs  - Follow app logs"
+	@echo "  make app-clean - Stop app and remove volumes"
+	@echo "  make app-re    - Full app rebuild"
+	@echo ""
+	@echo "Development (hot reload, no infra):"
+	@echo "  make dev       - Start dev services"
 	@echo "  make dev-down  - Stop dev services"
 	@echo "  make dev-restart - Restart dev services"
 	@echo "  make dev-logs  - Follow dev logs"

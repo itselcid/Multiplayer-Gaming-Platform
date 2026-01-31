@@ -545,7 +545,7 @@ export class Settings extends Component {
 				<div class="settings-divider"></div>
 				<div class="settings-danger-section">
 					<h4>Delete Account</h4>
-					<p class="settings-warning">⚠️ This action is permanent and cannot be undone. All your data will be deleted.</p>
+					<p class="settings-warning">This action is permanent and cannot be undone. All your data will be deleted.</p>
 					<form id="settings-delete-form" class="settings-form">
 						<div class="settings-form-group">
 							<label class="settings-label">Enter your password</label>

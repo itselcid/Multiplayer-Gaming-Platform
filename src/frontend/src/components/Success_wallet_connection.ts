@@ -82,7 +82,7 @@ export class Success_wallet_connection extends Component {
 					<p class="text-slate-400 text-xs">Network</p>
 				</div>
 				<div class="bg-slate-800/50 rounded-lg p-4 border border-green-500/20 text-center">
-					<div class="text-green-400 text-lg mb-2">⚡</div>
+					<div class="text-green-400 text-lg mb-2"></div>
 					<p class="text-slate-400 text-xs">Ready</p>
 				</div>
 			</div>

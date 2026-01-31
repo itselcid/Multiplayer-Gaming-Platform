@@ -72,7 +72,7 @@ export class Tournament_card extends Component {
 			</div>
 			`);
 	  
-		const	join_tournament = addElement('Button', 'block w-full py-3 rounded-lg text-center font-bold transition-all bg-gradient-to-r from-neon-cyan to-neon-purple hover:shadow-lg hover:shadow-neon-cyan/50', this.el);
+		const	join_tournament = addElement('Button', 'block w-full py-3 rounded-lg text-center font-bold transition-all bg-ctex hover:shadow-lg hover:shadow-neon-cyan/50', this.el);
 		join_tournament.textContent = 'Enter Tournament';
 		join_tournament.onclick = () => {
 			navigate('/tournaments/'+ String(this.tournament.id));

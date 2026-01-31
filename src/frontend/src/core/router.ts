@@ -144,7 +144,7 @@ export async function renderRoute() {
 
   //   // If trying to access guest-only routes (Login/Register), redirect to profile
   //   if (isGuestOnlyRoute) {
-  //     console.log("👤 User already logged in. Redirecting to /profile");
+  //     console.log("User already logged in. Redirecting to /profile");
   //     navigate("/profile");
   //     return;
   //   }

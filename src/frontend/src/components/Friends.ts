@@ -166,7 +166,7 @@ export class Friends extends Component {
     if (avatar && (avatar.startsWith('/') || avatar.startsWith('http'))) {
       return `<img src="${avatar}" alt="avatar" class="${size} rounded-full object-cover" />`;
     }
-    return `<span class="text-lg">${avatar || '👤'}</span>`;
+    return `<span class="text-lg">${avatar || ''}</span>`;
   }
 
   private async sendFriendRequest(userId: number) {
@@ -200,7 +200,7 @@ export class Friends extends Component {
     if (this.friends.length === 0) {
       return `
         <div class="text-center py-8 text-gray-400">
-          <div class="text-4xl mb-2">👥</div>
+          <div class="text-4xl mb-2"></div>
           <p>No friends yet</p>
           <p class="text-sm mt-1">Search for users to add friends</p>
         </div>
@@ -346,7 +346,7 @@ export class Friends extends Component {
         <!-- Header -->
         <div class="p-4 bg-space-dark/70 backdrop-blur-xl border-b border-neon-cyan/10">
           <div class="flex justify-between items-center mb-3">
-            <h1 class="text-xl font-bold text-neon-cyan">👥 Friends</h1>
+            <h1 class="text-xl font-bold text-neon-cyan">Friends</h1>
             <span class="text-xs text-gray-400 font-mono"></span>
           </div>
           
