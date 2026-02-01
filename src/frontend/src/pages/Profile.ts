@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Profile.ts                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/05 17:41:32 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/12 02:54:27 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/02/01 04:10:28 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -198,12 +198,12 @@ export class ProfileView extends Component {
 					</div>
 				</div>
 			`;
+			const log = this.el.querySelector("#login") as HTMLElement ;
+			log.onclick = () => navigate("/login");
+			const reg = this.el.querySelector("#register") as HTMLElement ;
+			reg.onclick = () => navigate("/register");
 			return;
 		}
-
-		container.querySelector("#register")?.addEventListener("click",()=> navigate("/register"));
-	  	container.querySelector("#login")?.addEventListener("click",()=> navigate("/login"));
-
 		// XP Tracker - between player card and achievements
 		// TODO: Replace with actual user XP data when available
 		const user = this.isOwnProfile ? currentUser : this.otherUser;

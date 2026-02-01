@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Player_card.ts                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: kez-zoub <kez-zoub@student.1337.ma>        +#+  +:+       +#+        */
+/*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/06 01:50:41 by kez-zoub          #+#    #+#             */
-/*   Updated: 2026/01/12 02:42:24 by kez-zoub         ###   ########.fr       */
+/*   Updated: 2026/02/01 04:30:11 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -116,7 +116,7 @@ export class Player_card extends Component {
 
 		// Only show logout button if user is logged in
 		if (user) {
-			const logoutBtn = addElement('button', 'w-full py-3 bg-space-dark border border-neon-cyan/50 shadow-sm rounded-lg font-bold hover:border-neon-cyan hover:shadow-[0_4px_15px_rgba(34,211,238,0.5)]transition-all flex items-center justify-center space-x-2', disconnect_logout);
+			const logoutBtn = addElement('button', 'relative w-full py-3 bg-space-dark flex items-center justify-center space-x-2 border shadow-sm border-neon-cyan/50 rounded-lg font-bold hover:border-neon-cyan hover:shadow-[0_0_15px_rgba(34,211,238,0.5)] transition-all ', disconnect_logout);
 
 			logoutBtn.innerHTML = `
 				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-log-out w-5 h-5" aria-hidden="true">

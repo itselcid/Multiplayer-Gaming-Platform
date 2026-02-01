@@ -162,7 +162,7 @@ export class Friends extends Component {
     return div.innerHTML;
   }
 
-  private   renderAvatar(avatar: string | undefined, size: string = 'w-8 h-8') {
+  private   renderAvatar(avatar: string | undefined, size: string = 'w-10 h-10') {
     if(avatar){
       const newavatar = avatar.startsWith('http') ? avatar : `/public${avatar}`;
 
