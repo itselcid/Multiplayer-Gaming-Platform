@@ -20,8 +20,6 @@ class SocketService {
 
         // 1. Authentication Middleware
         this.io.use((socket, next) => {
-            // const token = socket.handshake.auth.token; // Client sends { auth: { token: "..." } }
-            // const token = socket.handshake.cookies?.authToken;
             const cookies = cookie.parse(socket.handshake.headers.cookie || '');
             const token = cookies.authToken;
 

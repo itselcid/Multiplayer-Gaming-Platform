@@ -282,8 +282,10 @@ export class Game extends Component {
 			light.setDirectionToTarget(Vector3.Zero());
 		};
 		
-		window.addEventListener('keydown', (event)=>{handlekeycahnge(event,true);handlevision(event);});
-		window.addEventListener('keyup', (event)=>handlekeycahnge(event,false));
+		const keydownHandler = (event: KeyboardEvent) => { handlekeycahnge(event, true); handlevision(event); };
+		const keyupHandler = (event: KeyboardEvent) => handlekeycahnge(event, false);
+		window.addEventListener('keydown', keydownHandler);
+		window.addEventListener('keyup', keyupHandler);
 		
 		this.engine.runRenderLoop(async() => {
 			this.state = await new Promise((resolve)=>{this.socket.emit('input', this.input, resolve)});
@@ -305,7 +307,7 @@ export class Game extends Component {
 			if(this.state.min == 0 && this.state.sec <= 10 && !timer.classList.contains("text-red-400"))
 				timer.classList.add("text-red-400");
 			if(this.state.gameOver){
-				this.cleardata();
+				this.cleardata(keyupHandler,keydownHandler);
 				return;
 			}
 			this.scene.render();
@@ -343,12 +345,15 @@ export class Game extends Component {
 		container.querySelector("#home")?.addEventListener("click", () => { navigate("/home")});
 	}
 
-	cleardata(){
+	cleardata(keyupHandler:any,keydownHandler:any){
 		this.socket.emit("gameOver");
 		this.gameOver();
 		this.engine.stopRenderLoop();
 		this.scene.dispose();
 		this.engine.dispose();
+		window.removeEventListener('keydown',keydownHandler);
+		window.removeEventListener('keyup',keyupHandler);
+		this.socket.off('resume');
 		this.socket.disconnect();
 		this.waitingStarted = false;
 		this.countdownStarted = false;

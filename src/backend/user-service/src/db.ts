@@ -952,8 +952,6 @@ export async function getWinsAndLosses(userId: number) {
 }
 
 
-
-/////// Temporary ///////
 export async function createTestUserIfNeeded() {
     let user = await getUserByUsername('test')
 

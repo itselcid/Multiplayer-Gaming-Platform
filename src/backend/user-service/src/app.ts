@@ -34,8 +34,8 @@ export default async function buildServer() {
     // the following code is a fix for the options request check for Cross Origin Resource Sharing
     // Register CORS 
     await fastifyServer.register(cors, {
-        origin: [env.FRONTEND_URL],   // diffrent host is needed for 127.0.0.1
-        credentials: true,  // for siting cookies to work 
+        origin: [env.FRONTEND_URL],
+        credentials: true,
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
     });
 

@@ -227,16 +227,14 @@ socket.on('gameOver',()=>{
      const match = tour.get(id);
      socket.leave(id);
      if(game){
-       game.delet++;
-       if(game.move){
-         game.move = false;
+       if(!game.stop){
+         game.stop = true;
          sendMAtch(id);
         }
       }
       else if (match){
-        match.delet++;
-        if(match.move){
-          match.move = false;
+        if(!match.stop){
+          match.stop = true;
           sendMAtch(id);
         }
       }

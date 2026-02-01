@@ -155,7 +155,7 @@ export class chat extends Component {
 
     try {
       // CHANGE THIS ENDPOINT - FROM '/users/friends' TO '/friends'
-      const response = await fetch(`${API_URL}/friends`, {  // <-- CHANGE HERE
+      const response = await fetch(`${API_URL}/friends`, { 
         credentials: 'include',
       });
 
@@ -166,16 +166,15 @@ export class chat extends Component {
       const data = await response.json();
 
       // CHANGE HERE - Your Friends component returns { friends: [...] }
-      const friends: Friend[] = data.friends || [];  // <-- ADD '.friends'
+      const friends: Friend[] = data.friends || [];
 
       this.users = {};
       const friendIds: number[] = [];
 
       friends.forEach((friend: Friend) => {
-        // IMPORTANT: Your Friends component uses 'username', not 'name'
         this.users[friend.id] = {
           id: friend.id,
-          name: friend.username,  // <-- CHANGE 'username' to 'name' for chat
+          name: friend.username, 
           avatar: friend.avatar || '',
           status: 'Offline',  // Default to Offline, actual status comes from socket/API
           lastSeen: '',  // Empty - will show last message if exists
@@ -201,8 +200,8 @@ export class chat extends Component {
       this.render();
     } catch (error) {
       console.error('Failed to load friends:', error);
-      this.users = {};  // <-- Clear users on error
-      this.render();    // <-- Re-render to show empty state
+      this.users = {}; 
+      this.render();  
     } finally {
       this.isLoadingFriends = false;
     }
@@ -244,7 +243,7 @@ export class chat extends Component {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': currentUser.id.toString()  // <-- ADD THIS
+          'x-user-id': currentUser.id.toString()
         },
         body: JSON.stringify({ userIds }),
         credentials: 'include'
@@ -590,9 +589,6 @@ export class chat extends Component {
     this.saveTournamentNotification(notification);
 
     this.render();
-
-    // Auto-open tournament chat if desired (optional)
-    // this.openChat(systemUserId);
   }
 
   private subscribeToOnlineStatus() {
@@ -676,13 +672,9 @@ export class chat extends Component {
       this.conversations[otherUserId] = [];
     }
 
-    // Check if we already have this message (deduplication)
-    // But allow replacing optimistic messages (negative IDs)
     const existingIndex = this.conversations[otherUserId].findIndex(m => m.id === message.id);
     if (existingIndex !== -1) return;
 
-    // Check if we have an optimistic version (content matches, ID is negative)
-    // and replace it properly
     const optimisticIndex = this.conversations[otherUserId].findIndex(m =>
       m.isMine && m.text === message.content && (m.id && m.id < 0)
     );
@@ -879,7 +871,7 @@ export class chat extends Component {
     const messagesHtml = messages.map((msg) => {
       // Check if it's a system message (tournament notification)
       if (msg.isSystemMessage) {
-        console.log('Tournament message:', msg); // Debug log
+        console.log('Tournament message:', msg);
         return `
           <div class="flex justify-center my-4">
             <div class="max-w-sm w-full bg-gradient-to-r from-neon-purple/20 to-neon-cyan/20 border border-neon-cyan/30 rounded-xl p-4 shadow-lg">
@@ -1270,7 +1262,7 @@ export class chat extends Component {
     console.log('4. Socket connected:', this.socket?.connected);
 
     if (!content || !this.currentChatUserId) {
-      console.log('❌ Cannot send: No content or no user selected');
+      console.log(' Cannot send: No content or no user selected');
       return;
     }
 
@@ -1287,7 +1279,7 @@ export class chat extends Component {
       console.log('Socket emit called');
 
     } else {
-      console.error('❌ Socket is NOT connected! Cannot send via WebSocket.');
+      console.error(' Socket is NOT connected! Cannot send via WebSocket.');
       console.log('   Trying HTTP fallback...');
 
       // Use HTTP fallback immediately
@@ -1339,20 +1331,16 @@ export class chat extends Component {
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         const text = await response.text();
-        console.error('❌ Server returned HTML instead of JSON:', text.substring(0, 200));
+        console.error(' Server returned HTML instead of JSON:', text.substring(0, 200));
         throw new Error('Server returned HTML error page');
       }
 
       if (response.ok) {
         const message = await response.json();
         console.log('Message sent via HTTP:', message);
-
-        // Update the optimistic message with real data
-        //this.updateOptimisticMessage(message);
-
       } else {
         const error = await response.json();
-        console.error('❌ HTTP send failed:', error);
+        console.error(' HTTP send failed:', error);
 
         if (response.status === 403) {
           alert('You cannot send messages to this user (Blocked)');
@@ -1369,7 +1357,6 @@ export class chat extends Component {
         }
       }
     } catch (error) {
-      console.error('❌ HTTP send error:', error);
       alert('Network error. Please check your connection and try again.');
     }
   }

@@ -65,7 +65,13 @@ const waitForTxSafe = async (hash: `0x${string}`, retries = 20, delayMs = 3000) 
 
 export const transact = async (_functionName: string, _args: unknown[]): Promise<void> => {
 	if (processing) {
-		setTimeout(async () => { await transact(_functionName, _args) }, 1000);
+		setTimeout(async () => {
+			try {
+				await transact(_functionName, _args);
+			} catch (err: any) {
+				console.error("❌ Failed to broadcast tx -----  ------- < :");
+			}
+		}, 1000);
 		return;
 	}
 	processing = true;
@@ -203,12 +209,16 @@ const watchFinishedMatches = () => {
 						}
 					};
 					// console.log('obj:', typedLog, '_id: ', typedLog.args._id, '_round', typedLog.args._round, '_matchId', typedLog.args._matchId);
-					const	tournament = await getTournament(typedLog.args._id);
-					if (tournament.status === 2)
-						return;
-					if (await checkFinishedRounds(tournament)) {
-						const	order = get_shuffled_array(Number(tournament.currentRound)); // current round because its not changed yet so current round is also the remaining players in the tournament
-						await transact('createNextRound', [tournament.id, order]);
+					try {
+						const	tournament = await getTournament(typedLog.args._id);
+						if (tournament.status === 2)
+							return;
+						if (await checkFinishedRounds(tournament)) {
+							const	order = get_shuffled_array(Number(tournament.currentRound)); // current round because its not changed yet so current round is also the remaining players in the tournament
+							await transact('createNextRound', [tournament.id, order]);
+						}
+					} catch (err) {
+						console.error("transaction faild with err: ", err);
 					}
 				})
 			}
@@ -230,10 +240,14 @@ const watchForfeitedRounds = () => {
 						_id: bigint;
 						}
 					};
-					console.log('round forfeited', typedLog.args, 'creating next round...');
-					const	tournament = await getTournament(typedLog.args._id);
-					const	order = get_shuffled_array(Number(tournament.currentRound));
-					await transact('createNextRound', [tournament.id, order]);
+					try {
+						console.log('round forfeited', typedLog.args, 'creating next round...');
+						const	tournament = await getTournament(typedLog.args._id);
+						const	order = get_shuffled_array(Number(tournament.currentRound));
+						await transact('createNextRound', [tournament.id, order]);
+					} catch (err) {
+						console.error("transaction faild with err: ", err);
+					}
 				})
 			}
 		}

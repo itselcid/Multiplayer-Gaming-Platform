@@ -44,26 +44,25 @@ export class rabbitmq {
 	getMatch() {
 		if (!this.consum_match) return;
 
-			this.consum_match.consume(this.QUEUE_MATCH, async (msg: ConsumeMessage | null) => {
-				if (msg !== null) {
-					try {
-						const content = msg.content.toString();
-						const matchData: MatchMsg = JSON.parse(content);
+		this.consum_match.consume(this.QUEUE_MATCH, async (msg: ConsumeMessage | null) => {
+			if (msg !== null) {
+				try {
+					const content = msg.content.toString();
+					const matchData: MatchMsg = JSON.parse(content);
 
-						console.log('Received match result:', matchData); //! logs
+					console.log('Received match result:', matchData); //! logs
 
-						// Save to DB
-						await transact('submitMatchScore', [matchData.id, BigInt(matchData.player1Score), BigInt(matchData.player2Score)]);
+					// Save to DB
+					await transact('submitMatchScore', [matchData.id, BigInt(matchData.player1Score), BigInt(matchData.player2Score)]);
 
-						// Acknowledge message (remove from queue)
-						this.consum_match?.ack(msg);
-					} catch (err) {
-						console.error('Error processing match result:', err);
-						// we drop the message if it fails to process, data not really thet important lol
-						this.consum_match?.ack(msg);
-					}
+					// Acknowledge message (remove from queue)
+					this.consum_match?.ack(msg);
+				} catch (err) {
+					console.error('Error processing match result:', err);
+					// we drop the message if it fails to process, data not really thet important lol
+					this.consum_match?.ack(msg);
 				}
-	
-	})
-  }
+			}
+		})
+	}
 }

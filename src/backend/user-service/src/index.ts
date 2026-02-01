@@ -10,7 +10,7 @@ async function start() {
     try {
         const server = await buildServer();
 
-        await server.ready(); // Important!
+        await server.ready();
         socketService.initialize(server.server, {
             path: '/online-status',
             cors: {
@@ -33,7 +33,6 @@ async function start() {
 }
 
 await testEmailConnection();
-// await createTestUserIfNeeded();
 start();
 
 

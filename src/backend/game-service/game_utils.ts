@@ -134,10 +134,9 @@ export class PongGame {
   sec = 30;
   delta = 0;
   gameOver = false;
-  delet = 0;
   updt = 0;
 
-  readonly Duration = 90000;
+  readonly Duration = 7000;
   readonly PADDLE_HEIGHT = 2.3;
   readonly PLAY_AREA_WIDTH = 38;
   readonly PLAY_AREA_HEIGHT = 16;
@@ -189,7 +188,6 @@ export class PongGame {
 
     if (remain <= 0 && this.right !== this.left) {
       this.gameOver = true;
-      console.log("whyy heereee");
       return;
     }
 

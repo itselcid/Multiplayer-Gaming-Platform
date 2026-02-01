@@ -32,16 +32,16 @@ class SocketService {
         });
 
         this.socket.on('disconnect', () => {
-            console.log('Socket disconnected');    // for debuginh
+            console.log('Socket disconnected');
         });
 
         this.socket.on('connect_error', (err: Error) => {
-            console.error('Socket connection error:', err.message);    // for debuginh
+            console.error('Socket connection error:', err.message);
         });
 
         // Debug: Listen for friends status
         this.socket.on('friend_status', (data: any) => {
-            console.log('Friend status update:', data);    // for debuging
+            console.log('Friend status update:', data);
         });
     }
 
@@ -52,9 +52,7 @@ class SocketService {
         }
     }
 
-    /**
-     * Subscribe to an event
-     */
+    // Subscribe to an event
     on(event: string, callback: (...args: any[]) => void) {
         // Store listener to re-attach if socket reconnects/re-initializes
         this.listeners.set(event, callback);
@@ -64,9 +62,7 @@ class SocketService {
         }
     }
 
-    /**
-     * Unsubscribe from an event
-     */
+    // Unsubscribe from an event
     off(event: string) {
         this.listeners.delete(event);
         if (this.socket) {

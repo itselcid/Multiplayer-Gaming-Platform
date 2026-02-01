@@ -33,7 +33,7 @@ const envSchema = z.object({  // the following schema is to require certain vars
 const _env = envSchema.safeParse(process.env);
 
 if (!_env.success) {
-    console.error("❌ Invalid environment variables:", _env.error.format());
+    console.error("Invalid environment variables:", _env.error.format());
     process.exit(1);
 }
 

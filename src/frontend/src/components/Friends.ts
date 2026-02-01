@@ -84,8 +84,6 @@ export class Friends extends Component {
     }
   }
 
-  // ============ API CALLS (direct to user-service backend) ============
-
   private async fetchApi(endpoint: string, options: RequestInit = {}) {
     const headers: Record<string, string> = {};
 
@@ -146,8 +144,6 @@ export class Friends extends Component {
   private async rejectRequestApi(friendId: number): Promise<void> {
     await this.fetchApi(`/friends/requests/reject/${friendId}`, { method: 'POST' });
   }
-
-  // ============ END API CALLS ============
 
   unmount() {
     if (this.unsubscribeAuth) {

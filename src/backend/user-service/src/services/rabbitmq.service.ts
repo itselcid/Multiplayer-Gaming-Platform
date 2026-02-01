@@ -42,7 +42,7 @@ class RabbitMQService {
                     const content = msg.content.toString();
                     const matchData: MatchResult = JSON.parse(content);
 
-                    console.log('Received match result:', matchData); //! logs
+                    console.log('Received match result:', matchData);
 
                     // Save to DB
                     if (matchData.player1Id)
@@ -61,14 +61,6 @@ class RabbitMQService {
             }
         });
     }
-
-    // public async publishMatch(data: MatchResult) {
-    //     if (!this.channel) throw new Error("RabbitMQ Channel not initialized");
-    //     this.channel.sendToQueue(this.QUEUE_NAME, Buffer.from(JSON.stringify(data)), {
-    //         persistent: true
-    //     });
-    //     console.log(`📤 Published match result to ${this.QUEUE_NAME}`, data);   //! logs
-    // }
 
 }
 

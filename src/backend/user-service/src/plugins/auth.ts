@@ -9,7 +9,6 @@ import createHttpError from "http-errors";
 export default fp(function authPlugin(server: FastifyInstance) {
 
     server.register(fastifyCookie, {
-        // IMPORTANT: Use a strong, unique secret from environment variables in a real app
         secret: env.COOKIE_SECRET
     });
 

@@ -133,7 +133,7 @@ model UserTwoFactor {
 
     method     String? // totp or email, never both
     enabled    Boolean @default(false)
-    totpSecret String? // need to be encrypted, totp only
+    totpSecret String?
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt

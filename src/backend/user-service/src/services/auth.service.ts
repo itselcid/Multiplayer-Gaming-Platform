@@ -13,8 +13,8 @@ export const tokenService = {
     setCookie: (reply: any, token: any, type: string) => {
         reply.setCookie(type, token, {
             httpOnly: true,
-            secure: true,       // MUST BE TRUE
-            sameSite: 'none',   // MUST BE 'None' for cross-site/port requests
+            secure: true,
+            sameSite: 'none',
             path: '/',
             maxAge: type === 'authToken' ? 15 * 60 : 7 * 24 * 60 * 60     // 15m for access token, 7d for refresh token      
         });
