@@ -33,7 +33,7 @@ async function start() {
 }
 
 await testEmailConnection();
-await createTestUserIfNeeded();
+// await createTestUserIfNeeded();
 start();
 
 

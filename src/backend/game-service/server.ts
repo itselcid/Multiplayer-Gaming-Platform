@@ -6,7 +6,7 @@
 /*   By: ckhater <ckhater@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/12/20 17:15:36 by ckhater           #+#    #+#             */
-/*   Updated: 2026/01/31 19:46:13 by ckhater          ###   ########.fr       */
+/*   Updated: 2026/02/01 14:19:56 by ckhater          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,7 +46,6 @@ function generateroom(): string{
   const crypto = require("crypto");
   const byteLength = Math.floor(Math.random() * (8 - 4 + 1)) + 4;
   const id = crypto.randomBytes(Math.ceil(byteLength/2)).toString("hex");
-  // console.log(`in generate room ${id}`);
   return id;
 }
 
@@ -81,11 +80,13 @@ function generateroom(): string{
           rooms.delete(id);
         }
         if(match && !match.updt){
-          if(rooms.get(id)?.join1 && !rooms.get(id)?.join2 )
+          if(!match.left && !match.right){
+            if(rooms.get(id)?.join1 && !rooms.get(id)?.join2 )
               match.left = 3;
-          else if (rooms.get(id)?.join2 && !rooms.get(id)?.join1)
+            else if (rooms.get(id)?.join2 && !rooms.get(id)?.join1)
               match.right = 3;
-          sendMAtch(id);
+            sendMAtch(id);
+          }
           tour.delete(id);
           rooms.delete(id);
         }
@@ -227,20 +228,16 @@ socket.on('gameOver',()=>{
      socket.leave(id);
      if(game){
        game.delet++;
-       game.move = false;
-       if(game.delet == io.sockets.adapter.rooms.get(id)?.size){
+       if(game.move){
+         game.move = false;
          sendMAtch(id);
-         rooms.delete(id);
-         games.delete(id);
         }
       }
       else if (match){
         match.delet++;
-        match.move = false;
-        if(match.delet == io.sockets.adapter.rooms.get(id)?.size){
+        if(match.move){
+          match.move = false;
           sendMAtch(id);
-          rooms.delete(id);
-          tour.delete(id);
         }
       }
     });
