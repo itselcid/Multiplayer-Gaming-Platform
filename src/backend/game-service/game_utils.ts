@@ -155,7 +155,7 @@ export class PongGame {
 
   private calculateBounce(paddleY: number, ballY: number) {
     const relativeIntersectY = (ballY - paddleY) / (this.PADDLE_HEIGHT / 2);
-    this.ballVX *= -1.02; 
+    this.ballVX *= -1.03; 
     this.ballVY = relativeIntersectY * 0.12; 
   }
 
@@ -189,10 +189,11 @@ export class PongGame {
 
     if (remain <= 0 && this.right !== this.left) {
       this.gameOver = true;
+      console.log("whyy heereee");
       return;
     }
 
-    if(this.updt % 2 == 0) return;
+    if(this.updt % 2 !== 0) return;
     
     this.ballx += this.ballVX;
     this.bally += this.ballVY;

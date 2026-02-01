@@ -11,7 +11,7 @@ export const twoFactorController = {
         const { method, password } = request.body;
         const userId = request.user.userId; // from JWT payload
 
-        const user = await getUserForAuth(request.user.username);
+        const user = await getUserForAuth(request.user.username, request.user.userId);
 
         if (!user)
             throw createHttpError(404, 'User not found');

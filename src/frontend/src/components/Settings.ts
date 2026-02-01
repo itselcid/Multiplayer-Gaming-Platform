@@ -448,7 +448,8 @@ export class Settings extends Component {
 
 	private render2FATab(): string {
 		const user = userState.get();
-		const has2FA = user?.twoFactor?.method;
+		const has2FAMethod = user?.twoFactor?.method;
+		const is2FAEnabled = user?.twoFactor?.enabled && has2FAMethod;
 
 		if (this.awaiting2FAConfirm) {
 			return `
@@ -473,26 +474,31 @@ export class Settings extends Component {
 			`;
 		}
 
-		if (has2FA) {
+		// Show disable form if 2FA method exists (whether enabled or just configured but incomplete)
+		if (has2FAMethod) {
+			const statusTitle = is2FAEnabled ? '2FA is Enabled' : '2FA Setup Incomplete';
+			const statusDescription = is2FAEnabled
+				? `Method: ${has2FAMethod === 'totp' ? 'Authenticator App' : 'Email'}`
+				: 'Setup was started but not confirmed. Delete to start fresh.';
 			return `
 				<div class="settings-2fa-status">
-					<div class="settings-2fa-enabled">
+					<div class="settings-2fa-enabled ${!is2FAEnabled ? 'settings-2fa-pending' : ''}">
 						<svg class="settings-icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 							<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-							<path d="m9 12 2 2 4-4"/>
+							${is2FAEnabled ? '<path d="m9 12 2 2 4-4"/>' : '<path d="M12 8v4"/><path d="M12 16h.01"/>'}
 						</svg>
 						<div>
-							<h4>2FA is Enabled</h4>
-							<p>Method: ${has2FA === 'totp' ? 'Authenticator App' : 'Email'}</p>
+							<h4>${statusTitle}</h4>
+							<p>${statusDescription}</p>
 						</div>
 					</div>
 					<form id="settings-2fa-disable-form" class="settings-form">
 						<div class="settings-form-group">
-							<label class="settings-label">Enter password to disable 2FA</label>
+							<label class="settings-label">Enter password to ${is2FAEnabled ? 'disable' : 'delete'} 2FA</label>
 							<input type="password" name="password" class="settings-input" placeholder="Enter password" required />
 						</div>
 						<button type="submit" class="settings-btn settings-btn-danger" ${this.isLoading ? 'disabled' : ''}>
-							${this.isLoading ? 'Disabling...' : 'Disable 2FA'}
+							${this.isLoading ? 'Disabling...' : (is2FAEnabled ? 'Disable 2FA' : 'Delete 2FA Setup')}
 						</button>
 					</form>
 				</div>

@@ -341,7 +341,7 @@ export class Friends extends Component {
     }
 
     this.el.innerHTML = `
-      <div class="h-[82vh] bg-black/60 border border-neon-cyan/20 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-md" style="background: linear-gradient(135deg, rgba(10, 22, 40, 0.85) 0%, rgba(30, 11, 61, 0.85) 100%);  inset 0 0 30px rgba(0, 217, 255, 0.05);">
+      <div class="h-[82vh] bg-black/60 border border-neon-cyan/20 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-md" style="background: linear-gradient(135deg, rgba(10, 22, 40, 0.85) 0%, rgba(10, 30, 60, 0.85) 100%);  inset 0 0 30px rgba(0, 217, 255, 0.05);">
 		    <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(0, 217, 255, 0.1) 35px, rgba(0, 217, 255, 0.1) 70px);"></div>
         <!-- Header -->
         <div class="p-4 bg-space-dark/70 backdrop-blur-xl border-b border-neon-cyan/10">

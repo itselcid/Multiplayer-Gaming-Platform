@@ -223,7 +223,7 @@ export class CreateTournament extends Component {
 		const	cancel_button = addElement('button', 'flex-1 px-8 py-4 bg-slate-800/50 border-2 border-slate-600 rounded-xl text-slate-400 font-bold text-lg uppercase tracking-wider hover:border-slate-400 hover:text-slate-300 hover:bg-slate-800 transition-all duration-300 hover:scale-105', buttons);
 		cancel_button.textContent = 'Cancel';
 		cancel_button.onclick = () => {this.unmount();}
-		const	create_button = addElement('button', 'relative flex-1 px-8 py-4 bg-ctex rounded-xl text-white font-black text-lg uppercase tracking-wider overflow-hidden group hover:scale-105 transition-all duration-300 shadow-2xl shadow-neon-cyan/50', buttons) as HTMLButtonElement;
+		const	create_button = addElement('button', 'relative flex-1 px-8 py-4 bg-neon-cyan rounded-xl text-space-dark font-black text-lg uppercase tracking-wider overflow-hidden group hover:scale-105 transition-all duration-300 shadow-2xl shadow-neon-cyan/50', buttons) as HTMLButtonElement;
 		if (!walletClientMetamask)
 				return;
 		

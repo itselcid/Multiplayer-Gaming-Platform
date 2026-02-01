@@ -6,7 +6,7 @@ export class Particels extends Component {
 	}
 
 	render(): void {
-		addElement('div', 'absolute inset-0 bg-gradient-to-br from-slate-900 via-blue-950 to-purple-950', this.el);
+		addElement('div', 'absolute inset-0 bg-gradient-to-br from-blue-950/75 via-blue-950 to-blue-950/75', this.el);
 
 		// Optimized: Use radial-gradient instead of blur-3xl for better performance on VMs
 		const animation1 = addElement('div', 'absolute top-0 left-1/4 w-96 h-96 animate-pulse', this.el);

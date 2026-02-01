@@ -794,8 +794,10 @@ export class chat extends Component {
   }
 
   renderAvatar(avatar: string | undefined, size: string = 'w-8 h-8') {
-    if (avatar && (avatar.startsWith('/') || avatar.startsWith('http'))) {
-      return `<img src="${avatar}" alt="avatar" class="${size} rounded-full object-cover" />`;
+    if(avatar){
+      const newavatar = avatar.startsWith('http') ? avatar : `/public${avatar}`;
+
+      return `<img src="${newavatar}" alt="avatar" class="${size} rounded-full object-cover" />`;
     }
     return `<span class="text-lg">${avatar || ''}</span>`;
   }
@@ -1038,7 +1040,7 @@ export class chat extends Component {
           </div>
 
         <!-- Main Chat Area -->
-          <div class="flex-1 flex flex-col relative overflow-hidden bg-black/60" style="background: linear-gradient(135deg, rgba(10, 22, 40, 0.85) 0%, rgba(30, 11, 61, 0.85) 100%);  inset 0 0 30px rgba(0, 217, 255, 0.05);">
+          <div class="flex-1 flex flex-col relative overflow-hidden bg-black/60" style="background: linear-gradient(135deg, rgba(10, 22, 40, 0.85) 0%, rgba(10, 30, 60, 0.85) 100%);  inset 0 0 30px rgba(0, 217, 255, 0.05);">
 		    <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(0, 217, 255, 0.1) 35px, rgba(0, 217, 255, 0.1) 70px);"></div>
             ${!currentUser ? `
               <div class="flex-1 flex items-center justify-center text-gray-400">

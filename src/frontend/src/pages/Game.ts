@@ -263,7 +263,7 @@ export class Game extends Component {
 			const key = event.key.toLowerCase();
 			if( key !== "v") return;
 			
-			console.log(key);
+			// console.log(key);
 			this.vision = (this.vision + 1 ) %3;
 			if (this.vision  == 0){
 				this.camera.position = new Vector3(0,0,-30);

@@ -62,6 +62,11 @@ a, button {
 }
 
 @layer utilities {
+  /* Custom ctex shadow for hover effects */
+  .hover\:shadow-ctex:hover {
+    box-shadow: 0 4px 15px rgba(161, 183, 230, 0.5);
+  }
+
 	/* Hide scrollbar for Chrome, Safari and Opera */
   .no-scrollbar {
     scrollbar-width:none;      /* Firefox */
@@ -107,7 +112,7 @@ a, button {
   border-radius: 0.75rem;
   overflow: hidden;
   width: 100%;
-  background: linear-gradient(135deg, rgba(10, 22, 40, 0.9) 0%, rgba(30, 11, 61, 0.9) 100%);
+  background: linear-gradient(135deg, rgba(10, 22, 40, 0.9) 0%, rgba(10, 30, 60, 0.9) 100%);
   border: 2px solid rgba(45, 215, 255, 0.3);
   box-shadow: 0 0 20px rgba(45, 215, 255, 0.2);
 }
@@ -313,7 +318,7 @@ a, button {
   max-width: 500px;
   max-height: 85vh;
   overflow-y: auto;
-  background: linear-gradient(135deg, rgba(10, 22, 40, 0.98) 0%, rgba(30, 11, 61, 0.98) 100%);
+  background: linear-gradient(135deg, rgba(10, 22, 40, 0.98) 0%, rgba(10, 30, 60, 0.98) 100%);
   border: 2px solid rgba(45, 215, 255, 0.3);
   border-radius: 1rem;
   box-shadow: 0 0 40px rgba(45, 215, 255, 0.2), 0 0 80px rgba(185, 103, 255, 0.1);

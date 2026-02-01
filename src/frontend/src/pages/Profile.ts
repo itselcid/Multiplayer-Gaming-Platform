@@ -142,7 +142,7 @@ export class ProfileView extends Component {
 			// Guest user - show creative call-to-action instead of achievements/match history
 			profile_achievement.insertAdjacentHTML('beforeend', `
 				<div class="bg-gradient-to-br from-space-blue to-space-dark border border-neon-purple/30 rounded-xl p-6 text-center">
-					<div class="text-6xl mb-4"></div>
+					<div class="text-6xl mb-4">🎮</div>
 					<h3 class="text-xl font-bold text-neon-purple mb-2">Ready to Play?</h3>
 					<p class="text-gray-400 text-sm">Log in to track your achievements!</p>
 				</div>
@@ -152,12 +152,23 @@ export class ProfileView extends Component {
 			rightPanel.innerHTML = `
 				<div class="bg-gradient-to-br from-space-blue to-space-dark border border-neon-cyan/30 rounded-xl p-8 h-full flex flex-col items-center justify-center text-center">
 					<div class="relative mb-8">
-						<div class="w-32 h-32 rounded-full bg-gradient-to-br from-neon-cyan/20 to-neon-purple/20 flex items-center justify-center animate-pulse">
-							<span class="text-7xl"></span>
-						</div>
-						<div class="absolute -top-2 -right-2 w-8 h-8 bg-neon-gold rounded-full flex items-center justify-center text-lg animate-bounce">
+						<div class="w-32 h-32 rounded-full bg-gradient-to-br from-neon-cyan/20 to-space-dark/20 flex items-center justify-center animate-pulse">
+							<span class="text-7xl">
+								<svg xmlns="http://www.w3.org/2000/svg" class="w-24 h-24" viewBox="0 0 64 64" fill="none" style="transform: rotate(35deg);">
+									<ellipse cx="24" cy="24" rx="18" ry="22" fill="#00f2fe" stroke="#00f2fe" stroke-width="2"/>
+									<rect x="20" y="44" width="8" height="16" rx="3" fill="rgb(0, 0, 0)" stroke="#00f2fe" stroke-width="2"/>
 
-							</div>
+								</svg>
+							</span>
+						</div>
+						<div class="absolute top-2 right-4 w-6 h-6 bg-white rounded-full flex items-center justify-center text-sm" style="animation: ballBounce 1s ease-in-out infinite;">
+						</div>
+						<style>
+							@keyframes ballBounce {
+								0%, 100% { transform: translateY(40px); }
+								50% { transform: translateY(-10px); }
+							}
+						</style>
 					</div>
 					<h2 class="text-3xl font-bold mb-4 text-ctex">
 						Join the Arena
@@ -166,7 +177,7 @@ export class ProfileView extends Component {
 						Create an account to compete against players worldwide, unlock achievements, and climb the leaderboards!
 					</p>
 					<div class="flex flex-wrap gap-4 justify-center">
-						<a href="/register" class="px-8 py-3 bg-ctex rounded-lg font-bold text-white hover:shadow-lg hover:shadow-neon-cyan/30 transition-all transform hover:scale-105">
+						<a href="/register" class="px-8 py-3 bg-neon-cyan rounded-lg font-bold text-space-dark hover:shadow-lg hover:shadow-neon-cyan/30 transition-all transform hover:scale-105">
 							Get Started
 						</a>
 						<a href="/login" class="px-8 py-3 bg-space-dark border border-neon-cyan/50 rounded-lg font-bold text-neon-cyan hover:border-neon-cyan hover:bg-neon-cyan/10 transition-all">
@@ -175,13 +186,13 @@ export class ProfileView extends Component {
 					</div>
 					<div class="mt-8 flex items-center gap-8 text-gray-500 text-sm">
 						<div class="flex items-center gap-2">
-							<span class="text-neon-cyan"></span> Earn Trophies
+							<span class="text-neon-cyan">🏆</span> Earn Trophies
 						</div>
 						<div class="flex items-center gap-2">
-							<span class="text-neon-purple"></span> Real-time Matches
+							<span class="text-neon-purple">⚡</span> Real-time Matches
 						</div>
 						<div class="flex items-center gap-2">
-							<span class="text-neon-gold"></span> Streak Rewards
+							<span class="text-neon-gold">🔥</span> Streak Rewards
 						</div>
 					</div>
 				</div>

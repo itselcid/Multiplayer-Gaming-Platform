@@ -14,6 +14,7 @@ import { active_tab, web3auth } from "../core/appStore";
 import { addElement, Component } from "../core/Component";
 import { navigate } from "../core/router";
 import { shortenEthAddress } from "../web3/tools";
+import { userState } from "../core/appStore";
 
 const	link = (tag: string, classes: string, parent: HTMLElement, text: string, id: string, path: string): HTMLElement => {
 	const	link = addElement(tag, classes, parent);
@@ -35,7 +36,7 @@ const	link = (tag: string, classes: string, parent: HTMLElement, text: string, i
 export class Navbar extends Component {
   constructor() {
     super("nav");
-	this.el.className = "border-b border-neon-cyan/20 bg-space-blue/50 backdrop-blur-md";
+	this.el.className = "border-b border-neon-cyan/20  backdrop-blur-md";
   }
 
   render() {
@@ -107,7 +108,7 @@ export class Navbar extends Component {
 
 export class Navbar_connected_wallet extends Component {
 	constructor() {
-		super('div', 'flex items-center justify-center space-x-3 px-4 py-2 rounded-lg bg-space-blue/80 border border-ctex/30 hover:border-ctex/60 backdrop-blur-sm transition-all');
+		super('div', 'flex items-center justify-center space-x-3 px-4 py-2 shadow-sm rounded-lg bg-space-blue/80 border border-ctex/30 hover:border-ctex/60 hover:shadow-ctex backdrop-blur-sm transition-all');
 	}
 
 	async render() {
@@ -124,13 +125,13 @@ export class Navbar_connected_wallet extends Component {
 
 export class Navbar_connect_wallet extends Component {
 	constructor() {
-		super('button', 'flex items-center justify-center space-x-2 px-6 py-3 rounded-lg bg-ctex text-space-blue hover:bg-ctex/80 hover:shadow-lg hover:shadow-ctex/30 transition-all transform hover:scale-105');
+		super('button', 'flex items-center justify-center space-x-2 px-6 py-3 rounded-lg bg-neon-cyan text-space-dark hover:bg-neon-cyan/80 hover:shadow-lg hover:shadow-neon-cyan/30 transition-all transform hover:scale-105');
 	}
 
 	render() {
 	this.el.insertAdjacentHTML('beforeend', `
 		<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wallet w-5 h-5" aria-hidden="true"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"></path><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"></path></svg>
-		<span class="text-space-blue font-semibold">Connect</span>
+		<span class="text-space-dark font-semibold">Connect</span>
 	`);
 	this.el.onclick = web3auth.login;
 	}
@@ -138,26 +139,34 @@ export class Navbar_connect_wallet extends Component {
 
 export class Navbar_user_logged extends Component {
 	constructor() {
-		super('div', 'flex items-center justify-center space-x-3 px-4 py-2 rounded-lg bg-space-blue/80 border border-ctex/30 hover:border-ctex/60 backdrop-blur-sm transition-all');
+		super('div', 'flex items-center justify-center space-x-3 px-4 py-2 shadow-sm rounded-lg bg-space-blue/80 border border-ctex/30 hover:border-ctex/60 hover:shadow-ctex/30 backdrop-blur-sm transition-all');
 	}
 
 	async render() {
 		this.el.insertAdjacentHTML('beforeend', `
-			<div class="w-8 h-8 rounded-full bg-space-blue border border-ctex/50 flex items-center justify-center">
-				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user w-4 h-4 text-ctex" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>
-				</svg>
-			</div>
+	            <div class="w-8 h-8 bg-gradient-to-br from-neon-purple to-neon-cyan rounded-full flex items-center justify-center overflow-hidden">
+              ${this.renderAvatar(userState.get()?.avatar)}
+            </div>
 		`);
 
 		const	link_span = addElement('span', 'text-sm font-mono text-ctex current-web2-user', this.el);
 		// link_span.id = '';
 		// link_span.textContent = 'username'; 
 	}
+
+	renderAvatar(avatar: string | undefined, size: string = 'w-8 h-8') {
+    if(avatar){
+      const newavatar = avatar.startsWith('http') ? avatar : `/public${avatar}`;
+
+      return `<img src="${newavatar}" alt="avatar" class="${size} rounded-full object-cover" />`;
+    }
+    return `<span class="text-lg">${avatar || ''}</span>`;
+  }
 }
 
 export class Navbar_user_logging extends Component {
 	constructor() {
-		super('button', 'flex items-center justify-center space-x-2 px-6 py-3 rounded-lg bg-ctex text-space-blue hover:bg-ctex/80 hover:shadow-lg hover:shadow-ctex/30 transition-all transform hover:scale-105');
+		super('button', 'flex items-center justify-center space-x-2 px-6 py-3 rounded-lg bg-neon-cyan text-space-dark hover:bg-neon-cyan/80 hover:shadow-lg hover:shadow-neon-cyan/30 transition-all transform hover:scale-105');
 	}
 
 	render() {

@@ -23,7 +23,7 @@ import { type Tournament } from './web3/getters.ts';
 export let logged: boolean = true;
 export	let cachedTournaments: Tournament[] = [];
 
-const	container1 = addElement("div", "min-h-screen w-full bg-space-dark text-white");
+const	container1 = addElement("div", "min-h-screen w-full bg-black text-white");
 const	shouting_stars = new Shouting_stars();
 const	particels = new Particels();
 const	container2 = addElement("div", "relative z-10 flex flex-col min-h-screen", container1);

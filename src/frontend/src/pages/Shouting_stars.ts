@@ -124,7 +124,7 @@ export class Shouting_stars extends Component {
 
 		const	stars = addElement('div', 'absolute inset-0 overflow-hidden', this.el);
 		[...Array(15)].map((_, i) => {
-			const colors = ['white', 'cyan-400', 'purple-400'];
+			const colors = ['white', 'cyan-400', 'purple-500'];
 			const color = colors[i % colors.length];
 			const startY = Math.random() * 50; // Top half of screen
 			const startX = Math.random() * 100;

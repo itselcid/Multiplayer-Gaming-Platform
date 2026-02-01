@@ -107,7 +107,7 @@ export class Home extends Component {
 	const container = document.createElement("div");
 	container.className =`fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50`;
 	container.innerHTML=`<div class="backdrop-blur-xl rounded-xl shadow-xl items-center flex flex-col gap-4 p-6" 
-	style="background: linear-gradient(135deg, rgba(10, 22, 40, 0.85) 0%, rgba(30, 11, 61, 0.85) 100%); border: 2px solid #00d9ff; box-shadow: 0 0 30px rgba(0, 217, 255, 0.3), inset 0 0 30px rgba(0, 217, 255, 0.05);">
+	style="background: linear-gradient(135deg, rgba(10, 22, 40, 0.85) 0%, rgba(10, 30, 60, 0.85) 100%); border: 2px solid #00d9ff; box-shadow: 0 0 30px rgba(0, 217, 255, 0.3), inset 0 0 30px rgba(0, 217, 255, 0.05);">
 	 <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(0, 217, 255, 0.1) 35px, rgba(0, 217, 255, 0.1) 70px);"></div>
 	<h2 class="text-3xl text-center text-ctex mb-4">Choose your game mode</h2>
       <button id="local" class="btn px-10 py-3  w-fit shadow-sm rounded-sm text-ctex border border-transparent hover:border-neon-cyan hover:shadow-[0_4px_15px_rgba(34,211,238,0.5)] transition">Local Game</button>
@@ -134,17 +134,17 @@ export class Home extends Component {
 	container.className =`fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50`;
 	if(!this.friends.length){
 		container.innerHTML=`<div class="backdrop-blur-xl items-center rounded-xl shadow-xl flex flex-col gap-4 p-6" 
-		style="background: linear-gradient(135deg, rgba(10, 22, 40, 0.85) 0%, rgba(30, 11, 61, 0.85) 100%); border: 2px solid #00d9ff; box-shadow: 0 0 30px rgba(0, 217, 255, 0.3), inset 0 0 30px rgba(0, 217, 255, 0.05);">
+		style="background: linear-gradient(135deg, rgba(10, 22, 40, 0.85) 0%, rgba(10, 30, 60, 0.85) 100%); border: 2px solid #00d9ff; box-shadow: 0 0 30px rgba(0, 217, 255, 0.3), inset 0 0 30px rgba(0, 217, 255, 0.05);">
 		<div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(0, 217, 255, 0.1) 35px, rgba(0, 217, 255, 0.1) 70px);"></div>
 		<h2 class="text-3xl text-center text-ctex mb-4">No playmates around</h2>
-		<button id="make" class="btnpx-10 py-3  w-fit shadow-sm rounded-sm text-ctex border border-transparent hover:border-neon-cyan hover:shadow-[0_4px_15px_rgba(34,211,238,0.5)] transition">Start Friendships</button>
+		<button id="make" class="btn px-10 py-3  w-fit shadow-sm rounded-sm text-ctex border border-transparent hover:border-neon-cyan hover:shadow-[0_4px_15px_rgba(34,211,238,0.5)] transition">Start Friendships</button>
       	<button id="cancel" class="btn px-10 py-3  w-fit shadow-sm rounded-sm text-ctex border border-transparent hover:border-neon-cyan hover:shadow-[0_4px_15px_rgba(34,211,238,0.5)] transition">Cancel</button>
 		</div>`;
 		
 	}
 	else if (!this.online.length){
 		container.innerHTML = `<div class="backdrop-blur-xl rounded-xl items-center shadow-xl flex flex-col gap-4 p-6"
-		style="background: linear-gradient(135deg, rgba(10, 22, 40, 0.85) 0%, rgba(30, 11, 61, 0.85) 100%); border: 2px solid #00d9ff; box-shadow: 0 0 30px rgba(0, 217, 255, 0.3), inset 0 0 30px rgba(0, 217, 255, 0.05);">
+		style="background: linear-gradient(135deg, rgba(10, 22, 40, 0.85) 0%, rgba(10, 30, 60, 0.85) 100%); border: 2px solid #00d9ff; box-shadow: 0 0 30px rgba(0, 217, 255, 0.3), inset 0 0 30px rgba(0, 217, 255, 0.05);">
 		<div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(0, 217, 255, 0.1) 35px, rgba(0, 217, 255, 0.1) 70px);"></div>
 		<h2 class="text-3xl text-center text-ctex mb-4">No online playmates around</h2>
 		<button id="cancel" class="btn px-10 py-3  w-fit shadow-sm rounded-sm text-ctex border border-transparent hover:border-neon-cyan hover:shadow-[0_4px_15px_rgba(34,211,238,0.5)] transition">Cancel</button>
@@ -152,7 +152,7 @@ export class Home extends Component {
 	}
 	else{
 		container.innerHTML = `<div class="backdrop-blur-xl rounded-xl items-center shadow-xl flex flex-col gap-4 p-6"
-		style="background: linear-gradient(135deg, rgba(10, 22, 40, 0.85) 0%, rgba(30, 11, 61, 0.85) 100%); border: 2px solid #00d9ff; box-shadow: 0 0 30px rgba(0, 217, 255, 0.3), inset 0 0 30px rgba(0, 217, 255, 0.05);">
+		style="background: linear-gradient(135deg, rgba(10, 22, 40, 0.85) 0%, rgba(10, 30, 60, 0.85) 100%); border: 2px solid #00d9ff; box-shadow: 0 0 30px rgba(0, 217, 255, 0.3), inset 0 0 30px rgba(0, 217, 255, 0.05);">
 		<div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(0, 217, 255, 0.1) 35px, rgba(0, 217, 255, 0.1) 70px);"></div>
 		<h2 class="text-3xl text-center text-ctex mb-4">Select a playmate</h2>
 		<div id="friendsList" class="flex flex-col gap-2"></div>
@@ -208,13 +208,12 @@ export class Home extends Component {
 			 alert('Network error. Please check your connection and try again.');
 		}
 	}
-	renderAvatar(avatar: string | undefined, size: string = 'w-8 h-8') {
-		if (avatar && avatar.startsWith('/public')) {
-    	avatar = avatar.replace('/public', '');
-	}
-    if (avatar && (avatar.startsWith('/') || avatar.startsWith('http'))) {
-      return `<img src="${avatar}" alt="avatar" class="${size} rounded-full object-cover" />`;
+  renderAvatar(avatar: string | undefined, size: string = 'w-8 h-8') {
+    if(avatar){
+      const newavatar = avatar.startsWith('http') ? avatar : `/public${avatar}`;
+
+      return `<img src="${newavatar}" alt="avatar" class="${size} rounded-full object-cover" />`;
     }
-    return `<span class="text-sm">${avatar || ''}</span>`;
+    return `<span class="text-lg">${avatar || ''}</span>`;
   }
 }
