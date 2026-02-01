@@ -23,7 +23,7 @@ export class rabbitmq {
 		this.conne_match = await amqp.connect(rabbitUrl, {rejectUnauthorized: false});
 		this.channel_match= await this.conne_match.createChannel();
 		this.consum_match= await this.conne_match.createChannel();
-		await this.consum_match!.assertQueue(this.QUEUE_MATCH, {durable: true });
+		await this.consum_match?.assertQueue(this.QUEUE_MATCH, {durable: true });
 		this.getMatch();
 		console.log(`Connected to RabbitMQ, listening on ${this.QUEUE_MATCH}`);
 		}
@@ -36,7 +36,7 @@ export class rabbitmq {
 
 	publishMatch(data: MatchMsg){
 		const jsonresult = JSON.stringify(data,null,2);
-		this.channel_match!.sendToQueue(this.QUEUE_CREAT,  Buffer.from(jsonresult),{persistent: true});
+		this.channel_match?.sendToQueue(this.QUEUE_CREAT,  Buffer.from(jsonresult),{persistent: true});
 		console.log(`match published: `, data);
 		
 	}
@@ -56,11 +56,11 @@ export class rabbitmq {
 						await transact('submitMatchScore', [matchData.id, BigInt(matchData.player1Score), BigInt(matchData.player2Score)]);
 
 						// Acknowledge message (remove from queue)
-						this.consum_match!.ack(msg);
+						this.consum_match?.ack(msg);
 					} catch (err) {
 						console.error('Error processing match result:', err);
 						// we drop the message if it fails to process, data not really thet important lol
-						this.consum_match!.ack(msg);
+						this.consum_match?.ack(msg);
 					}
 				}
 	
