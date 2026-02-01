@@ -28,6 +28,7 @@ curl -s -X PUT "http://elasticsearch:9200/_index_template/services-template" \
       }
     }
   }'
+  
 
 
 echo "Setup complete!"

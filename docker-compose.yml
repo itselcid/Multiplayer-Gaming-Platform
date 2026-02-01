@@ -14,7 +14,7 @@ services:
     logging:
       driver: gelf
       options:
-        gelf-address: "udp://localhost:12201"
+        gelf-address: "udp://${DOCKER_HOST_IP:-172.17.0.1}:12201"
         tag: "rabbitmq"
 
   nginx:
@@ -37,7 +37,7 @@ services:
     logging:
       driver: gelf
       options:
-        gelf-address: "udp://localhost:12201"
+        gelf-address: "udp://${DOCKER_HOST_IP:-172.17.0.1}:12201"
         tag: "nginx"
 
   user-service:
@@ -56,7 +56,7 @@ services:
     logging:
       driver: gelf
       options:
-        gelf-address: "udp://localhost:12201"
+        gelf-address: "udp://${DOCKER_HOST_IP:-172.17.0.1}:12201"
         tag: "user-service"
 
   game-service:
@@ -72,7 +72,7 @@ services:
     logging:
       driver: gelf
       options:
-        gelf-address: "udp://localhost:12201"
+        gelf-address: "udp://${DOCKER_HOST_IP:-172.17.0.1}:12201"
         tag: "game-service"
 
   chat-service:
@@ -88,7 +88,7 @@ services:
     logging:
       driver: gelf
       options:
-        gelf-address: "udp://localhost:12201"
+        gelf-address: "udp://${DOCKER_HOST_IP:-172.17.0.1}:12201"
         tag: "chat-service"
 
   blockchain-service:
@@ -104,7 +104,7 @@ services:
     logging:
       driver: gelf
       options:
-        gelf-address: "udp://localhost:12201"
+        gelf-address: "udp://${DOCKER_HOST_IP:-172.17.0.1}:12201"
         tag: "blockchain-service"
 
 volumes:

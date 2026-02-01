@@ -155,7 +155,7 @@ export class Home extends Component {
 		style="background: linear-gradient(135deg, rgba(10, 22, 40, 0.85) 0%, rgba(10, 30, 60, 0.85) 100%); border: 2px solid #00d9ff; box-shadow: 0 0 30px rgba(0, 217, 255, 0.3), inset 0 0 30px rgba(0, 217, 255, 0.05);">
 		<div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(0, 217, 255, 0.1) 35px, rgba(0, 217, 255, 0.1) 70px);"></div>
 		<h2 class="text-3xl text-center text-ctex mb-4">Select a playmate</h2>
-		<div id="friendsList" class="flex flex-col gap-2"></div>
+		<div id="friendsList" class="flex flex-col gap-2 max-h-64 overflow-y-auto pr-2" style="scrollbar-width: thin; scrollbar-color: #00d9ff rgba(10, 22, 40, 0.5);"></div>
 		<button id="cancel" class="btn px-10 py-3  w-fit shadow-sm rounded-sm text-ctex border border-transparent hover:border-neon-cyan hover:shadow-[0_4px_15px_rgba(34,211,238,0.5)] transition">Cancel</button>
     	</div>`;
 		
@@ -164,7 +164,7 @@ export class Home extends Component {
   		this.online.forEach(friend => {
     		const btn = document.createElement("button");
     		btn.className =
-    		  "btn overflow-y-auto flex text-center px-10 py-3 w-fit shadow-sm rounded-sm text-ctex border border-transparent hover:border-neon-cyan hover:shadow-[0_4px_15px_rgba(34,211,238,0.5)] transition";
+    		  "btn flex items-center gap-2 text-center px-10 py-3 w-fit shadow-sm rounded-sm text-ctex border border-transparent hover:border-neon-cyan hover:shadow-[0_4px_15px_rgba(34,211,238,0.5)] transition";
     		const avatar = document.createElement("img");
     		avatar.src = friend.avatar || ''; 
     		avatar.alt = friend.username;

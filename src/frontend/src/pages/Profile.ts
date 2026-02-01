@@ -177,12 +177,13 @@ export class ProfileView extends Component {
 						Create an account to compete against players worldwide, unlock achievements, and climb the leaderboards!
 					</p>
 					<div class="flex flex-wrap gap-4 justify-center">
-						<a href="/register" class="px-8 py-3 bg-neon-cyan rounded-lg font-bold text-space-dark hover:shadow-lg hover:shadow-neon-cyan/30 transition-all transform hover:scale-105">
-							Get Started
-						</a>
-						<a href="/login" class="px-8 py-3 bg-space-dark border border-neon-cyan/50 rounded-lg font-bold text-neon-cyan hover:border-neon-cyan hover:bg-neon-cyan/10 transition-all">
+					<div id="register" class="px-8 py-3 bg-neon-cyan rounded-lg font-bold text-space-dark hover:shadow-lg hover:shadow-neon-cyan/30 transition-all transform hover:scale-105">
+						Get Started
+					</div>
+					
+						<div id="login" class="px-8 py-3 bg-space-dark border border-neon-cyan/50 rounded-lg font-bold text-neon-cyan hover:border-neon-cyan hover:bg-neon-cyan/10 transition-all">
 							Sign In
-						</a>
+						</div>
 					</div>
 					<div class="mt-8 flex items-center gap-8 text-gray-500 text-sm">
 						<div class="flex items-center gap-2">
@@ -199,6 +200,9 @@ export class ProfileView extends Component {
 			`;
 			return;
 		}
+
+		container.querySelector("#register")?.addEventListener("click",()=> navigate("/register"));
+	  	container.querySelector("#login")?.addEventListener("click",()=> navigate("/login"));
 
 		// XP Tracker - between player card and achievements
 		// TODO: Replace with actual user XP data when available
