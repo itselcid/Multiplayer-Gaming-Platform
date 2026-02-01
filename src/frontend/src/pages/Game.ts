@@ -317,7 +317,7 @@ export class Game extends Component {
 		container.className = "fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50 p-4";	
 		container.innerHTML = `
 		<div class="backdrop-blur-xl rounded-2xl flex flex-col gap-6 p-8 items-center border border-cyan/20 max-w-lg w-full" 
-			style="background: linear-gradient(135deg, rgba(10, 22, 40, 0.85) 0%, rgba(30, 11, 61, 0.85) 100%); border: 2px solid #00d9ff; box-shadow: 0 0 30px rgba(0, 217, 255, 0.3), inset 0 0 30px rgba(0, 217, 255, 0.05);">
+			style="background: linear-gradient(135deg, rgba(10, 22, 40, 0.85) 0%, rgba(10, 30, 60, 0.85) 100%); border: 2px solid #00d9ff; box-shadow: 0 0 30px rgba(0, 217, 255, 0.3), inset 0 0 30px rgba(0, 217, 255, 0.05);">
         <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(0, 217, 255, 0.1) 35px, rgba(0, 217, 255, 0.1) 70px);"></div>
 		<h1 class="text-5xl font-bold text-center text-ctex">Game Over</h1>
 		<div class="flex flex-row justify-around items-center gap-8 py-4">

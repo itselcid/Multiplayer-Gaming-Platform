@@ -75,11 +75,11 @@ function generateroom(): string{
         const id  = room.id;
         const game = games.get(id);
         const match = tour.get(id);
-        if(game && !game.updt){
+        if(game && (Date.now() - game.starTime > 1000*3*60)){
           games.delete(id);
           rooms.delete(id);
         }
-        if(match && !match.updt){
+        if(match && (Date.now() - match.starTime > 1000*3*60)){
           if(!match.left && !match.right){
             if(rooms.get(id)?.join1 && !rooms.get(id)?.join2 )
               match.left = 3;
