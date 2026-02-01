@@ -166,7 +166,7 @@ export const authController = {
         if (!resetToken)
             throw createHttpError(400, 'Invalid or expired token');
 
-        await updateUser(resetToken.userId, { password: { newpassword } });
+        await updateUser(resetToken.userId, { password: { newpassword } }, true);
         await deletePasswordResetToken(token);
 
         return reply.send({

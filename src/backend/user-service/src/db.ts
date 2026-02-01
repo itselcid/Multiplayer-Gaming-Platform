@@ -168,7 +168,7 @@ export async function getUserForAuth(username: string, id?: number): Promise<Use
     return user;
 }
 
-export async function updateUser(id: number, updates: UpdateUserInput): Promise<UserData | null> {
+export async function updateUser(id: number, updates: UpdateUserInput, skipPasswordCheck: boolean = false): Promise<UserData | null> {
     const data: any = {};
 
     if (updates.email !== undefined) {
@@ -195,7 +195,7 @@ export async function updateUser(id: number, updates: UpdateUserInput): Promise<
         // Check if user has a password set (regular user vs GitHub-only user)
         const hasExistingPassword = !!user.password;
 
-        if (hasExistingPassword) {
+        if (!skipPasswordCheck && hasExistingPassword) {
             // Regular user: must provide and validate old password
             if (!oldpassword)
                 throw createHttpError(400, 'Current password is required');
@@ -206,7 +206,7 @@ export async function updateUser(id: number, updates: UpdateUserInput): Promise<
         }
 
         // Validate new passwords match
-        if (newpassword !== repeatednewpasswd)
+        if (repeatednewpasswd && newpassword !== repeatednewpasswd)
             throw createHttpError(400, 'Passwords do not match');
 
         const hash = await bcrypt.hash(newpassword, 10);

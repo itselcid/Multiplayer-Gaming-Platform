@@ -402,7 +402,8 @@ export class Settings extends Component {
 
 	private renderProfileTab(): string {
 		const user = userState.get();
-		const avatarUrl = user?.avatar ? `/public/${user.avatar}` : '/public/avatars/default.webp';
+		const avatar = user?.avatar ? `${user.avatar}` : '/public/default-avatar.png';
+		const avatarUrl = avatar.startsWith('http') ? avatar : `/public/${avatar}`;
 		return `
 			<!-- Avatar Upload Section -->
 			<div class="settings-avatar-section">
