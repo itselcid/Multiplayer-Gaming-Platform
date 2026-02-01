@@ -19,7 +19,7 @@ export class Success_wallet_connection extends Component {
 	}
 
 	async render(): Promise<void> {
-		const	container = addElement('div', 'max-w-lg w-full relative z-10 my-8', this.el);
+		const	container = addElement('div', 'max-w-xl w-full relative z-10 my-8', this.el);
 		container.style = 'animation: fadeIn 0.5s ease-out;';
 		const	container2 = addElement('div', 'relative', container);
 
@@ -67,7 +67,7 @@ export class Success_wallet_connection extends Component {
 									  		</div>
 										</div>
 										<div class="bg-slate-900/70 rounded-lg px-4 py-3.5 border border-slate-700/50">
-									  	<p class="text-green-400 font-mono text-sm tracking-wide">${wallet_address.toUpperCase()}</p>
+									  	<p class="text-green-400 font-mono text-sm text-center tracking-wide">${wallet_address.toUpperCase()}</p>
 										</div>
 									</div>
 		`);
