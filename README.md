@@ -510,11 +510,11 @@ npx hardhat ignition deploy ./ignition/modules/Tournament.ts --network fuji
 
 ## Team
 
-- **oessaadi**
-- **laoubaid**
-- **ckhater**
-- **kez-zoub**
-- **oel-moue**
+- **[oessaadi](https://github.com/itselcid)**
+- **[laoubaid](https://github.com/laoubaid)**
+- **[ckhater](https://github.com/ckhater)**
+- **[kez-zoub](https://github.com/kamal98ETH)**
+- **[oel-moue](https://github.com/oussamaelmouekken)**
 
 ---
 
